@@ -1,6 +1,6 @@
 
 #define maxSteps 500
-#define tstep 0.01f
+#define tstep 0.02f
 
 // intersect ray with a box
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm

@@ -73,10 +73,13 @@ class VolumeRenderer:
         self.set_scale(self._data.shape[::-1],stackUnits)
 
 
+    def setCLImg(self,dataImg):
+        self.dataImg = dataImg
 
     def update_data(self,data):
         self._data = data
-        self.dev.writeImage(self.dataImg,self._data.astype(uint16))
+        # self.dev.writeImage(self.dataImg,self._data.astype(uint16))
+        self.dev.writeImage(self.dataImg,data)
 
     def set_scale(self,stackSize,stackUnits):
         Nx,Ny,Nz = stackSize
@@ -88,8 +91,9 @@ class VolumeRenderer:
             data = SpimUtils.fromSpimFolder(
                 fName,pos=pos,count=1)[0,:,:,:]
             self.set_data(data)
-        except:
+        except Exception as e:
             print "set_dataFromFolder: couldnt open %s" % fName
+            print e
             return
         try:
             stackSize = SpimUtils.parseIndexFile(
@@ -98,7 +102,8 @@ class VolumeRenderer:
                 os.path.join(fName,"metadata.txt"))
             print stackSize, stackUnits
             self.set_scale(stackSize,stackUnits)
-        except:
+        except Exception as e:
+            print e
             print "couldnt open/parse index/meta file"
 
 
@@ -113,13 +118,13 @@ class VolumeRenderer:
         return userp[0],userp[1]
 
 
-    def render(self,modelView = None, data = None,
+    def render(self,data = None, stackUnits = None,modelView = None,
                density= .1, gamma = 1., offset = 0., scale = 1.,
                isStackScale = True, render_func = "d_render"):
         """  render_func = "d_render", "max_proj" """
 
-        if data != None:
-            self.set_data(data)
+        if data != None and stackUnits != None:
+            self.set_data(data, stackUnits)
 
         if modelView:
             self.set_modelView(modelView)
@@ -187,10 +192,11 @@ def test_render_simple():
     import pylab
 
     rend = VolumeRenderer((600,600))
-    rend.set_dataFromFolder("../Data/Drosophila_Single")
+    rend.set_dataFromFolder("../Data/ExampleData")
 
     rend.set_modelView(rotMatX(pi/2.))
     out = rend.render(render_func="max_proj")
+    out = minimum(out,400)
     print rend.mScale
 
     # pylab.ion()
