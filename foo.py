@@ -1,73 +1,98 @@
 
+import SpimUtils
+from PyOCL import *
+from numpy import *
 
-# import socket
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.bind(("localhost",8089))
-# s.listen(5)
+from PyQt4 import QtCore
+from PyQt4 import QtGui
+from PyQt4 import QtOpenGL
 
+import Queue
+from volume_render import VolumeRenderer
 
-# while True:
-#     c,a = s.accept()
-#     # buf = c.recv(64)
-#     # if len(buf)>0:
-#     #     print buf
-#     #     break
-
-
-
-import socket
-import select
-import numpy as np
-
-def readlines(sock, recv_buffer=4096, delim='\n'):
-	buffer = ''
-	data = True
-	while data:
-		data = sock.recv(recv_buffer)
-		buffer += data
-		while buffer.find(delim) != -1:
-			line, buffer = buffer.split('\n', 1)
-			yield line
-	return
+isAppRunning = True
+dataQueue = Queue.Queue()
 
 
+class DataLoadThread(QtCore.QThread):
+    def __init__(self, dataQueue, size = 6):
+        self.size = size
+        self.queue = dataQueue
+        self.fName = "../Data/Drosophila_07"
+        QtCore.QThread.__init__(self)
+
+    def run(self):
+        self.pos, self.nT  = 0, 100
+        dpos = 1
+        while isAppRunning:
+            if self.queue.qsize()<self.size:
+                # print "fetching data at pos %i"%(self.pos)
+                try:
+                    d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
+                                                 count=1)[0,:,:,:]
+                    self.queue.put(d)
+                except Exception as e:
+                    print "couldnt open: ", self.fName
+                    print e
+                self.pos += dpos
+                if self.pos>self.nT-1:
+                    self.pos = self.nT-1
+                    dpos = -1
+                if self.pos<0:
+                    self.pos = 0
+                    dpos = 1
 
 
-def empty_socket(sock):
-    """remove the data present on the socket"""
-    input = [sock]
-    while 1:
-        inputready, o, e = select.select(input,[],[], 0.0)
-        if len(inputready)==0: break
-        for s in inputready: s.recv(4096)
-
-
-def getQuatFromSocket(s):
-
-    
-    while s.recv(1) != "[":
-        pass
-
-    # print "after"
-    tmp = "["
-
-    while tmp.find(']') == -1:
-        tmp += s.recv(1)
-
-    # empty_socket(s)
-
-    return eval("np.array(%s)"%tmp)
 
 
 if __name__ == '__main__':
-    import time
+    from time import time
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    dev = OCLDevice()
 
-    s.connect(("myers-mac-5-wifi.mpi-cbg.de",4444))
+    fName = "../Data/Drosophila_07"
+    d = SpimUtils.fromSpimFolder(fName,count=1)[0,:,:,:].astype(uint16)
+    img = dev.createImage(d.shape[::-1])
+
+    dataLoadThread = DataLoadThread(dataQueue,size = 4)
+    dataLoadThread.start(priority=QtCore.QThread.HighPriority)
+
+    rend = VolumeRenderer((600,600))
+    rend.set_dataFromFolder("../Data/Drosophila_07")
+
+    t = time()
+    for i in range(100):
+        # a = d.astype(uint16)
+        d = dataQueue.get()
+        dev.writeImage(img,d)
+        # rend.dev.writeImage(rend.dataImg,d)
+        # rend.update_data(d)
+
+        # rend.render(render_func="max_proj")
+
+        # print i
 
 
-    while True:
-        d = getQuatFromSocket(s)
-        if d[0]%100 == 0:
-            print d[0]
+    print (time()-t)
+    # N = 100
+
+
+
+    # fName = "../Data/Drosophila_07"
+    # d = fromSpimFolder(fName,count=1)[0,:,:,:].astype(uint16)
+    # img = dev.createImage(d.shape[::-1])
+
+
+    # stackSize = parseIndexFile(os.path.join(fName,"data/index.txt"))
+
+    # t = time()
+    # for i in range(N):
+
+    #     d = fromSpimFolder(fName,pos=0,count=1)[0,:,:,:].astype(uint16)
+
+    #     # dev.writeImage(img,d)
+
+    # print (1.*time()-t)/N
+
+    # # print time()-t
+    # print N*d.nbytes/((1.*time()-t))/1e6," MB/s"

@@ -22,8 +22,6 @@ quatRot = array([1,0,0,0])
 zoomVal = 1.
 isAppRunning = True
 isSocket = False
-dataQueue = Queue.Queue()
-
 
 
 def getEggData(s):
@@ -48,7 +46,7 @@ class ModelViewThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
 
     def run(self):
-
+        global isSocket
         try:
             soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # soc.connect(("myers-mac-5.local",4444))
@@ -66,10 +64,9 @@ class ModelViewThread(QtCore.QThread):
         global quatRot
 
         t = 0
-        while soc != None and isAppRunning:
+        while isSocket and isAppRunning:
             try:
                 eggData = getEggData(soc)
-
                 a,b,c,d = eggData[:4]
                 q = array([a,b,d,-c])
 
@@ -77,7 +74,7 @@ class ModelViewThread(QtCore.QThread):
 
                 buttonPressVal = eggData[8]/255.
                 acceleratVal = sum(abs(eggData[4:7]))
-                if buttonPressVal>.3:
+                if buttonPressVal>.5:
                     zoomVal = min(2.,zoomVal*(1+.01*buttonPressVal))
 
                 if acceleratVal>1.:
@@ -96,14 +93,15 @@ class DataLoadThread(QtCore.QThread):
     def __init__(self, dataQueue, size = 6):
         self.size = size
         self.queue = dataQueue
-        self.fName = "../Data/Drosophila_Single"
+        # self.fName = "../Data/Drosophila_05"
+        self.fName = ""
         QtCore.QThread.__init__(self)
 
     def run(self):
         self.pos, self.nT  = 0, 1
         dpos = 1
         while isAppRunning:
-            if self.queue.qsize()<self.size :
+            if self.queue.qsize()<self.size:
                 print "fetching data at pos %i"%(self.pos)
                 try:
                     d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
@@ -130,6 +128,49 @@ class DataLoadThread(QtCore.QThread):
         print "changed: ",stackSize, fName
 
 
+# class CLLoadThread(QtCore.QThread):
+#     def __init__(self, myqueue, dev, size = 6):
+#         self.size = size
+#         self.dev = dev
+#         self.queue = myqueue
+#         self.fName = "../Data/Drosophila_Single"
+#         QtCore.QThread.__init__(self)
+
+#     def run(self):
+#         self.pos, self.nT  = 0, 1
+#         dpos = 1
+
+#         while isAppRunning:
+#             if self.queue.qsize()<self.size :
+#                 print "fetching data at pos %i"%(self.pos)
+#                 try:
+#                     d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
+#                                                  count=1)[0,:,:,:]
+#                     dataImg = self.dev.createImage(d.shape[::-1],
+#                                                    mem_flags = cl.mem_flags.READ_ONLY)
+#                     self.dev.writeImage(dataImg,d.astype(uint16))
+#                     self.queue.put(dataImg)
+#                 except:
+#                     print "couldnt open ", self.fName
+#                 self.pos += dpos
+#                 if self.pos>self.nT-1:
+#                     self.pos = self.nT-1
+#                     dpos = -1
+#                 if self.pos<0:
+#                     self.pos = 0
+#                     dpos = 1
+
+
+    # def dataFolderChanged(self,fName):
+    #     self.fName = str(fName)
+
+    #     self.queue.queue.clear()
+    #     stackSize = SpimUtils.parseIndexFile(
+    #         os.path.join(self.fName,"data/index.txt"))
+    #     self.pos, self.nT = 0, stackSize[0]
+    #     print "changed: ",stackSize, fName
+
+
 class GLWidget(QtOpenGL.QGLWidget):
     dataFolderChanged = QtCore.pyqtSignal(str)
 
@@ -139,20 +180,21 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((600,600),useDevice=1)
+        self.renderer = VolumeRenderer((800,800),useDevice=1)
         self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
-
         self.modelViewThread = ModelViewThread()
         self.modelViewThread.start()
-        self.dataLoadThread = DataLoadThread(dataQueue,size = 4)
-        self.dataLoadThread.start(priority=QtCore.QThread.IdlePriority)
+
+        self.dataQueue = Queue.Queue()
+        self.dataLoadThread = DataLoadThread(self.dataQueue,size = 4)
+        self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
 
         self.dataFolderChanged.connect(self.dataLoadThread.dataFolderChanged)
 
         self.count = 0
         self.scale = 1.
         self.t = time.time()
-        self.set_dataFromFolder("../Data/Drosophila_Single")
+        self.set_dataFromFolder("../Data/Drosophila_05")
 
 
     def dragEnterEvent(self, event):
@@ -236,29 +278,26 @@ class GLWidget(QtOpenGL.QGLWidget):
     def render(self):
 
         global modelView
+        global isSocket
 
         if isSocket:
-            loc_modelView = dot(transMat(0,0,-16*log(zoomVal)),modelView)
+            loc_modelView = dot(transMat(0,0,-18*log(zoomVal)),modelView)
         else:
-            loc_modelView = dot(transMat(0,0,-6),rotMatX(.01*self.count));
+            loc_modelView = dot(transMat(0,0,-8+4*cos(.02*self.count)),rotMatX(.01*self.count));
+
 
         self.renderer.set_modelView(loc_modelView)
-
 
         out = self.renderer.render(render_func="max_proj")
 
         self.scale = .9*self.scale + .1*(1e-8+amax(out))
         out = (out-amin(out))/self.scale
 
-        self.output = 250*out
+        self.output = minimum(255,255*out)
 
-        print self.count
-
-        if self.count %1 ==0:
-            self.renderer.update_data(dataQueue.get())
-            dataQueue.task_done()
 
         if self.count%20==0:
+            print self.count
             t2  = time.time()
             fps = 20./(t2-self.t)
             self.t = t2
@@ -266,7 +305,17 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.count += 1
 
 
-    def onTimer(self):
+    def onRenderTimer(self):
+        self.render()
+        self.updateGL()
+
+
+    def onUpdateDataTimer(self):
+
+        if self.dataQueue.qsize():
+            self.renderer.update_data(self.dataQueue.get())
+            self.dataQueue.task_done()
+
         self.render()
         self.updateGL()
 
@@ -281,15 +330,20 @@ class MainWindow(QtGui.QMainWindow):
         self.initActions()
         self.initMenus()
 
-
         self.glWidget = GLWidget(self)
         self.setCentralWidget(self.glWidget)
 
-        timer = QtCore.QTimer(self)
-        timer.setInterval(50)
-        QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'),
-                               self.glWidget.onTimer)
-        timer.start()
+        renderTimer = QtCore.QTimer(self)
+        renderTimer.setInterval(50)
+        QtCore.QObject.connect(renderTimer, QtCore.SIGNAL('timeout()'),
+                               self.glWidget.onRenderTimer)
+        renderTimer.start()
+
+        updateDataTimer = QtCore.QTimer(self)
+        updateDataTimer.setInterval(100)
+        QtCore.QObject.connect(updateDataTimer, QtCore.SIGNAL('timeout()'),
+                               self.glWidget.onUpdateDataTimer)
+        updateDataTimer.start()
 
 
     def initActions(self):
