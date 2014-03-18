@@ -219,12 +219,19 @@ max_projectShort(__global short *d_output,
   // calculate eye ray in world space
   float4 eyeRay_o;
   float4 eyeRay_d;
+  float4 temp;
 
-  eyeRay_o = (float4)(invViewMatrix[3], invViewMatrix[7], invViewMatrix[11], 1.0f);
+  temp = (float4)(0, 0, .0f,1.0f);
 
-  // eyeRay_o = (float4)(invViewMatrix[3], invViewMatrix[7], invViewMatrix[11], 1.0f);  
 
-  float4 temp = normalize(((float4)(u, v, -2.0f,0.0f)));
+  eyeRay_o.x = dot(temp, ((float4)(invViewMatrix[0],invViewMatrix[1],invViewMatrix[2],invViewMatrix[3])));
+  eyeRay_o.y = dot(temp, ((float4)(invViewMatrix[4],invViewMatrix[5],invViewMatrix[6],invViewMatrix[7])));
+  eyeRay_o.z = dot(temp, ((float4)(invViewMatrix[8],invViewMatrix[9],invViewMatrix[10],invViewMatrix[11])));
+  eyeRay_o.w = 1.0f;
+
+  // eyeRay_o = (float4)(invViewMatrix[3], invViewMatrix[7], invViewMatrix[11], 1.0f);
+
+  temp = normalize(((float4)(u, v, -2.0f,0.0f)));
   eyeRay_d.x = dot(temp, ((float4)(invViewMatrix[0],invViewMatrix[1],invViewMatrix[2],invViewMatrix[3])));
   eyeRay_d.y = dot(temp, ((float4)(invViewMatrix[4],invViewMatrix[5],invViewMatrix[6],invViewMatrix[7])));
   eyeRay_d.z = dot(temp, ((float4)(invViewMatrix[8],invViewMatrix[9],invViewMatrix[10],invViewMatrix[11])));
@@ -292,3 +299,95 @@ __kernel void foo( __global uint* output,
   output[i] = uint(pix);
   
 }
+
+
+
+__kernel void
+test_project(__global short *d_output, 
+         uint Nx, uint Ny,
+         __constant float* invViewMatrix
+          ,__read_only image3d_t volume      )
+{
+
+  const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
+	CLK_ADDRESS_CLAMP_TO_EDGE |	CLK_FILTER_LINEAR ;
+
+  uint x = get_global_id(0);
+  uint y = get_global_id(1);
+
+  float u = (x / (float) Nx)*2.0f-1.0f;
+  float v = (y / (float) Ny)*2.0f-1.0f;
+
+  //float tstep = 0.01f;
+  float4 boxMin = (float4)(-1.0f, -1.0f, -1.0f,-1.0f);
+  float4 boxMax = (float4)(1.0f, 1.0f, 1.0f,1.0f);
+
+  // calculate eye ray in world space
+  float4 eyeRay_o;
+  float4 eyeRay_d;
+  float4 temp;
+  
+  eyeRay_o = (float4)(invViewMatrix[3], invViewMatrix[7], invViewMatrix[11], 1.0f);
+
+  // eyeRay_o = (float4)(invViewMatrix[3], invViewMatrix[7], invViewMatrix[11], 1.0f);  
+
+  temp = (float4)(u,v,0,1.f);
+
+  eyeRay_o.x = dot(temp, ((float4)(invViewMatrix[0],invViewMatrix[1],invViewMatrix[2],invViewMatrix[3])));
+  eyeRay_o.y = dot(temp, ((float4)(invViewMatrix[4],invViewMatrix[5],invViewMatrix[6],invViewMatrix[7])));
+  eyeRay_o.z = dot(temp, ((float4)(invViewMatrix[8],invViewMatrix[9],invViewMatrix[10],invViewMatrix[11])));
+  eyeRay_o.w = 1.0f;
+  
+  temp = normalize(((float4)(u, v, -2.0f,0.0f)));
+  temp =  (float4)(.0f,.0f,-1.f,.0f);
+  // temp = normalize(((float4)(u, v, -3.0f,0.0f)));
+
+  
+  eyeRay_d.x = dot(temp, ((float4)(invViewMatrix[0],invViewMatrix[1],invViewMatrix[2],invViewMatrix[3])));
+  eyeRay_d.y = dot(temp, ((float4)(invViewMatrix[4],invViewMatrix[5],invViewMatrix[6],invViewMatrix[7])));
+  eyeRay_d.z = dot(temp, ((float4)(invViewMatrix[8],invViewMatrix[9],invViewMatrix[10],invViewMatrix[11])));
+  eyeRay_d.w = 0.0f;
+
+  // find intersection with box
+  float tnear, tfar;
+  int hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, &tnear, &tfar);
+  if (!hit) {
+  	if ((x < Nx) && (y < Ny)) {
+  	  // write output color
+  	  d_output[x+Nx*y] = 0.f;
+  	}
+  	return;
+  }
+  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
+
+  uint colVal = 0;
+  
+  float t = tfar;
+
+  float4 pos;
+  
+  for(uint i=0; i<maxSteps; i++) {		
+  	pos = eyeRay_o + eyeRay_d*t;
+
+
+	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
+
+  	// read from 3D texture        
+  	uint newVal = read_imageui(volume, volumeSampler, pos).x;
+
+  	colVal = max(colVal, newVal);
+
+  	t -= tstep;
+  	if (t < tnear) break;
+  }
+
+  if ((x < Nx) && (y < Ny)) {
+
+	d_output[x+Nx*y] = colVal;
+	// d_output[x+Nx*y] = short(100*fabs(1.f*eyeRay_d.x));
+	// d_output[x+Nx*y] = short(100*tnear);
+
+  }
+
+}
+
