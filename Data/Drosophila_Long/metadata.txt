@@ -1,0 +1,3 @@
+timelapse.NumberOfPlanes	=	108	0
+timelapse.StartZ	=	0	0
+timelapse.StopZ	=	108.00	0

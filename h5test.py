@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import sys
 import os
 from PyQt4 import QtCore
@@ -8,7 +6,7 @@ from PyQt4 import QtOpenGL
 from OpenGL import GLU
 from OpenGL.GL import *
 
-# from PyOCL import *
+from PyOCL import *
 from volume_render import *
 import SpimUtils
 
@@ -17,10 +15,10 @@ import time
 import Queue
 import socket
 from scipy.misc import imsave
-from quaternion import Quaternion
 
 
 modelView = scaleMat()
+quatRot = array([1,0,0,0])
 zoomVal = 1.
 isAppRunning = True
 isSocket = False
@@ -63,14 +61,14 @@ class ModelViewThread(QtCore.QThread):
         # soc = 1
         global modelView
         global zoomVal
-        global EggQuatRot
+        global quatRot
 
         t = 0
         while isSocket and isAppRunning:
             try:
                 eggData = getEggData(soc)
                 a,b,c,d = eggData[:4]
-                q = Quaternion(a,b,d,-c)
+                q = array([a,b,d,-c])
 
                 quatRot =  .93*quatRot + .07 * q
 
@@ -83,15 +81,13 @@ class ModelViewThread(QtCore.QThread):
                     zoomVal = max(1.,zoomVal*(1-.01*acceleratVal))
 
 
-                # modelView = quaternionToRotMat(quatRot)
-                modelView = quatRot.toRotation4()
-
+                modelView = quaternionToRotMat(quatRot)
             except Exception as e:
                 print e
                 print "couldnt create modelview from quaternion"
 
 
-
+import h5py
 
 
 class DataLoadThread(QtCore.QThread):
@@ -103,17 +99,24 @@ class DataLoadThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
 
     def run(self):
-        self.pos, self.nT  = 0, 1
+        self.pos, self.nT  = 0, 100
         dpos = 1
         while isAppRunning:
-            if self.queue.qsize()<self.size:
-                print "fetching data at pos %i"%(self.pos)
-                try:
-                    d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
-                                                 count=1)[0,:,:,:]
-                    self.queue.put(d)
-                except:
-                    print "couldnt open ", self.fName
+            if self.queue.qsize()<self.size and self.fName !="":
+
+                with h5py.File(self.fName, "r") as f:
+
+                    print f["0"].shape
+                    print "fetching data at pos %i"%(self.pos)
+
+                    try:
+                        print str(self.pos)
+                        d = f[str(self.pos)]
+                        self.queue.put(d[...])
+                        # print d.shape
+                    except:
+                        print "couldnt open ", self.fName
+
                 self.pos += dpos
                 if self.pos>self.nT-1:
                     self.pos = self.nT-1
@@ -123,26 +126,20 @@ class DataLoadThread(QtCore.QThread):
                     dpos = 1
 
 
-    def dataFolderChanged(self,fName):
+    def dataSourceChanged(self,fName):
         self.fName = str(fName)
 
         self.queue.queue.clear()
-        stackSize = SpimUtils.parseIndexFile(
-            os.path.join(self.fName,"data/index.txt"))
-        self.pos, self.nT = 0, stackSize[0]
-        print "changed: ",stackSize, fName
-
-
-    def posChanged(self,pos):
-        print "pos changed ",pos
-        self.queue.queue.clear()
-        self.pos = pos
+        # stackSize = SpimUtils.parseIndexFile(
+        #     os.path.join(self.fName,"data/index.txt"))
+        # self.pos, self.nT = 0, stackSize[0]
+        # print "changed: ",stackSize, fName
+        print "changed: ",fName
 
 
 
 class GLWidget(QtOpenGL.QGLWidget):
-    dataFolderChanged = QtCore.pyqtSignal(str)
-    posChanged = QtCore.pyqtSignal(int)
+    dataSourceChanged = QtCore.pyqtSignal(str)
 
     def __init__(self, parent=None):
         self.parent = parent
@@ -155,21 +152,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.modelViewThread = ModelViewThread()
         self.modelViewThread.start()
 
-
-
         self.dataQueue = Queue.Queue()
-
         self.dataLoadThread = DataLoadThread(self.dataQueue,size = 4)
         self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
-        self.dataFolderChanged.connect(self.dataLoadThread.dataFolderChanged)
-        self.posChanged.connect(self.dataLoadThread.posChanged)
+
+        self.dataSourceChanged.connect(self.dataLoadThread.dataSourceChanged)
 
         self.count = 0
-        self.quatRot = Quaternion(1,0,0,0)
-
         self.scale = 1.
         self.t = time.time()
-        self.set_dataFromFolder("../Data/Drosophila_Long")
+        self.set_dataSource("/Users/mweigert/Desktop/Phd/worms/test.h5")
 
 
     def dragEnterEvent(self, event):
@@ -188,11 +180,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def initializeGL(self):
         self.qglClearColor(QtGui.QColor(0, 0,  0))
         glEnable(GL_TEXTURE_2D)
-        glEnable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glEnable( GL_LINE_SMOOTH )
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
 
@@ -213,10 +200,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_data(data)
 
 
-    def set_dataFromFolder(self,fName):
+    def set_dataSource(self,fName):
         try:
-            self.renderer.set_dataFromFolder(fName)
-            self.dataFolderChanged.emit(fName)
+            self.dataSourceChanged.emit(fName)
+            self.renderer.set_shape([532, 1352, 108])
+            # self.renderer.set_shape((54, 676,266))
+                        
         except:
             print "couldnt open %s" % fName
 
@@ -235,8 +224,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         w = 1.*min(self.width,self.height)/self.width
         h = 1.*min(self.width,self.height)/self.height
 
-        glEnable(GL_TEXTURE_2D)
-
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         glMatrixMode(GL_PROJECTION)
@@ -245,8 +232,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBindTexture(GL_TEXTURE_2D,self.texture)
         glTexImage2D(GL_TEXTURE_2D, 0, 1, Nx, Ny,
                       0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
-        glColor4f(1.,1.,1.,1.);
-
         glBegin (GL_QUADS);
         glTexCoord2f (0, 0);
         glVertex2f (-w, -h);
@@ -257,41 +242,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         glTexCoord2f (0, 1);
         glVertex2f (-w, h);
         glEnd();
-
-        glDisable(GL_TEXTURE_2D)
-
-        rSphere = .05
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
-
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glTranslatef(1.-2*rSphere,-1.+2*rSphere,0)
-
-        glMultMatrixf(linalg.inv(self.quatRot.toRotation4()))
-
-
-        quadric = GLU.gluNewQuadric()
-
-        glLineWidth(2)
-        glColor(101./255, 134./255, 167./255,.8)
-        # glColor(.8,.8,.8,.7)
-
-        for i,rots in enumerate([-90,90,90]):
-            vec = (arange(3)==i).astype(int)
-            glPushMatrix()
-            glRotatef(rots,*vec)
-            glTranslatef(0,0,rSphere)
-            GLU.gluCylinder(quadric,.2*rSphere,0,rSphere,30,30)
-            glPopMatrix()
-
-        glColor(14./255, 66./255, 108./255,.7)
-        # glColor(.4,.4,.4,.7)
-
-        GLU.gluSphere(quadric,rSphere,40,40)
-
 
 
     def render(self):
@@ -307,25 +257,12 @@ class GLWidget(QtOpenGL.QGLWidget):
             # loc_modelView = dot(transMat(0,0,-18*log(zoomVal)),rotMatX(.01*self.count));
             # loc_modelView = dot(transMat(0,0,-18*log(zoomVal)),
             #                     quaternionToRotMat([cos(.01*self.count),sin(.01*self.count),0,0]));
-            # loc_modelView = dot(transMat(0,0,12*(-1./3+log(2)-log(zoomVal))),
-            #                     quaternionToRotMat([cos(.01*self.count),sin(.01*self.count),0,0]));
-
-
-            # self.renderer._defaultModelView = scaleMat()
-            # loc_modelView = dot(scaleMat(*[1./zoomVal]*3),dot(transMat(0,0,-1.6-1.4*(zoomVal-1)),
-            #                     self.quatRot.toRotation4()))
-
-            # loc_modelView = dot(scaleMat(*[4./zoomVal**2]*3),dot(transMat(0,0,2),
-            #                     self.quatRot.toRotation4()))
-
             loc_modelView = dot(transMat(0,0,12*(-1./3+log(2)-log(zoomVal))),
-                                self.quatRot.toRotation4())
-
+                                quaternionToRotMat([cos(.01*self.count),sin(.01*self.count),0,0]));
 
         self.renderer.set_modelView(loc_modelView)
 
         out = self.renderer.render(render_func="max_proj")
-        # out = self.renderer.render(render_func="test_proj")
 
         # self.scale = .9*self.scale + .1*(1e-8+amax(out))
 
@@ -337,6 +274,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
         if self.count%20==0:
+            print self.count
             t2  = time.time()
             fps = 20./(t2-self.t)
             self.t = t2
@@ -350,9 +288,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def onUpdateDataTimer(self):
-        # print "updating"
+
         if self.dataQueue.qsize():
-            self.renderer.update_data(self.dataQueue.get(timeout=2))
+            self.renderer.update_data(self.dataQueue.get())
             self.dataQueue.task_done()
 
         self.render()
@@ -365,38 +303,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         lam += sign(event.delta())*(1.01-abs(lam))/30.
         lam = sign(lam)*min(1,abs(lam))
         zoomVal = (3+lam)/2.
-
-    def posToVec(self,x,y, isRot = True ):
-        x, y = 2.*x/self.width-1.,1.-2.*y/self.width
-        r = sqrt(x*x+y*y)
-        if r>1.-1.e-7:
-            x,y = 1.*x/r, 1.*y/r
-        z = sqrt(max(0,1.-x*x+y*y))
-
-        if isRot:
-            M = linalg.inv(self.quatRot.toRotation3())
-            x,y,z = dot(M,[x,y,z])
-
-        return x,y,z
-
-
-    def mousePressEvent(self, event):
-        button = event.button()
-        self._x0, self._y0, self._z0 = self.posToVec(event.x(),event.y())
-        # print "pressed ", self._x0,self._y0,self._z0
-
-    def mouseMoveEvent(self, event):
-        x1,y1,z1 = self.posToVec(event.x(),event.y())
-        # print "moved ", x1,y1,z1, linalg.norm(array([x1,y1,z1]))
-        n = cross(array([self._x0,self._y0,self._z0]),array([x1,y1,z1]))
-        nnorm = linalg.norm(n)
-        if abs(nnorm)>=1.:
-            nnorm *= 1./abs(nnorm)
-        w = arcsin(nnorm)
-        n *= 1./(nnorm+1.e-10)
-        q = Quaternion(cos(.5*w),*(sin(.5*w)*n))
-        self.quatRot = self.quatRot*q
-
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -411,41 +317,7 @@ class MainWindow(QtGui.QMainWindow):
         self.initMenus()
 
         self.glWidget = GLWidget(self)
-
-        self.startButton = QtGui.QPushButton("",self)
-        self.startButton.setStyleSheet("background-color: black")
-        self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
-        self.startButton.setIconSize(QtCore.QSize(24,24))
-        self.startButton.clicked.connect(self.startTimeLapsed)
-        self.startButton.setMaximumWidth(24)
-        self.startButton.setMaximumHeight(24)
-
-        self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
-        # self.sliderTime.setStyleSheet("QSlider::handle:horizontal {border-radius: 1px;}")
-
-        self.sliderTime.setRange(1, 400)
-        self.sliderTime.setValue(20)
-        self.sliderTime.setTracking(True)
-        self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
-
-        self.connect(self.sliderTime, QtCore.SIGNAL('valueChanged(int)'),
-                     self.on_sliderTime)
-
-        self.setStyleSheet("background-color:black")
-
-
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.glWidget)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(self.startButton)
-        hbox.addWidget(self.sliderTime)
-
-        vbox.addLayout(hbox)
-
-        widget = QtGui.QWidget()
-        widget.setLayout(vbox)
-        self.setCentralWidget(widget)
+        self.setCentralWidget(self.glWidget)
 
         renderTimer = QtCore.QTimer(self)
         renderTimer.setInterval(50)
@@ -453,11 +325,11 @@ class MainWindow(QtGui.QMainWindow):
                                self.glWidget.onRenderTimer)
         renderTimer.start()
 
-        self.updateDataTimer = QtCore.QTimer(self)
-        self.updateDataTimer.setInterval(50)
-        QtCore.QObject.connect(self.updateDataTimer, QtCore.SIGNAL('timeout()'),
+        updateDataTimer = QtCore.QTimer(self)
+        updateDataTimer.setInterval(50)
+        QtCore.QObject.connect(updateDataTimer, QtCore.SIGNAL('timeout()'),
                                self.glWidget.onUpdateDataTimer)
-
+        updateDataTimer.start()
 
 
     def initActions(self):
@@ -466,30 +338,12 @@ class MainWindow(QtGui.QMainWindow):
         self.exitAction.setStatusTip('Exit application')
         self.connect(self.exitAction, QtCore.SIGNAL('triggered()'), self.close)
 
-
     def initMenus(self):
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         fileMenu.addAction(self.exitAction)
         # this has to be repeated in MAC OSX for some magic reason
         fileMenu = menuBar.addMenu('&File')
-
-
-    def startTimeLapsed(self,event):
-        if self.updateDataTimer.isActive():
-            self.updateDataTimer.stop()
-            self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
-
-        else:
-            self.updateDataTimer.start()
-            self.startButton.setIcon(QtGui.QIcon("icon_pause.png"))
-
-    def on_sliderTime(self,event):
-        pos =  self.sliderTime.value()
-        self.glWidget.posChanged.emit(pos)
-        # time.sleep(.4)
-        self.glWidget.onUpdateDataTimer()
-
 
     def close(self):
         isAppRunning = False

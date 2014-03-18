@@ -53,25 +53,29 @@ class VolumeRenderer:
         self.proc = OCLProcessor(self.dev,absPath("simple2.cl"))
         self.matBuf = self.dev.createBuffer(12,dtype=float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
+
+        self._defaultModelView = transMat(0,0,4)
+        self.set_units()
+
         if size:
             self.resize(size)
         else:
             self.resize((200,200))
         self.set_modelView(scaleMat())
 
+
     def resize(self,size):
         self.width, self.height = size
-        self._modelView = transMat(0,0,12)
-
         self.buf = self.dev.createBuffer(self.height*self.width,dtype=uint16)
 
-    def set_data(self,data, stackUnits = ones(3)):
+    def set_data(self,data):
         self._data = data
-        self.dataImg = self.dev.createImage(self._data.shape[::-1],
-                                            mem_flags = cl.mem_flags.READ_ONLY)
+        self.set_shape(self._data.shape[::-1])
         self.dev.writeImage(self.dataImg,self._data.astype(uint16))
-        self.set_scale(self._data.shape[::-1],stackUnits)
 
+    def set_shape(self,dataShape):
+        self.dataImg = self.dev.createImage(dataShape,
+                                            mem_flags = cl.mem_flags.READ_ONLY)
 
     def setCLImg(self,dataImg):
         self.dataImg = dataImg
@@ -81,10 +85,8 @@ class VolumeRenderer:
         # self.dev.writeImage(self.dataImg,self._data.astype(uint16))
         self.dev.writeImage(self.dataImg,data)
 
-    def set_scale(self,stackSize,stackUnits):
-        Nx,Ny,Nz = stackSize
-        dx,dy,dz = stackUnits
-        self.mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
+    def set_units(self,stackUnits = ones(3)):
+        self.stackUnits = stackUnits
 
     def set_dataFromFolder(self,fName,pos=0):
         try:
@@ -101,7 +103,7 @@ class VolumeRenderer:
             stackUnits = SpimUtils.parseMetaFile(
                 os.path.join(fName,"metadata.txt"))
             print stackSize, stackUnits
-            self.set_scale(stackSize,stackUnits)
+            self.set_units(stackUnits)
         except Exception as e:
             print e
             print "couldnt open/parse index/meta file"
@@ -109,7 +111,7 @@ class VolumeRenderer:
 
 
     def set_modelView(self, modelView = scaleMat()):
-        self.modelView = dot(self._modelView,modelView)
+        self.modelView = dot(self._defaultModelView,modelView)
 
     def _get_user_coords(self,x,y,z):
         p = array([x,y,z,1])
@@ -118,24 +120,31 @@ class VolumeRenderer:
         return userp[0],userp[1]
 
 
-    def render(self,data = None, stackUnits = None,modelView = None,
-               density= .1, gamma = 1., offset = 0., scale = 1.,
-               isStackScale = True, render_func = "d_render"):
+    def render(self,data = None, modelView = None,
+               # density= .1, gamma = 1., offset = 0., scale = 1.,
+            render_func = "max_proj"):
         """  render_func = "d_render", "max_proj" """
 
-        if data != None and stackUnits != None:
-            self.set_data(data, stackUnits)
+        if data != None:
+            self.set_data(data)
 
-        if modelView:
-            self.set_modelView(modelView)
+        if not hasattr(self,'dataImg'):
+            print "no data provided, set_data(data) before"
+            return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
+
         if not modelView and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
             return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
 
-        if isStackScale and hasattr(self,'mScale'):
-            modelView = dot(self.modelView,self.mScale)
-        else:
-            modelView = 1.*self.modelView
+        if modelView:
+            self.set_modelView(modelView)
+
+        # scaling the data according to size and units
+        Nx,Ny,Nz = self.dataImg.shape
+        dx,dy,dz = self.stackUnits
+        mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
+
+        modelView = dot(self.modelView,mScale)
 
         invViewMatrix = modelView.transpose()[:-1,:]
 
@@ -147,12 +156,19 @@ class VolumeRenderer:
                    int32(self.width),int32(self.height),
                    self.matBuf,
                    self.dataImg)
-        else:
+        if render_func == "d_render":
             self.proc.runKernel("d_render",(self.width,self.height),None,
                    self.buf,
                    int32(self.width),int32(self.height),
                    float32(density), float32(gamma),
                    float32(offset), float32(scale),
+                   self.matBuf,
+                   self.dataImg)
+
+        if render_func == "test_proj":
+            self.proc.runKernel("test_project",(self.width,self.height),None,
+                   self.buf,
+                   int32(self.width),int32(self.height),
                    self.matBuf,
                    self.dataImg)
 
@@ -187,7 +203,6 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
         imsave("%s_%s.png"%(outName,str(t+1).zfill(int(ceil(log10(count+1))))),out)
 
 
-
 def test_render_simple():
     import pylab
 
@@ -216,28 +231,38 @@ def test_render_movie():
 if __name__ == "__main__":
 
     # test_render_movie()
+    # test_render_simple()
 
+    from time import time, sleep
 
-    test_render_simple()
+    rend = VolumeRenderer((400,400))
 
-    # from time import time
+    Nx,Ny,Nz = 200,150,50
+    d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    # t = time()
-    # rend = VolumeRenderer((400,400))
-    # print time()-t
+    d = SpimUtils.fromSpimFolder("../Data/Drosophila_Long",count=1)[0,...]
 
-    # d = ones([200,200,200])
+    rend.set_data(d)
+    # rend.set_modelView(dot(transMat(0,0,0),rotMatX(1*pi/2.)))
 
+    rend.set_units([1.,1.,4.])
+    # rend._defaultModelView = transMat(0,0,0)
+    print rend.modelView
+    img = None
+    pylab.ion()
+    for t in linspace(0,pi/2.+.4,4):
+        print t
+        rend.set_modelView(dot(transMat(0,0,t),rotMatX(t)))
+        # rend.set_modelView(transMat(0,0,2-2*t))
 
-    # t = time()
-    # rend.set_data(d)
-    # print time()-t
+        print rend.modelView
 
-    # t = time()
-    # out = rend.render()
-    # print time()-t
+        out = rend.render(render_func = "max_proj")
 
+        if not img:
+            img = pylab.imshow(out)
+        else:
+            img.set_data(out)
+        pylab.draw()
 
-    # pylab.imshow(out)
-
-    # pylab.show()
+        sleep(1)
