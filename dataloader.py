@@ -1,10 +1,13 @@
+import os
+import numpy as np
 from PyQt4 import QtCore
 import time
 import Queue
 import h5py
 import SpimUtils
 import re
-from collections import OrderedDict
+from PIL import Image
+from collections import defaultdict
 isAppRunning = True
 
 class DataLoadThread2(QtCore.QThread):
@@ -66,70 +69,221 @@ class DataLoadThread2(QtCore.QThread):
             self.getFunc = self.getfromSpimFolder
 
 
+def getTiffSize(fName):
+    img = Image.open(fName, 'r')
+    depth = 0
+    while True:
+        try:
+            img.seek(depth)
+        except EOFError:
+            break
+        depth += 1
+
+    return (depth,)+img.size[::-1]
+
+
+def read3dTiff(fName, depth = -1, dtype = np.uint16):
+
+    if not depth>0:
+        depth = getTiffSize(fName)[0]
+
+    img = Image.open(fName, 'r')
+    stackSize = (depth,) + img.size[::-1]
+
+    data = np.empty(stackSize,dtype=dtype)
+
+    for i in range(stackSize[0]):
+        img.seek(i)
+        data[i,...] = np.asarray(img, dtype= dtype)
+
+    return data
+
+
+
+
+class GenericData():
+    def __init__(self):
+        self.stackSize = None
+        self.stackUnits = None
+
+    def __getitem__(self,int):
+        return None
+
+
+class SpimData(GenericData):
+    def __init__(self,fName):
+        GenericData.__init__(self)
+        self.load(fName)
+
+    def load(self,fName):
+        try:
+            self.stackSize = SpimUtils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+            self.stackUnits = SpimUtils.parseMetaFile(os.path.join(fName,"metadata.txt"))
+            self.fName = fName
+        except Exception as e:
+            print e
+
+    def __getitem__(self,pos):
+        if self.stackSize:
+            if pos<0 or pos>=self.stackSize[0]:
+                raise IndexError("0 <= pos <= %i, but pos = %i"%(self.stackSize[0]-1,pos))
+
+
+            pos = max(0,min(pos,self.stackSize[0]-1))
+            voxels = np.prod(self.stackSize[1:])
+            offset = 2*pos*voxels
+
+            with open(os.path.join(self.fName,"data/data.bin"),"rb") as f:
+                f.seek(offset)
+                return np.fromfile(f,dtype="<u2",
+                count=voxels).reshape(self.stackSize[1:])
+
+
+class TiffData(GenericData):
+    def __init__(self,fName):
+        GenericData.__init__(self)
+        self.load(fName)
+
+    def load(self,fName, stackUnits = None):
+        try:
+            self.stackSize = (1,)+ getTiffSize(fName)
+        except Exception as e:
+            print e
+        if stackUnits:
+            self.stackUnits = stackUnits
+        self.fName = fName
+
+    def __getitem__(self,pos):
+        if self.stackSize:
+            return read3dTiff(self.fName,depth = self.stackSize[1])
 
 
 
 
 class DataLoadThread(QtCore.QThread):
-    def __init__(self):
+    def __init__(self, _rwLock, nset = set(), data = None,dataContainer = None):
         QtCore.QThread.__init__(self)
+        self._rwLock = _rwLock
+        if nset and data and dataContainer:
+            self.load(nset, data, dataContainer)
+
+
+    def load(self, nset, data, dataContainer):
+        self.nset = nset
+        self.data = data
+        self.dataContainer = dataContainer
+
 
     def run(self):
         self.stopped = False
         while not self.stopped:
-            print "thread"
-            time.sleep(1)
+            kset = set(self.data.keys())
+            dkset = kset.difference(set(self.nset))
+            dnset = set(self.nset).difference(kset)
+
+            for k in dkset:
+                del(self.data[k])
+
+            if dnset:
+                print "preloading ", list(dnset)
+                for k in dnset:
+                    self._rwLock.lockForWrite()
+                    self.data[k] = self.dataContainer[k]
+                    self._rwLock.unlock()
+                    time.sleep(.0001)
+            time.sleep(.0001)
 
 
 class DataLoader():
     _rwLock = QtCore.QReadWriteLock()
 
-    def __init__(self, prefetch_size = 4):
-        self.data = OrderedDict()
-        self.dataLoadThread = DataLoadThread()
-        self.dataLoadThread.start()
+    def __init__(self, fName = "", prefetchSize = 0):
+        self.dataLoadThread = DataLoadThread(self._rwLock)
+        if fName:
+            self.load(fName, prefetchSize)
+
+    def load(self,fName, prefetchSize = 0):
+        try:
+            self.dataContainer = self.chooseContainer(fName)
+        except Exception as e:
+            print "couldnt load abstract data container ", fName
+            print e
+            return
+
+        self.fName = fName
+        self.prefetchSize = prefetchSize
+        self.nset = []
+        self.data = defaultdict(lambda: None)
+
+        if prefetchSize > 0:
+            self.dataLoadThread.stopped = True
+            self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
+            self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
 
 
-    def foo(self):
+    def chooseContainer(self,fName):
+        if re.match(".*\.tif",fName):
+            return TiffData(fName)
+        else:
+            return SpimData(fName)
+
+
+    def stop(self):
         self.dataLoadThread.stopped = True
 
     def __getitem__(self,pos):
-        try:
-            return self.data[pos]
-        except KeyError:
-            #load the data
+        # self._rwLock.lockForRead()
+        if not self.data.has_key(pos):
+            self._rwLock.lockForWrite()
+            self.data[pos] = self.dataContainer[pos]
+            self._rwLock.unlock()
 
 
+        if self.prefetchSize > 0:
+            self._rwLock.lockForWrite()
+            self.nset[:] = self.neighborhood(pos)
+            self._rwLock.unlock()
+
+        return self.data[pos]
+
+
+    def neighborhood(self,pos):
+        # FIXME mod stackSize!
+        return range(pos,pos+self.prefetchSize+1)
+
+
+
+
+def test_spimLoader():
+    loader = DataLoader("/Users/mweigert/python/Data/Drosophila_Full",0)
+
+
+    dt = 0
+
+    for i in range(20):
+        print i
+        time.sleep(.00001)
+        t = time.time()
+        d = loader[i]
+        dt += (time.time()-t)
+
+    print "%.4s per fetch "%(dt/20.)
+
+    loader.stop()
 
 
 if __name__ == '__main__':
-    # dataQueue = Queue.Queue()
-
-    # thread = DataLoadThread(dataQueue,size = 4)
-
-    # thread.dataSourceChanged("/Users/mweigert/Desktop/Phd/worms/test.h5")
-    # thread.dataSourceChanged("/Users/mweigert/Desktop/Phd/worms/test_lzf.h5")
-
-    # thread.dataSourceChanged("/Users/mweigert/python/Data/Drosophila_Full")
-    # thread.getFunc = thread.getfromSpimFolder
 
 
-    # thread.start(priority=QtCore.QThread.LowPriority)
+    fName = "../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
-    # N = 10
-    # t = time.time()
-
-    # for i in range(N):
-    #     print i
-    #     d = dataQueue.get(timeout=2)
-
-    # print "",(1.*time.time()-t)/N
-
-    # isAppRunning = False
+    # data = read3dTiff(fName)
 
 
-    loader = DataLoader()
+    loader = DataLoader(fName)
 
+    d = loader[0]
 
-    time.sleep(4)
-    loader.foo()
+    loader.stop()
+
+    # test_spimLoader()

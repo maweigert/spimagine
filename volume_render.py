@@ -1,39 +1,14 @@
 import os
-from PyOCL import *
-import SpimUtils
-from scipy.misc import imsave
-from numpy import *
 import pylab
+from PyOCL import cl, OCLDevice, OCLProcessor
+from scipy.misc import imsave
+import SpimUtils
+from transform_matrices import *
+from numpy import *
 
 def absPath(s):
     return os.path.join(os.path.dirname(__file__),s)
 
-def rotMatX(phi):
-    return array([cos(phi),0,sin(phi),0,
-                  0,1, 0,0,
-                  -sin(phi),0, cos(phi),0,
-                  0,0,0,1]).reshape(4,4)
-
-
-def quaternionToRotMat(q):
-    a,b,c,d = q
-    return array([
-        [a**2+b**2-c**2-d**2, 2*(b*c-a*d), 2*(b*d+a*c),0],
-        [2*(b*c+a*d), a**2-b**2+c**2-d**2, 2*(c*d-a*b),0],
-        [2*(b*d-a*c), 2*(c*d+a*b),  a**2-b**2-c**2+d**2,0],
-        [0,0,0,1]
-        ])
-
-def transMat(x=0,y=0,z=0):
-    return array([1.0, 0.0, 0.0, 0.,
-                          0.0, 1.0, 0.0, 0.0,
-                          0.0, 0.0, 1.0, 0.0,
-                          x, y, z, 1.0]).reshape(4,4)
-def scaleMat(x =1.,y=1.,z=1.):
-    return array([x, 0.0, 0.0, 0.,
-                  0.0, y, 0.0, 0.0,
-                  0.0, 0.0, z, 0.0,
-                  0, 0, 0, 1.0]).reshape(4,4)
 
 
 class VolumeRenderer:
@@ -240,7 +215,7 @@ if __name__ == "__main__":
     Nx,Ny,Nz = 200,150,50
     d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = SpimUtils.fromSpimFolder("../Data/Drosophila_Long",count=1)[0,...]
+    d = SpimUtils.fromSpimFolder("../Data/Drosophila_05",count=1)[0,...]
 
     rend.set_data(d)
     # rend.set_modelView(dot(transMat(0,0,0),rotMatX(1*pi/2.)))
@@ -265,4 +240,4 @@ if __name__ == "__main__":
             img.set_data(out)
         pylab.draw()
 
-        sleep(1)
+        sleep(.4)
