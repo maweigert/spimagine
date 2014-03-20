@@ -1,78 +1,72 @@
-from time import sleep
-import SpimUtils
-from PyOCL import *
-from numpy import *
-
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
-
-import Queue
-from volume_render import VolumeRenderer
-
-isAppRunning = True
-dataQueue = Queue.Queue()
+from volume_render import *
+from pylab import *
 
 
-class DataLoadThread(QtCore.QThread):
-    def __init__(self, dataQueue, fName = "",size = 6):
-        self.size = size
-        self.queue = dataQueue
-        self.fName = fName
-        QtCore.QThread.__init__(self)
-
-    def run(self):
-        global isAppRunning
-        self.pos, self.nT  = 0, 100
-        dpos = 1
-        while isAppRunning:
-            if self.queue.qsize()<self.size:
-                print "fetching data at pos %i"%(self.pos)
-                try:
-                    d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
-                                                 count=1)[0,:,:,:]
-                    self.queue.put(d)
-                except Exception as e:
-                    print "couldnt open: ", self.fName
-                    print e
-                self.pos += dpos
-                if self.pos>self.nT-1:
-                    self.pos = self.nT-1
-                    dpos = -1
-                if self.pos<0:
-                    self.pos = 0
-                    dpos = 1
+def transMat(x=0,y=0,z=0):
+    return np.array([1.0, 0.0, 0.0, x,
+                          0.0, 1.0, 0.0, y,
+                          0.0, 0.0, 1.0, z,
+                          0, 0, 0, 1.0]).reshape(4,4)
 
 
+class volrend(VolumeRenderer):
+    def render(self,data, matM = transMat(), matP = projMatOrtho(-1,1,-1,1,-1,1)):
+
+
+        # matM
+
+        # invViewMatrix = modelView.transpose()[:-1,:]
+
+        self.proc = OCLProcessor(self.dev,absPath("volume_render.cl"))
+
+        self.set_data(data)
+
+        self.matMBuf = self.dev.createBuffer(16,dtype=float32,
+                                            mem_flags = cl.mem_flags.READ_ONLY)
+        self.matPBuf = self.dev.createBuffer(16,dtype=float32,
+                                            mem_flags = cl.mem_flags.READ_ONLY)
+
+        self.invPMBuf = self.dev.createBuffer(16,dtype=float32,
+                                            mem_flags = cl.mem_flags.READ_ONLY)
+
+        matM = inv(matM)
+        self.invPM = inv(dot(matP,matM))
+        print self.invPM
+
+        
+        self.dev.writeBuffer(self.matMBuf,matM.flatten().astype(float32))
+        self.dev.writeBuffer(self.matPBuf,matP.flatten().astype(float32))
+        self.dev.writeBuffer(self.invPMBuf,self.invPM.flatten().astype(float32))
+
+        self.proc.runKernel("test",(self.width,self.height),None,
+                   self.buf,
+                   int32(self.width),int32(self.height),
+                   self.matMBuf,
+                   self.matPBuf,
+                   self.invPMBuf,
+                   self.dataImg)
+
+
+        return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
 
 
 if __name__ == '__main__':
-    from time import time
-
-    dev = OCLDevice()
-
-    fName = "../Data/Drosophila_07"
-    d = SpimUtils.fromSpimFolder(fName,count=1)[0,:,:,:].astype(uint16)
-    img = dev.createImage(d.shape[::-1])
-
-    dataLoadThread = DataLoadThread(dataQueue,fName,size = 4)
-    dataLoadThread
-    dataLoadThread.start(priority=QtCore.QThread.HighPriority)
-
-    rend = VolumeRenderer((200,200))
-    rend.set_dataFromFolder(fName)
-
-    t = time()
-    for i in range(100):
-        d = dataQueue.get()
-        rend.update_data(d)
-        rend.render(render_func="max_proj")
-
-        # print i
 
 
-    print (time()-t)
-    print "fps: ",100./(time()-t)
+    rend = volrend((400,400))
 
-    global isAppRunning
-    isAppRunning = False
+    N = 100
+    tmp = arange(N)
+    Y,Z,X = np.meshgrid(tmp,tmp,tmp)
+
+    d = bitwise_xor(X,bitwise_xor(Y,Z))
+
+    matM = transMat(0,0,-4.)
+    matP = projMatOrtho()
+    matP = projMatPerspective()
+
+    out = rend.render(d,matM,matP)
+
+
+    ion()
+    imshow(out)
