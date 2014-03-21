@@ -174,7 +174,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.scale = 1.
         self.t = time.time()
         # self.load("../Data/Drosophila_05")
-        self.load("../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN02_CHN03.fusedStack.tif")
+        self.load("../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN02_CHN03.fusedStack.tif")
 
 
         # self.set_dataFromFolder("../Data/Drosophila_05")
