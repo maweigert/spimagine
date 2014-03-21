@@ -8,6 +8,11 @@ setup(name='SpimRender',
       author_email='mweigert@mpi-cbg.de',
       license='MIT',
       packages=['SpimRender'],
+      scripts=['SpimRender/spim_render'],
       install_requires=[
-          'numpy', 'Pillow',"pyopencl"],
+          'numpy', 'scipy','Pillow',"pyopencl",
+          'SpimUtils',"PyOCL"],
+          dependency_links=[
+              "git+http://mweigert@bitbucket.org/mweigert/spimutils.git",
+              "git+http://mweigert@bitbucket.org/mweigert/pyocl.git"],
       zip_safe=False)

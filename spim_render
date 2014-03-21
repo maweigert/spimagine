@@ -6,21 +6,6 @@ import argparse
 from SpimRender.volume_render import *
 
 
-from PIL import Image
-
-def getTiffSize(fName):
-    img = Image.open(fName, 'r')
-    depth = 0
-    while True:
-        try:
-            img.seek(depth)
-        except EOFError:
-            break
-        depth += 1
-
-    return (depth,)+img.size[::-1]
-
-
 
 def read3dTiff(fName, depth = -1, dtype = np.uint16):
 
@@ -37,6 +22,7 @@ def read3dTiff(fName, depth = -1, dtype = np.uint16):
         data[i,...] = np.asarray(img, dtype= dtype)
 
     return data
+
 
 
 if __name__ == '__main__':
