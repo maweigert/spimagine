@@ -14,7 +14,9 @@ with pip
 standard python 
 
 > clone http://mweigert@bitbucket.org/mweigert/spimrender
+
 > cd spimrender
+
 > python setup.py install
 
 -----
