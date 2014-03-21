@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='SpimRender',
       version='0.1',
@@ -8,7 +8,7 @@ setup(name='SpimRender',
       author_email='mweigert@mpi-cbg.de',
       license='MIT',
       packages=['SpimRender'],
-      scripts=['SpimRender/spim_render'],
+      scripts=['bin/spim_render'],
       install_requires=[
           'numpy', 'scipy','Pillow',"pyopencl"],
           
