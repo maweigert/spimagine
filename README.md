@@ -8,12 +8,16 @@ renders spim data in 3D
 
 with pip
 
+> pip install git+http://mweigert@bitbucket.org/mweigert/spimutils
+
+> pip install git+http://mweigert@bitbucket.org/mweigert/pyocl
+
 > pip install git+http://mweigert@bitbucket.org/mweigert/spimrender
 
 
 standard python 
 
-> clone http://mweigert@bitbucket.org/mweigert/spimrender
+> git clone http://mweigert@bitbucket.org/mweigert/spimrender
 
 > cd spimrender
 
