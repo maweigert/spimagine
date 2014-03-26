@@ -44,6 +44,8 @@ class DataLoadThread(QtCore.QThread):
 
 class DataLoadModel(QtCore.QObject):
     _dataSourceChanged = QtCore.pyqtSignal()
+    _dataPosChanged = QtCore.pyqtSignal(int)
+
     _rwLock = QtCore.QReadWriteLock()
 
     def __init__(self, fName = "", prefetchSize = 0):
@@ -51,6 +53,7 @@ class DataLoadModel(QtCore.QObject):
 
         self.dataLoadThread = DataLoadThread(self._rwLock)
         self._dataSourceChanged.connect(self.dataSourceChanged)
+        self._dataPosChanged.connect(self.dataPosChanged)
 
         if fName:
             self.load(fName, prefetchSize)
@@ -58,6 +61,11 @@ class DataLoadModel(QtCore.QObject):
 
     def dataSourceChanged(self):
         print "data source changed"
+
+    def dataPosChanged(self, pos):
+        print "data position changed to %i"%pos
+
+
 
     def load(self,fName, prefetchSize = 0):
         try:
@@ -78,6 +86,8 @@ class DataLoadModel(QtCore.QObject):
             self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
 
         self._dataSourceChanged.emit()
+        self.setPos(0)
+
 
     def chooseContainer(self,fName):
         if re.match(".*\.tif",fName):
@@ -88,6 +98,26 @@ class DataLoadModel(QtCore.QObject):
 
     def stop(self):
         self.dataLoadThread.stopped = True
+
+    def prefetch(self,pos):
+        self._rwLock.lockForWrite()
+        self.nset[:] = self.neighborhood(pos)
+        self._rwLock.unlock()
+
+    def sizeT(self):
+        if self.dataContainer:
+            return self.dataContainer.sizeT()
+
+
+    def setPos(self,pos):
+        if pos<0 or pos>=self.sizeT():
+            raise IndexError("setPos(pos): %i outside of [0,%i]!"%(pos,self.sizeT()-1))
+            return
+
+        self.pos = pos
+        self._dataPosChanged.emit(pos)
+        self.prefetch(self.pos)
+
 
     def __getitem__(self,pos):
         # self._rwLock.lockForRead()
@@ -101,9 +131,7 @@ class DataLoadModel(QtCore.QObject):
 
 
         if self.prefetchSize > 0:
-            self._rwLock.lockForWrite()
-            self.nset[:] = self.neighborhood(pos)
-            self._rwLock.unlock()
+            self.prefetch(pos)
 
         return self.data[pos]
 
