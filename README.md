@@ -5,6 +5,7 @@ renders spim data in 3D
 
 ### Installing
 
+On Mac, change your c compiler to clang...
 
 with pip
 

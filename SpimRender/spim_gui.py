@@ -10,136 +10,12 @@ from OpenGL.GL import *
 
 from volume_render import *
 from dataloader import DataLoader
-from data_model import DataLoadModel
 import SpimUtils
 
 from numpy import *
 import time
-import Queue
-import socket
 from scipy.misc import imsave
 from quaternion import Quaternion
-
-
-modelView = scaleMat()
-zoomVal = 1.
-isAppRunning = True
-isSocket = False
-
-
-
-
-def getEggData(s):
-    while s.recv(1) != "[":
-        pass
-    tmp = "["
-    while tmp.find(']') == -1:
-        tmp += s.recv(1)
-
-
-    # empty_socket(s)
-    try:
-        q = eval("array(%s)"%tmp)
-    except Exception as e:
-        print e
-        q = np.array([1,0,0,0,0,0,0,0,0,0])
-
-    return q
-
-class ModelViewThread(QtCore.QThread):
-    def __init__(self):
-        QtCore.QThread.__init__(self)
-
-    def run(self):
-        global isSocket
-        try:
-            soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # soc.connect(("myers-mac-5.local",4444))
-            soc.connect(("localhost",4444))
-            isSocket = True
-            print "connected"
-        except Exception as e:
-            print e
-            print "not connected"
-            soc = None
-
-        # soc = 1
-        global modelView
-        global zoomVal
-        global EggQuatRot
-
-        t = 0
-        while isSocket and isAppRunning:
-            try:
-                eggData = getEggData(soc)
-                a,b,c,d = eggData[:4]
-                q = Quaternion(a,b,d,-c)
-
-                quatRot =  .93*quatRot + .07 * q
-
-                buttonPressVal = eggData[8]/255.
-                acceleratVal = sum(abs(eggData[4:7]))
-                if buttonPressVal>.5:
-                    zoomVal = min(2.,zoomVal*(1+.01*buttonPressVal))
-
-                if acceleratVal>1.:
-                    zoomVal = max(1.,zoomVal*(1-.01*acceleratVal))
-
-
-                # modelView = quaternionToRotMat(quatRot)
-                modelView = quatRot.toRotation4()
-
-            except Exception as e:
-                print e
-                print "couldnt create modelview from quaternion"
-
-
-
-
-
-class DataLoadThread(QtCore.QThread):
-    def __init__(self, dataQueue, size = 6):
-        self.size = size
-        self.queue = dataQueue
-        # self.fName = "../Data/Drosophila_05"
-        self.fName = ""
-        QtCore.QThread.__init__(self)
-
-    def run(self):
-        self.pos, self.nT  = 0, 1
-        dpos = 1
-        while isAppRunning:
-            if self.queue.qsize()<self.size:
-                print "fetching data at pos %i"%(self.pos)
-                try:
-                    d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
-                                                 count=1)[0,:,:,:]
-                    self.queue.put(d)
-                except:
-                    print "couldnt open ", self.fName
-                self.pos += dpos
-                if self.pos>self.nT-1:
-                    self.pos = self.nT-1
-                    dpos = -1
-                if self.pos<0:
-                    self.pos = 0
-                    dpos = 1
-
-
-    def dataFolderChanged(self,fName):
-        self.fName = str(fName)
-
-        self.queue.queue.clear()
-        stackSize = SpimUtils.parseIndexFile(
-            os.path.join(self.fName,"data/index.txt"))
-        self.pos, self.nT = 0, stackSize[0]
-        print "changed: ",stackSize, fName
-
-
-    def posChanged(self,pos):
-        print "pos changed ",pos
-        self.queue.queue.clear()
-        self.pos = pos
 
 
 
@@ -160,28 +36,16 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
 
-        # self.dataQueue = Queue.Queue()
-
-        # self.dataLoadThread = DataLoadThread(self.dataQueue,size = 4)
-        # self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
-        # self.dataFolderChanged.connect(self.dataLoadThread.dataFolderChanged)
-
-        # self.posChanged.connect(self.dataLoadThread.posChanged)
-
+        self.dataQueue = Queue.Queue()
 
         self.dataLoader = DataLoader()
-
-        # self.dataModel = DataLoadModel(prefetchSize = 0)
 
         self.count = 0
         self.quatRot = Quaternion(1,0,0,0)
 
         self.scale = 1.
         self.t = time.time()
-
-        # self.dataModel.load("../../Data/Drosophila_05")
         self.load("../../Data/Drosophila_05")
-
         # self.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
 
 
@@ -455,7 +319,6 @@ class MainWindow(QtGui.QMainWindow):
         self.setStyleSheet("background-color:black")
 
 
-
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.glWidget)
 
@@ -468,9 +331,6 @@ class MainWindow(QtGui.QMainWindow):
         widget = QtGui.QWidget()
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
-
-
-        self.mode = DataModel()
 
         renderTimer = QtCore.QTimer(self)
         renderTimer.setInterval(50)
@@ -527,29 +387,11 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.qApp.quit()
 
 
-class DataModel:
-    dataModelChanged = QtCore.pyqtSignal()
-    dataPosChanged = QtCore.pyqtSignal(int)
-
-    def __init__(self,fName=""):
-        self.load(fName)
-
-    def load(self,fName = ""):
-        if fName:
-            try:
-                self.data = DataLoader(fName)
-                self.dataModelChanged.emit()
-                self.dataPosChanged.emit(0)
-
-            except e:
-                print e
-                self.data = None
-        else:
-            self.data = None
-
 
 
 if __name__ == '__main__':
+
+
 
     app = QtGui.QApplication(sys.argv)
 

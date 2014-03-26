@@ -3,70 +3,71 @@ import numpy as np
 from PyQt4 import QtCore
 import time
 import Queue
-import h5py
+# import h5py
 import SpimUtils
 import re
 from PIL import Image
 from collections import defaultdict
-isAppRunning = True
 
-class DataLoadThread2(QtCore.QThread):
-    def __init__(self, dataQueue, fName = "", size = 6):
-        self.size = size
-        self.queue = dataQueue
-        QtCore.QThread.__init__(self)
-        self.getFunc = self.getfromH5
+# isAppRunning = True
 
-    def run(self):
-        self.pos, self.nT  = 0, 10
-        dpos = 1
-        while isAppRunning:
-            if self.queue.qsize()<self.size and self.fName !="":
+# class DataLoadThread2(QtCore.QThread):
+#     def __init__(self, dataQueue, fName = "", size = 6):
+#         self.size = size
+#         self.queue = dataQueue
+#         QtCore.QThread.__init__(self)
+#         self.getFunc = self.getfromH5
 
-                print "fetching data at pos %i"%(self.pos)
+#     def run(self):
+#         self.pos, self.nT  = 0, 10
+#         dpos = 1
+#         while isAppRunning:
+#             if self.queue.qsize()<self.size and self.fName !="":
 
-                try:
-                    self.queue.put(self.getFunc(self.fName,self.pos))
-                except Exception as e:
-                    print e
-                    print "couldnt open ", self.fName
+#                 print "fetching data at pos %i"%(self.pos)
 
-                self.pos += dpos
-                if self.pos>self.nT-1:
-                    self.pos = self.nT-1
-                    dpos = -1
-                if self.pos<0:
-                    self.pos = 0
-                    dpos = 1
+#                 try:
+#                     self.queue.put(self.getFunc(self.fName,self.pos))
+#                 except Exception as e:
+#                     print e
+#                     print "couldnt open ", self.fName
 
-    def getfromSpimFolder(self,fName,pos):
-        try:
-            d = SpimUtils.fromSpimFolder(fName,pos=pos,
-                                         count=1)[0,:,:,:]
-            return d
-        except Exception as e:
-            print e
-            print "couldnt open ", fName
+#                 self.pos += dpos
+#                 if self.pos>self.nT-1:
+#                     self.pos = self.nT-1
+#                     dpos = -1
+#                 if self.pos<0:
+#                     self.pos = 0
+#                     dpos = 1
 
-    def getfromH5(self,fName,pos):
-        try:
-            return self.f[str(self.pos)][...]
-        except Exception as e:
-            print e
-            print "couldnt open ", fName
+#     def getfromSpimFolder(self,fName,pos):
+#         try:
+#             d = SpimUtils.fromSpimFolder(fName,pos=pos,
+#                                          count=1)[0,:,:,:]
+#             return d
+#         except Exception as e:
+#             print e
+#             print "couldnt open ", fName
+
+#     def getfromH5(self,fName,pos):
+#         try:
+#             return self.f[str(self.pos)][...]
+#         except Exception as e:
+#             print e
+#             print "couldnt open ", fName
 
 
-    def dataSourceChanged(self,fName):
-        self.fName = str(fName)
-        self.queue.queue.clear()
-        print "changed: ",fName
-        if re.match(".*\.h5",fName):
-            if hasattr(self,"f"):
-                self.f.close()
-            self.getFunc = self.getfromH5
-            self.f = h5py.File(fName, "r")
-        else:
-            self.getFunc = self.getfromSpimFolder
+#     def dataSourceChanged(self,fName):
+#         self.fName = str(fName)
+#         self.queue.queue.clear()
+#         print "changed: ",fName
+#         if re.match(".*\.h5",fName):
+#             if hasattr(self,"f"):
+#                 self.f.close()
+#             self.getFunc = self.getfromH5
+#             self.f = h5py.File(fName, "r")
+#         else:
+#             self.getFunc = self.getfromSpimFolder
 
 
 def getTiffSize(fName):
@@ -102,6 +103,7 @@ def read3dTiff(fName, depth = -1, dtype = np.uint16):
 
 
 class GenericData():
+    dataFileError = Exception("not a valid file")
     def __init__(self):
         self.stackSize = None
         self.stackUnits = None
@@ -111,20 +113,24 @@ class GenericData():
 
 
 class SpimData(GenericData):
-    def __init__(self,fName):
+    def __init__(self,fName = ""):
         GenericData.__init__(self)
         self.load(fName)
 
     def load(self,fName):
-        try:
-            self.stackSize = SpimUtils.parseIndexFile(os.path.join(fName,"data/index.txt"))
-            self.stackUnits = SpimUtils.parseMetaFile(os.path.join(fName,"metadata.txt"))
-            self.fName = fName
-        except Exception as e:
-            print e
+        if fName:
+            try:
+                self.stackSize = SpimUtils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                self.stackUnits = SpimUtils.parseMetaFile(os.path.join(fName,"metadata.txt"))
+                self.fName = fName
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as SpimData"%fName)
+
 
     def __getitem__(self,pos):
-        if self.stackSize:
+        if self.stackSize and self.fName:
             if pos<0 or pos>=self.stackSize[0]:
                 raise IndexError("0 <= pos <= %i, but pos = %i"%(self.stackSize[0]-1,pos))
 
@@ -137,26 +143,34 @@ class SpimData(GenericData):
                 f.seek(offset)
                 return np.fromfile(f,dtype="<u2",
                 count=voxels).reshape(self.stackSize[1:])
+        else:
+            return None
 
 
 class TiffData(GenericData):
-    def __init__(self,fName):
+    def __init__(self,fName = ""):
         GenericData.__init__(self)
         self.load(fName)
 
-    def load(self,fName, stackUnits = None):
-        try:
-            self.stackSize = (1,)+ getTiffSize(fName)
-        except Exception as e:
-            print e
-        if stackUnits:
-            self.stackUnits = stackUnits
-        self.fName = fName
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            try:
+                self.stackSize = (1,)+ getTiffSize(fName)
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as TiffData"%fName)
+                return
+
+            if stackUnits:
+                self.stackUnits = stackUnits
+            self.fName = fName
 
     def __getitem__(self,pos):
-        if self.stackSize:
+        if self.stackSize and self.fName:
             return read3dTiff(self.fName,depth = self.stackSize[1])
-
+        else:
+            return None
 
 
 
@@ -275,15 +289,13 @@ def test_spimLoader():
 if __name__ == '__main__':
 
 
-    fName = "../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
+    fName = "../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
     # data = read3dTiff(fName)
 
+    data = TiffData()
 
-    loader = DataLoader(fName)
 
-    d = loader[0]
+    data.load(fName)
 
-    loader.stop()
-
-    # test_spimLoader()
+    d = data[0]
