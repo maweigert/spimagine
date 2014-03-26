@@ -94,55 +94,6 @@ class ModelViewThread(QtCore.QThread):
                 print "couldnt create modelview from quaternion"
 
 
-
-
-
-class DataLoadThread(QtCore.QThread):
-    def __init__(self, dataQueue, size = 6):
-        self.size = size
-        self.queue = dataQueue
-        # self.fName = "../Data/Drosophila_05"
-        self.fName = ""
-        QtCore.QThread.__init__(self)
-
-    def run(self):
-        self.pos, self.nT  = 0, 1
-        dpos = 1
-        while isAppRunning:
-            if self.queue.qsize()<self.size:
-                print "fetching data at pos %i"%(self.pos)
-                try:
-                    d = SpimUtils.fromSpimFolder(self.fName,pos=self.pos,
-                                                 count=1)[0,:,:,:]
-                    self.queue.put(d)
-                except:
-                    print "couldnt open ", self.fName
-                self.pos += dpos
-                if self.pos>self.nT-1:
-                    self.pos = self.nT-1
-                    dpos = -1
-                if self.pos<0:
-                    self.pos = 0
-                    dpos = 1
-
-
-    def dataFolderChanged(self,fName):
-        self.fName = str(fName)
-
-        self.queue.queue.clear()
-        stackSize = SpimUtils.parseIndexFile(
-            os.path.join(self.fName,"data/index.txt"))
-        self.pos, self.nT = 0, stackSize[0]
-        print "changed: ",stackSize, fName
-
-
-    def posChanged(self,pos):
-        print "pos changed ",pos
-        self.queue.queue.clear()
-        self.pos = pos
-
-
-
 class GLWidget(QtOpenGL.QGLWidget):
     dataFolderChanged = QtCore.pyqtSignal(str)
     posChanged = QtCore.pyqtSignal(int)
@@ -155,37 +106,16 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer = VolumeRenderer2((800,800),useDevice=1)
         self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
-        self.modelViewThread = ModelViewThread()
-        self.modelViewThread.start()
+        # self.modelViewThread = ModelViewThread()
+        # self.modelViewThread.start()
 
 
-
-        # self.dataQueue = Queue.Queue()
-
-        # self.dataLoadThread = DataLoadThread(self.dataQueue,size = 4)
-        # self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
-        # self.dataFolderChanged.connect(self.dataLoadThread.dataFolderChanged)
-
-        # self.posChanged.connect(self.dataLoadThread.posChanged)
-
-
-        self.dataLoader = DataLoader()
-
-        # self.dataModel = DataLoadModel(prefetchSize = 0)
 
         self.count = 0
         self.quatRot = Quaternion(1,0,0,0)
 
         self.scale = 1.
         self.t = time.time()
-
-        # self.dataModel.load("../../Data/Drosophila_05")
-        self.load("../../Data/Drosophila_05")
-
-        # self.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
-
-
-        # self.set_dataFromFolder("../Data/Drosophila_05")
 
 
     def dragEnterEvent(self, event):
@@ -197,10 +127,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
-            print path
-            self.load(path)
-
-            # self.set_dataFromFolder(path)
+            self.dataModel.load(path)
 
 
     def initializeGL(self):
@@ -227,25 +154,18 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.width , self.height = 200, 200
 
-    def set_data(self,data):
-        self.renderer.set_data(data)
 
-    def load(self, fName):
-        self.dataLoader.load(fName)
-        self.renderer.set_data(self.dataLoader[0])
-        if self.dataLoader.dataContainer.stackUnits != None:
-            self.renderer.set_units(self.dataLoader.dataContainer.stackUnits)
+    def dataSourceChanged(self):
+        self.renderer.set_data(self.dataModel[0])
+        if self.dataModel.dataContainer.stackUnits != None:
+            self.renderer.set_units(self.dataModel.dataContainer.stackUnits)
         else:
             self.renderer.set_units([.16,.16,.8])
 
-        print self.renderer.stackUnits
 
-    def set_dataFromFolder(self,fName):
-        try:
-            self.renderer.set_dataFromFolder(fName)
-            self.dataFolderChanged.emit(fName)
-        except:
-            print "couldnt open %s" % fName
+    def dataPosChanged(self,pos):
+        self.renderer.update_data(self.dataModel[pos])
+
 
 
     def resizeGL(self, width, height):
@@ -340,7 +260,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         out = self.renderer.render(isPerspective = True)
 
-        self.scale = .9*self.scale + .1*(1e-8+partition(out.flatten(),out.size-100)[out.size-100])
+        self.scale = .7*self.scale + .3*(1e-8+partition(out.flatten(),out.size-100)[out.size-100])
 
         out = (out-amin(out))/self.scale
 
@@ -351,7 +271,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             t2  = time.time()
             fps = 20./(t2-self.t)
             self.t = t2
-            self.parent.setWindowTitle('SpimRender (%.1f fps)'%fps)
+            self.parent.setWindowTitle('%s   (%.1f fps)'%(self.dataModel.fName,fps))
         self.count += 1
 
 
@@ -383,7 +303,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if r>r0-1.e-7:
             x,y = 1.*x*r0/r, 1.*y*r0/r
         z = sqrt(max(0,r0**2-x*x-y*y))
-        print x,y,z
+        # print x,y,z
         if isRot:
             # global modelView
 
@@ -400,7 +320,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         super(GLWidget, self).mousePressEvent(event)
 
         if event.buttons() == QtCore.Qt.LeftButton:
-            print "huhu"
             self._x0, self._y0, self._z0 = self.posToVec(event.x(),event.y())
 
         # print "pressed ", self._x0,self._y0,self._z0
@@ -437,22 +356,26 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setStyleSheet("background-color: black")
         self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
         self.startButton.setIconSize(QtCore.QSize(24,24))
-        self.startButton.clicked.connect(self.startTimeLapsed)
+        self.startButton.clicked.connect(self.startPlay)
         self.startButton.setMaximumWidth(24)
         self.startButton.setMaximumHeight(24)
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
-        # self.sliderTime.setStyleSheet("QSlider::handle:horizontal {border-radius: 1px;}")
-
-        self.sliderTime.setRange(1, 400)
-        self.sliderTime.setValue(1)
         self.sliderTime.setTracking(True)
         self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderTime.setTickInterval(1)
 
-        self.connect(self.sliderTime, QtCore.SIGNAL('valueChanged(int)'),
-                     self.on_sliderTime)
+
+        self.spinTime = QtGui.QSpinBox()
+        self.spinTime.setStyleSheet("color:white;")
+        self.spinTime.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinTime.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.spinTime.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
         self.setStyleSheet("background-color:black")
+
+        self.sliderTime.valueChanged.connect(self.spinTime.setValue)
+        self.spinTime.valueChanged.connect(self.sliderTime.setValue)
 
 
 
@@ -462,6 +385,7 @@ class MainWindow(QtGui.QMainWindow):
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
+        hbox.addWidget(self.spinTime)
 
         vbox.addLayout(hbox)
 
@@ -470,28 +394,38 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(widget)
 
 
-        self.mode = DataModel()
 
         renderTimer = QtCore.QTimer(self)
         renderTimer.setInterval(50)
-        QtCore.QObject.connect(renderTimer, QtCore.SIGNAL('timeout()'),
-                               self.glWidget.onRenderTimer)
+        renderTimer.timeout.connect(self.glWidget.onRenderTimer)
         renderTimer.start()
 
-        self.updateDataTimer = QtCore.QTimer(self)
-        self.updateDataTimer.setInterval(50)
-        QtCore.QObject.connect(self.updateDataTimer, QtCore.SIGNAL('timeout()'),
-                               self.glWidget.onUpdateDataTimer)
-        QtCore.QObject.connect(self.updateDataTimer, QtCore.SIGNAL('timeout()'),
-                               self.onUpdateDataTimer)
+        self.playTimer = QtCore.QTimer(self)
+        self.playTimer.setInterval(50)
+        self.playTimer.timeout.connect(self.onPlayTimer)
+        self.playDir = 1
 
+
+        self.dataModel = DataLoadModel(prefetchSize = 0)
+        self.glWidget.dataModel = self.dataModel
+        self.dataModel._dataSourceChanged.connect(self.glWidget.dataSourceChanged)
+        self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+
+        self.dataModel._dataPosChanged.connect(self.glWidget.dataPosChanged)
+        self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+
+        self.sliderTime.valueChanged.connect(self.dataModel.setPos)
+
+        # self.dataModel.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
+
+        self.dataModel.load("../../Data/Drosophila_05")
 
 
     def initActions(self):
         self.exitAction = QtGui.QAction('Quit', self)
         self.exitAction.setShortcut('Ctrl+Q')
         self.exitAction.setStatusTip('Exit application')
-        self.connect(self.exitAction, QtCore.SIGNAL('triggered()'), self.close)
+        self.exitAction.triggered.connect(self.close)
 
 
     def initMenus(self):
@@ -502,50 +436,34 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menuBar.addMenu('&File')
 
 
-    def startTimeLapsed(self,event):
-        if self.updateDataTimer.isActive():
-            self.updateDataTimer.stop()
+    def dataSourceChanged(self):
+        self.sliderTime.setRange(0,self.dataModel.sizeT()-1)
+        self.spinTime.setRange(0,self.dataModel.sizeT()-1)
+        print self.dataModel.sizeT()
+
+
+    def startPlay(self,event):
+        if self.playTimer.isActive():
+            self.playTimer.stop()
             self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
 
         else:
-            self.updateDataTimer.start()
+            self.playTimer.start()
             self.startButton.setIcon(QtGui.QIcon("icon_pause.png"))
 
-    def on_sliderTime(self,event):
-        pos =  self.sliderTime.value()
-        self.glWidget.posChanged.emit(pos)
-        # time.sleep(.4)
-        self.glWidget.onUpdateDataTimer()
 
+    def onPlayTimer(self):
+        if self.dataModel.pos == self.dataModel.sizeT()-1:
+            self.playDir = -1
+        if self.dataModel.pos == 0:
+            self.playDir = 1
 
-    def onUpdateDataTimer(self):
-        pos =  self.sliderTime.value()
-        self.sliderTime.setValue(pos+1)
+        newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
+        self.dataModel.setPos(newpos)
 
     def close(self):
         isAppRunning = False
         QtGui.qApp.quit()
-
-
-class DataModel:
-    dataModelChanged = QtCore.pyqtSignal()
-    dataPosChanged = QtCore.pyqtSignal(int)
-
-    def __init__(self,fName=""):
-        self.load(fName)
-
-    def load(self,fName = ""):
-        if fName:
-            try:
-                self.data = DataLoader(fName)
-                self.dataModelChanged.emit()
-                self.dataPosChanged.emit(0)
-
-            except e:
-                print e
-                self.data = None
-        else:
-            self.data = None
 
 
 

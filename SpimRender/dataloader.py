@@ -108,6 +108,9 @@ class GenericData():
         self.stackSize = None
         self.stackUnits = None
 
+    def sizeT(self):
+        return None
+
     def __getitem__(self,int):
         return None
 
@@ -128,6 +131,11 @@ class SpimData(GenericData):
                 self.fName = ""
                 raise Exception("couldnt open %s as SpimData"%fName)
 
+    def sizeT(self):
+        if self.fName:
+            return self.stackSize[0]
+        else:
+            return 0
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
@@ -152,7 +160,7 @@ class TiffData(GenericData):
         GenericData.__init__(self)
         self.load(fName)
 
-    def load(self,fName, stackUnits = [1.,1.,1.]):
+    def load(self,fName, stackUnits = None):
         if fName:
             try:
                 self.stackSize = (1,)+ getTiffSize(fName)
@@ -165,6 +173,12 @@ class TiffData(GenericData):
             if stackUnits:
                 self.stackUnits = stackUnits
             self.fName = fName
+
+    def sizeT(self):
+        if self.fName:
+            return 1
+        else:
+            return 0
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
