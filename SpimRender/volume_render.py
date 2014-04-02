@@ -329,32 +329,33 @@ def test_render_movie():
 
 if __name__ == "__main__":
 
-    pass
+    # pass
 
-    # from time import time, sleep
+    from time import time, sleep
+    import pylab
 
-    # rend = VolumeRenderer2((400,400))
+    rend = VolumeRenderer2((400,400))
 
-    # Nx,Ny,Nz = 200,150,50
-    # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
+    Nx,Ny,Nz = 200,150,50
+    d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    # d = SpimUtils.fromSpimFolder("../Data/Drosophila_05",count=1)[0,...]
+    d = SpimUtils.fromSpimFolder("../../Data/Drosophila_05",count=1)[0,...]
 
-    # rend.set_data(d)
-    # rend.set_units([1.,1.,4.])
+    rend.set_data(d)
+    rend.set_units([1.,1.,4.])
 
-    # img = None
-    # pylab.ion()
-    # for t in linspace(0,pi/2.+.4,4):
-    #     print t
-    #     rend.set_modelView(dot(transMatReal(0,0,-3),dot(rotMatX(t),scaleMat(.3,.3,.3))))
+    img = None
+    pylab.ion()
+    for t in linspace(0,pi/2.+.4,4):
+        print t
+        rend.set_modelView(dot(transMatReal(0,0,-3),dot(rotMatX(t),scaleMat(.3,.3,.3))))
 
-    #     out = rend.render(isPerspective = False)
+        out = rend.render(isPerspective = True)
 
-    #     if not img:
-    #         img = pylab.imshow(out)
-    #     else:
-    #         img.set_data(out)
-    #     pylab.draw()
+        if not img:
+            img = pylab.imshow(out)
+        else:
+            img.set_data(out)
+        pylab.draw()
 
-    #     sleep(.4)
+        sleep(.4)
