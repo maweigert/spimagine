@@ -20,6 +20,7 @@ import socket
 from scipy.misc import imsave
 from quaternion import Quaternion
 
+from QxtSpanSlider import QxtSpanSlider
 
 modelView = scaleMat()
 zoomVal = 1.
@@ -95,8 +96,6 @@ class ModelViewThread(QtCore.QThread):
 
 
 class GLWidget(QtOpenGL.QGLWidget):
-    dataFolderChanged = QtCore.pyqtSignal(str)
-    posChanged = QtCore.pyqtSignal(int)
 
     def __init__(self, parent=None):
         self.parent = parent
@@ -253,7 +252,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             # loc_modelView = dot(transMat(0,0,12*(-1./3+log(2)-log(zoomVal))),
             #                     self.quatRot.toRotation4())
 
-            modelView = dot(transMatReal(0,0,-10*(1-log(zoomVal)/log(2.))),
+            modelView = dot(transMatReal(0,0,-7*(1-log(zoomVal)/log(2.))),
                                 self.quatRot.toRotation4())
 
         self.renderer.set_modelView(modelView)
@@ -280,15 +279,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.updateGL()
 
 
-    def onUpdateDataTimer(self):
-        # print "updating"
-        if self.dataQueue.qsize():
-            self.renderer.update_data(self.dataQueue.get(timeout=2))
-            self.dataQueue.task_done()
-
-        self.render()
-        self.updateGL()
-
 
     def wheelEvent(self, event):
         global zoomVal
@@ -297,7 +287,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         lam = sign(lam)*min(1,abs(lam))
         zoomVal = (3+lam)/2.
 
-    def posToVec(self,x,y, r0 = .3,isRot = True ):
+    def posToVec(self,x,y, r0 = .8, isRot = True ):
         x, y = 2.*x/self.width-1.,1.-2.*y/self.width
         r = sqrt(x*x+y*y)
         if r>r0-1.e-7:
@@ -344,7 +334,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow,self).__init__()
 
-        self.resize(600, 600)
+        self.resize(800, 700)
         self.setWindowTitle('SpimRender')
 
         self.initActions()
@@ -361,7 +351,7 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setMaximumHeight(24)
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.sliderTime.setTracking(True)
+        self.sliderTime.setTracking(False)
         self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.sliderTime.setTickInterval(1)
 
@@ -379,13 +369,26 @@ class MainWindow(QtGui.QMainWindow):
 
 
 
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.glWidget)
+        self.scaleSlider = QxtSpanSlider(self,QtCore.Qt.Vertical)
+        self.scaleSlider.setRange(0, 100)
+        self.scaleSlider.setSpan(30, 70)
+
+        # self.scaleSlider.lowerValueChanged.connect(self.foo)
+        # self.scaleSlider.upperValueChanged.connect(self.foo)
+
+
+        hbox0 = QtGui.QHBoxLayout()
+        hbox0.addWidget(self.glWidget)
+        hbox0.addWidget(self.scaleSlider)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
+
+
+        vbox = QtGui.QVBoxLayout()
+        vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
 
@@ -418,7 +421,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # self.dataModel.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
 
-        self.dataModel.load("../../Data/Drosophila_05")
+        self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")
 
 
     def initActions(self):
