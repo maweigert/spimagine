@@ -4,7 +4,32 @@ from PyQt4 import QtCore
 import time
 import re
 from collections import defaultdict
-from dataloader import SpimData, TiffData
+from dataloader import GenericData, SpimData, TiffData
+
+
+class DemoData(GenericData):
+    def __init__(self, N = 200):
+        GenericData.__init__(self)
+        self.load(N)
+
+    def load(self,N=200):
+        self.stackSize = (N,N,N)
+        self.fName = ""
+        self.N = N
+        self.stackUnits = (1,1,1)
+        x = np.linspace(-1,1,self.N)
+        X,self.Y,Z = np.meshgrid(x,x,x,indexing="ij")
+        self.R  = np.sqrt(X**2+self.Y**2+Z**2)
+        self.W = np.arctan2(Z,X)
+
+
+    def sizeT(self):
+        return self.N
+
+    def __getitem__(self,pos):
+        return (400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
+
+
 
 
 
@@ -35,10 +60,12 @@ class DataLoadThread(QtCore.QThread):
             if dnset:
                 print "preloading ", list(dnset)
                 for k in dnset:
+                    newdata = self.dataContainer[k]
                     self._rwLock.lockForWrite()
-                    self.data[k] = self.dataContainer[k]
+                    self.data[k] = newdata
                     self._rwLock.unlock()
                     time.sleep(.0001)
+
             time.sleep(.0001)
 
 
@@ -49,6 +76,7 @@ class DataLoadModel(QtCore.QObject):
     _rwLock = QtCore.QReadWriteLock()
 
     def __init__(self, fName = "", prefetchSize = 0):
+        print "prefetch: ", prefetchSize
         super(DataLoadModel,self).__init__()
 
         self.dataLoadThread = DataLoadThread(self._rwLock)
@@ -56,7 +84,7 @@ class DataLoadModel(QtCore.QObject):
         self._dataPosChanged.connect(self.dataPosChanged)
 
         if fName:
-            self.load(fName, prefetchSize)
+            self.load(fName, prefetchSize = prefetchSize)
 
 
     def dataSourceChanged(self):
@@ -67,13 +95,20 @@ class DataLoadModel(QtCore.QObject):
 
 
 
-    def load(self,fName, prefetchSize = 0):
-        try:
-            self.dataContainer = self.chooseContainer(fName)
-        except Exception as e:
-            print "couldnt load abstract data container ", fName
-            print e
+    def load(self,fName = "", dataContainer = None, prefetchSize = 0):
+        if not fName and not dataContainer:
             return
+
+        if not dataContainer:
+            try:
+                dataContainer = self.chooseContainer(fName)
+            except Exception as e:
+                print "couldnt load abstract data container ", fName
+                print e
+                return
+
+        self.dataContainer = dataContainer
+
 
         self.fName = fName
         self.prefetchSize = prefetchSize
@@ -125,9 +160,11 @@ class DataLoadModel(QtCore.QObject):
             return None
 
         if not self.data.has_key(pos):
+            newdata = self.dataContainer[pos]
             self._rwLock.lockForWrite()
-            self.data[pos] = self.dataContainer[pos]
+            self.data[pos] = newdata
             self._rwLock.unlock()
+
 
 
         if self.prefetchSize > 0:
@@ -138,7 +175,7 @@ class DataLoadModel(QtCore.QObject):
 
     def neighborhood(self,pos):
         # FIXME mod stackSize!
-        return range(pos,pos+self.prefetchSize+1)
+        return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
 
 class MyData(DataLoadModel):
@@ -153,15 +190,19 @@ if __name__ == '__main__':
 
     # fName = "/Users/mweigert/python/Data/Drosophila_Full"
 
-    loader = DataLoadModel(fName,3)
+    loader = DataLoadModel(fName,prefetchSize = 10)
 
+
+    d = loader[0]
+
+    time.sleep(2)
 
 
     dt = 0
 
     for i in range(10):
         print i
-        time.sleep(.1)
+        # time.sleep(.1)
         t = time.time()
         # time.sleep(.1)
 
