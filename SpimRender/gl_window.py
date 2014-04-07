@@ -9,8 +9,8 @@ from OpenGL import GLU
 from OpenGL.GL import *
 
 from volume_render import *
-from dataloader import DataLoader
-from data_model import DataLoadModel
+
+from data_model import DataLoadModel, DemoData
 import SpimUtils
 
 from numpy import *
@@ -22,11 +22,22 @@ from quaternion import Quaternion
 
 from QxtSpanSlider import QxtSpanSlider
 
+N_PREFETCH = 20
+
 modelView = scaleMat()
 zoomVal = 1.
 isAppRunning = True
 isSocket = False
 
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, myPath)
 
 
 
@@ -105,10 +116,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer = VolumeRenderer2((800,800),useDevice=1)
         self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
-        # self.modelViewThread = ModelViewThread()
-        # self.modelViewThread.start()
-
-
 
         self.count = 0
         self.quatRot = Quaternion(1,0,0,0)
@@ -126,7 +133,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
-            self.dataModel.load(path)
+            self.dataModel.load(path, prefetchSize = N_PREFETCH)
 
 
     def initializeGL(self):
@@ -283,9 +290,12 @@ class GLWidget(QtOpenGL.QGLWidget):
     def wheelEvent(self, event):
         global zoomVal
         lam = 2*zoomVal-3
+        # lam += sign(event.delta())*(1.01-abs(lam))/30.
         lam += sign(event.delta())*(1.01-abs(lam))/30.
+
         lam = sign(lam)*min(1,abs(lam))
         zoomVal = (3+lam)/2.
+        print zoomVal
 
     def posToVec(self,x,y, r0 = .8, isRot = True ):
         x, y = 2.*x/self.width-1.,1.-2.*y/self.width
@@ -344,7 +354,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.startButton = QtGui.QPushButton("",self)
         self.startButton.setStyleSheet("background-color: black")
-        self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
+        self.startButton.setIcon(QtGui.QIcon(absPath("images/icon_start.png")))
         self.startButton.setIconSize(QtCore.QSize(24,24))
         self.startButton.clicked.connect(self.startPlay)
         self.startButton.setMaximumWidth(24)
@@ -379,7 +389,7 @@ class MainWindow(QtGui.QMainWindow):
 
         hbox0 = QtGui.QHBoxLayout()
         hbox0.addWidget(self.glWidget)
-        hbox0.addWidget(self.scaleSlider)
+        # hbox0.addWidget(self.scaleSlider)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.startButton)
@@ -404,12 +414,12 @@ class MainWindow(QtGui.QMainWindow):
         renderTimer.start()
 
         self.playTimer = QtCore.QTimer(self)
-        self.playTimer.setInterval(50)
+        self.playTimer.setInterval(100)
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.playDir = 1
 
 
-        self.dataModel = DataLoadModel(prefetchSize = 0)
+        self.dataModel = DataLoadModel(prefetchSize = N_PREFETCH)
         self.glWidget.dataModel = self.dataModel
         self.dataModel._dataSourceChanged.connect(self.glWidget.dataSourceChanged)
         self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
@@ -421,7 +431,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # self.dataModel.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
 
-        self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")
+        # self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")
+        self.dataModel.load(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
 
 
     def initActions(self):
@@ -442,17 +453,16 @@ class MainWindow(QtGui.QMainWindow):
     def dataSourceChanged(self):
         self.sliderTime.setRange(0,self.dataModel.sizeT()-1)
         self.spinTime.setRange(0,self.dataModel.sizeT()-1)
-        print self.dataModel.sizeT()
 
 
     def startPlay(self,event):
         if self.playTimer.isActive():
             self.playTimer.stop()
-            self.startButton.setIcon(QtGui.QIcon("icon_start.png"))
+            self.startButton.setIcon(QtGui.QIcon(absPath("images/icon_start.png")))
 
         else:
             self.playTimer.start()
-            self.startButton.setIcon(QtGui.QIcon("icon_pause.png"))
+            self.startButton.setIcon(QtGui.QIcon(absPath("images/icon_pause.png")))
 
 
     def onPlayTimer(self):
@@ -461,6 +471,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.dataModel.pos == 0:
             self.playDir = 1
 
+        print self.dataModel.pos, self.playDir
         newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
 

@@ -209,14 +209,20 @@ class DataLoadThread(QtCore.QThread):
             dkset = kset.difference(set(self.nset))
             dnset = set(self.nset).difference(kset)
 
-            for k in dkset:
-                del(self.data[k])
+            self._rwLock.lockForWrite()
+            try:
+                for k in dkset:
+                    del(self.data[k])
+            except Exception as e:
+                print e
+            self._rwLock.unlock()
 
             if dnset:
                 print "preloading ", list(dnset)
                 for k in dnset:
+                    newdata = self.dataContainer[k]
                     self._rwLock.lockForWrite()
-                    self.data[k] = self.dataContainer[k]
+                    self.data[k] = newdata
                     self._rwLock.unlock()
                     time.sleep(.0001)
             time.sleep(.0001)
@@ -262,8 +268,9 @@ class DataLoader():
     def __getitem__(self,pos):
         # self._rwLock.lockForRead()
         if not self.data.has_key(pos):
+            newdata = self.dataContainer[pos]
             self._rwLock.lockForWrite()
-            self.data[pos] = self.dataContainer[pos]
+            self.data[pos] = newdata
             self._rwLock.unlock()
 
 
@@ -303,13 +310,29 @@ def test_spimLoader():
 if __name__ == '__main__':
 
 
-    fName = "../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
+    # fName = "../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
-    # data = read3dTiff(fName)
+    # # data = read3dTiff(fName)
 
-    data = TiffData()
+    # data = TiffData()
 
 
-    data.load(fName)
+    # data.load(fName)
+
+    # d = data[0]
+
+
+    fName = "../../Data/Drosophila_Full"
+
+    data = DataLoader(fName,prefetchSize = 10)
 
     d = data[0]
+
+    time.sleep(1)
+    t = time.time()
+
+    for i in range(10):
+        d = data[i]
+        print d[10,10,10]
+
+    print time.time()-t
