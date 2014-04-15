@@ -2,7 +2,7 @@
 *.pyc
 
 # build folder.
-/build
+/build*
 /bin
 
 # Python egg metadata, regenerated from source files by setuptools.

@@ -75,7 +75,7 @@ class DataLoadModel(QtCore.QObject):
 
     _rwLock = QtCore.QReadWriteLock()
 
-    def __init__(self, fName = "", prefetchSize = 0):
+    def __init__(self, fName = "", dataContainer = None, prefetchSize = 0):
         print "prefetch: ", prefetchSize
         super(DataLoadModel,self).__init__()
 
@@ -83,8 +83,7 @@ class DataLoadModel(QtCore.QObject):
         self._dataSourceChanged.connect(self.dataSourceChanged)
         self._dataPosChanged.connect(self.dataPosChanged)
 
-        if fName:
-            self.load(fName, prefetchSize = prefetchSize)
+        self.load(fName, dataContainer, prefetchSize = prefetchSize)
 
 
     def dataSourceChanged(self):
@@ -149,6 +148,7 @@ class DataLoadModel(QtCore.QObject):
             raise IndexError("setPos(pos): %i outside of [0,%i]!"%(pos,self.sizeT()-1))
             return
 
+        print "setPos: ",pos
         self.pos = pos
         self._dataPosChanged.emit(pos)
         self.prefetch(self.pos)
