@@ -35,9 +35,9 @@ class QxtSpanSlider(QSlider):
         self.connect(self, SIGNAL("rangeChanged(int, int)"), self.updateRange)
         self.connect(self, SIGNAL("sliderReleased()"), self.movePressedHandle)
 
-        self.setStyle(QStyleFactory.create('Macintosh'))
+        self.setStyle(QStyleFactory.create('Cleanlooks'))
 
-        # print QStyleFactory.keys().join("")
+        print QStyleFactory.keys().join("\n")
 
 
         self.lower = 0
@@ -51,6 +51,7 @@ class QxtSpanSlider(QSlider):
         self.lowerPressed = QStyle.SC_None
         self.movement = QxtSpanSlider.FreeMovement
         self.mainControl = QxtSpanSlider.LowerHandle
+
         self.firstMovement = False
         self.blockTracking = False
         self.gradientLeft = self.palette().color(QPalette.Dark).light(110)
@@ -448,3 +449,23 @@ class QxtSpanSlider(QSlider):
     handleMovementMode = pyqtProperty("PyQt_PyObject", handleMovementMode, setHandleMovementMode)
     gradientLeftColor = pyqtProperty("PyQt_PyObject", gradientLeftColor, setGradientLeftColor)
     gradientRightColor = pyqtProperty("PyQt_PyObject", gradientRightColor, setGradientRightColor)
+
+
+if __name__ == '__main__':
+    import sys
+    from PyQt4.QtGui import QApplication
+
+    app = QApplication(sys.argv)
+
+    s = QxtSpanSlider(None,QtCore.Qt.Vertical)
+    s.resize(40,250)
+    s.setRange(0, 100)
+    s.setSpan(30, 70)
+    s.show()
+    style = """QWidget {background: gray;}
+    QxtSpanSlider::handle:vertical {background: white;}
+    """
+    s.setStyleSheet(style)
+
+    s.raise_()
+    app.exec_()

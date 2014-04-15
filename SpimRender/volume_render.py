@@ -303,7 +303,7 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
 
 
 def test_render_simple():
-    import pylab
+    # import pylab
 
     rend = VolumeRenderer((600,600))
     rend.set_dataFromFolder("../Data/ExampleData")
@@ -331,8 +331,8 @@ if __name__ == "__main__":
 
     # pass
 
-    from time import time, sleep
-    import pylab
+    # from time import time, sleep
+    # import pylab
 
     rend = VolumeRenderer2((400,400))
 
