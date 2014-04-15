@@ -268,7 +268,7 @@ class VolumeRenderer2:
                    self.buf,
                    int32(self.width),int32(self.height),
                    self.invMBuf,
-                   bool8(isPerspective),
+                   int32(isPerspective),
                    self.dataImg)
 
 
@@ -331,15 +331,15 @@ if __name__ == "__main__":
 
     # pass
 
-    # from time import time, sleep
-    # import pylab
+    from time import time, sleep
+    import pylab
 
     rend = VolumeRenderer2((400,400))
 
     Nx,Ny,Nz = 200,150,50
     d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = SpimUtils.fromSpimFolder("../../Data/Drosophila_05",count=1)[0,...]
+    d = SpimUtils.fromSpimFolder("X:\Kate\Kate19",count=1)[0,...]
 
     rend.set_data(d)
     rend.set_units([1.,1.,4.])

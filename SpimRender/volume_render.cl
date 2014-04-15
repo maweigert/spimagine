@@ -99,7 +99,7 @@ __kernel void
 max_project(__global short *d_output, 
          uint Nx, uint Ny,
 	 __constant float* invM,
-	 const bool isPerspective,
+	 const int isPerspective,
 	 __read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
