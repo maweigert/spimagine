@@ -8,6 +8,7 @@ setup(name='SpimRender',
       author_email='mweigert@mpi-cbg.de',
       license='MIT',
       packages=['SpimRender'],
+      package_data={"SpimRender":['volume_render.cl']},
       scripts=['SpimRender/spim_render.py',"SpimRender/spimagine.py"],
       install_requires=[
           'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
@@ -18,3 +19,4 @@ setup(name='SpimRender',
               "http://mweigert@bitbucket.org/mweigert/spimutils",
               "http://mweigert@bitbucket.org/mweigert/pyocl"],
       zip_safe=False)
+
