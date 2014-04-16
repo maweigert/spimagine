@@ -13,6 +13,29 @@ from numpy import *
 import time
 from quaternion import Quaternion
 
+vertShaderStrBasic ="""#version 120
+void main() {
+gl_FrontColor = gl_Color;
+gl_TexCoord[0] = gl_MultiTexCoord0;
+gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}
+"""
+
+fragShaderStrBasic = """#version 120
+void main() {
+gl_FragColor = gl_Color;
+}
+"""
+
+fragShaderStrTex = """#version 120
+uniform sampler2D tex;
+void main() {
+gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
+gl_FragColor.w = 1.*length(gl_FragColor.xyz);
+
+}
+"""
+
 
 
 class TransformModel(QtCore.QObject):
@@ -99,10 +122,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def initializeGL(self):
-        self.qglClearColor(QtGui.QColor(0, 0,  0))
+        glClearColor(0,0,0,1.)
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
+        # glEnable(GL_DEPTH_TEST)
         glEnable( GL_LINE_SMOOTH )
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -121,16 +144,19 @@ class GLWidget(QtOpenGL.QGLWidget):
         glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
 
         self.width , self.height = 200, 200
-        # vertShader = shaders.compileShader("""#version 120
-        # void main() {
-        #     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-        # }""", GL_VERTEX_SHADER)
-        # fragShader = shaders.compileShader("""#version 120
-        # void main() {
-        #     gl_FragColor = vec4( 0, 1, 0, 1 );
-        # }""", GL_FRAGMENT_SHADER)
 
-        # shaders.compileProgram(vertShader,fragShader)
+        # set up shaders...
+        self.shaderBasic = QtOpenGL.QGLShaderProgram()
+        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
+        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrBasic)
+        print self.shaderBasic.log()
+        self.shaderBasic.link()
+
+        self.shaderTex = QtOpenGL.QGLShaderProgram()
+        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
+        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrTex)
+        print self.shaderTex.log()
+        self.shaderTex.link()
 
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0])
@@ -168,7 +194,39 @@ class GLWidget(QtOpenGL.QGLWidget):
         w = 1.*min(self.width,self.height)/self.width
         h = 1.*min(self.width,self.height)/self.height
 
+        # self.shaderBasic.bind()
+
+        # glMatrixMode(GL_PROJECTION)
+        # glLoadIdentity()
+        # GLU.gluPerspective(45,-1.*self.width/self.height,.01,10.)
+        # # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,1,-1)
+        # glMatrixMode(GL_MODELVIEW)
+        # glLoadIdentity()
+        # modelView = self.getModelView()
+
+
+        # glTranslatef(0,0,-3)
+
+        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
+
+        # glLineWidth(2)
+        # glColor(171./255, 134./255, 167./255,.4)
+
+        # glBegin(GL_LINES)
+        # glVertex3f(-1,1,-1)
+        # glVertex3f(1.,1,-1)
+        # glVertex3f(-1,-1,-1)
+        # glVertex3f(1,-1.,-1)
+        # # glVertex3f(0,0,0)
+        # # glVertex3f(0,0,1.)
+
+        # glEnd()
+
+        self.shaderTex.bind()
+
+
         glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -178,10 +236,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBindTexture(GL_TEXTURE_2D,self.texture)
         glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
                       0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
-        glColor4f(1.,1.,1.,1.);
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
         glBegin (GL_QUADS);
         glTexCoord2f (0, 0);
@@ -194,33 +248,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         glVertex2f (-w, h);
         glEnd();
 
+
         glDisable(GL_TEXTURE_2D)
 
-        # glMatrixMode(GL_PROJECTION)
-        # glLoadIdentity()
-        # GLU.gluPerspective(45,-1.*self.width/self.height,.01,10.)
-        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,1,-1)
-        # glMatrixMode(GL_MODELVIEW)
-        # glLoadIdentity()
-        # modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
-        #                         dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
-
-        # glMultMatrixf(modelView)
-        # # glTranslatef(0,0,-3)
-        # glLineWidth(2)
-        # glColor(171./255, 134./255, 167./255,1.)
-
-        # glBegin(GL_LINES)
-        # glVertex3f(-1,0,-1)
-        # glVertex3f(1.,0,-1)
-        # glVertex3f(0,0,0)
-        # glVertex3f(0,1.,0)
-        # glVertex3f(0,0,0)
-        # glVertex3f(0,0,1.)
-
-        # glEnd()
+        self.shaderBasic.bind()
 
         rSphere = .05
+
+        glEnable(GL_DEPTH_TEST)
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -254,13 +289,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def getModelView(self):
         modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
                                 dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
-
-        # modelView = dot(dot(transMatReal(0,0,-5),self.transform.quatRot.toRotation4()),transMatReal(*self.transform.translate))
-
-
-    #     M = scaleMat(*(args.scale*3))
-    # M = dot(M,rotMat(*args.rotation))
-    # M = dot(M,transMatReal(*args.translate))
 
         return modelView
 
@@ -338,7 +366,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             n *= 1./(nnorm+1.e-10)
             q = Quaternion(cos(.5*w),*(sin(.5*w)*n))
             self.transform.quatRot = self.transform.quatRot*q
-            
+
         if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(),event.y())
             self.transform.translate[0] += (x-self._x0)

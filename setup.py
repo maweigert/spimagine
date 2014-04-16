@@ -8,9 +8,9 @@ setup(name='SpimRender',
       author_email='mweigert@mpi-cbg.de',
       license='MIT',
       packages=['SpimRender'],
-      scripts=['spim_render'],
+      scripts=['SpimRender/spim_render.py',"SpimRender/spimagine.py"],
       install_requires=[
-          'numpy', 'scipy','Pillow',"pyopencl"
+          'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
           ,"SpimUtils","PyOCL"
           ],
 
