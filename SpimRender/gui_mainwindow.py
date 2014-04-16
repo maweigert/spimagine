@@ -118,20 +118,22 @@ class MainWindow(QtGui.QMainWindow):
         self.playDir = 1
 
 
-        self.dataModel = DataLoadModel(prefetchSize = N_PREFETCH)
-        self.glWidget.dataModel = self.dataModel
+        self.dataModel = DataLoadModel(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
+
         self.dataModel._dataSourceChanged.connect(self.glWidget.dataSourceChanged)
         self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
 
         self.dataModel._dataPosChanged.connect(self.glWidget.dataPosChanged)
         self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
+        self.glWidget.setModel(self.dataModel)
+
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
 
         # self.dataModel.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
 
-        # self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")
-        self.dataModel.load(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
+        # self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")\
+
 
 
     def initActions(self):

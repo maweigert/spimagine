@@ -10,6 +10,12 @@ from OpenGL.GL import shaders
 from volume_render import *
 
 from numpy import *
+
+# on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg 
+if os.name == "nt":
+    from scipy import linalg
+
+ 
 import time
 from quaternion import Quaternion
 
@@ -76,7 +82,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer2((800,800),useDevice=1)
+        self.renderer = VolumeRenderer2((800,800),useDevice=0)
         self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
 
         self.count = 0
@@ -98,7 +104,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform._gammaChanged.connect(lambda x:self.refresh())
 
         self.refresh()
-
+    
 
     def setModel(self,dataModel):
         self.dataModel = dataModel
@@ -188,6 +194,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def paintGL(self):
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         Ny, Nx = self.output.shape
@@ -264,8 +271,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         glTranslatef(1.+2*rSphere,-1.+2*rSphere,0)
-
         glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
+
 
 
         quadric = GLU.gluNewQuadric()
