@@ -145,7 +145,8 @@ class SpimData(GenericData):
 
             pos = max(0,min(pos,self.stackSize[0]-1))
             voxels = np.prod(self.stackSize[1:])
-            offset = 2*pos*voxels
+            # use int64 for bigger files
+            offset = np.int64(2)*pos*voxels
 
             with open(os.path.join(self.fName,"data/data.bin"),"rb") as f:
                 f.seek(offset)
