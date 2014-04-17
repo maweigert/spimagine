@@ -76,7 +76,7 @@ def getTiffSize(fName):
     while True:
         try:
             img.seek(depth)
-        except EOFError:
+        except Exception as e:
             break
         depth += 1
 
@@ -309,7 +309,6 @@ def test_spimLoader():
 
 
 if __name__ == '__main__':
-
 
     # fName = "../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
