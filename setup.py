@@ -9,14 +9,14 @@ setup(name='SpimRender',
       license='MIT',
       packages=['SpimRender'],
       package_data={"SpimRender":['volume_render.cl']},
+      data_files=[("images","images/icon_start.png")],
       scripts=['SpimRender/spim_render.py',"SpimRender/spimagine.py"],
       install_requires=[
           'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
           ,"SpimUtils","PyOCL"
           ],
 
-          dependency_links=[
+      dependency_links=[
               "http://mweigert@bitbucket.org/mweigert/spimutils",
-              "http://mweigert@bitbucket.org/mweigert/pyocl"],
-      zip_safe=False)
-
+              "http://mweigert@bitbucket.org/mweigert/pyocl"]
+      )
