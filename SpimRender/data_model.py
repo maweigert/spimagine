@@ -13,21 +13,21 @@ class DemoData(GenericData):
         self.load(N)
 
     def load(self,N=200):
-        self.stackSize = (N,N,N)
+        self.stackSize = (N,N,N/2)
         self.fName = ""
-        self.N = N
+        self.nT = N
         self.stackUnits = (1,1,1)
-        x = np.linspace(-1,1,self.N)
-        X,self.Y,Z = np.meshgrid(x,x,x,indexing="ij")
+        x = np.linspace(-1,1,N)
+        X,self.Y,Z = np.meshgrid(x[::2],x,x,indexing="ij")
         self.R  = np.sqrt(X**2+self.Y**2+Z**2)
         self.W = np.arctan2(Z,X)
 
 
     def sizeT(self):
-        return self.N
+        return self.nT
 
     def __getitem__(self,pos):
-        return (400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
+        return (700+400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
 
 
 

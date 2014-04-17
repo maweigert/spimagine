@@ -4,6 +4,8 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 from OpenGL import GLU
+from OpenGL import GLUT
+
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
@@ -11,11 +13,11 @@ from volume_render import *
 
 from numpy import *
 
-# on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg 
+# on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
     from scipy import linalg
 
- 
+
 import time
 from quaternion import Quaternion
 
@@ -104,7 +106,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform._gammaChanged.connect(lambda x:self.refresh())
 
         self.refresh()
-    
+
 
     def setModel(self,dataModel):
         self.dataModel = dataModel
@@ -201,33 +203,32 @@ class GLWidget(QtOpenGL.QGLWidget):
         w = 1.*min(self.width,self.height)/self.width
         h = 1.*min(self.width,self.height)/self.height
 
-        # self.shaderBasic.bind()
+        self.shaderBasic.bind()
 
-        # glMatrixMode(GL_PROJECTION)
-        # glLoadIdentity()
-        # GLU.gluPerspective(45,-1.*self.width/self.height,.01,10.)
-        # # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,1,-1)
-        # glMatrixMode(GL_MODELVIEW)
-        # glLoadIdentity()
-        # modelView = self.getModelView()
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        GLU.gluPerspective(360*arctan(.5)/pi,1.*self.width/self.height,2,10.)
+        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,1,-1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        modelView = self.getModelView()
 
 
-        # glTranslatef(0,0,-3)
+        # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
+        mScale =  self.renderer._stack_scale_mat()
 
-        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
+        # glTranslatef(0,0,3)
+        glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
 
-        # glLineWidth(2)
-        # glColor(171./255, 134./255, 167./255,.4)
 
-        # glBegin(GL_LINES)
-        # glVertex3f(-1,1,-1)
-        # glVertex3f(1.,1,-1)
-        # glVertex3f(-1,-1,-1)
-        # glVertex3f(1,-1.,-1)
-        # # glVertex3f(0,0,0)
-        # # glVertex3f(0,0,1.)
+        glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
+        glMultMatrixf(mScale)
 
-        # glEnd()
+
+        glLineWidth(1)
+        glColor(1.,1.,1.,.4)
+
+        GLUT.glutWireCube(2.)
 
         self.shaderTex.bind()
 
@@ -387,7 +388,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(600,500))
+    win = GLWidget(size=QtCore.QSize(600,600))
     win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
 
     win.show()

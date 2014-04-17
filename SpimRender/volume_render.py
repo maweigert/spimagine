@@ -231,6 +231,13 @@ class VolumeRenderer2:
         userp = (worldp+[1.,1.])*.5*array([self.width,self.height])
         return userp[0],userp[1]
 
+    def _stack_scale_mat(self):
+        # scaling the data according to size and units
+        Nx,Ny,Nz = self.dataImg.shape
+        dx,dy,dz = self.stackUnits
+        # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
+        return  scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
+
 
     def render(self,data = None, stackUnits = None, modelView = None,
             isPerspective = True):
@@ -253,12 +260,7 @@ class VolumeRenderer2:
             print "no modelView provided and set_modelView() not called before!"
             return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
 
-
-        # scaling the data according to size and units
-        Nx,Ny,Nz = self.dataImg.shape
-        dx,dy,dz = self.stackUnits
-        # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
-        mScale =  scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
+        mScale = self._stack_scale_mat()
 
         invM = inv(dot(self.modelView,mScale))
 

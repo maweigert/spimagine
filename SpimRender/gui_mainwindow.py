@@ -64,7 +64,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
         self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.scaleSlider.setRange(1, 150)
+        self.scaleSlider.setRange(1, 250)
 
         self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(0, 200)

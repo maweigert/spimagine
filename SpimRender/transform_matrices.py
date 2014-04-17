@@ -41,7 +41,7 @@ def projMatPerspective(fovy = 45,aspect = 1.,
     """ like gluPerspective(fovy, aspect, zNear, zFar)
         fovy in degrees
     """
-    f = 1./np.tan(180.*fovy/np.pi/2.)
+    f = 1./np.tan(fovy/180.*np.pi/2.)
     return np.array([[1.*f/aspect,0,0,0],
                   [0,f,0,0],
                   [0,0,-1.*(z2+z1)/(z2-z1),-2.*z1*z2/(z2-z1)],
