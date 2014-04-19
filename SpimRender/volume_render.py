@@ -27,7 +27,7 @@ class VolumeRenderer:
         """ e.g. size = (300,300)"""
 
         self.dev = OCLDevice(useDevice = useDevice)
-        self.proc = OCLProcessor(self.dev,absPath("simple2.cl"))
+        self.proc = OCLProcessor(self.dev,absPath("kernels/simple2.cl"))
         self.matBuf = self.dev.createBuffer(12,dtype=float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
@@ -168,8 +168,11 @@ class VolumeRenderer2:
         """ e.g. size = (300,300)"""
 
         self.dev = OCLDevice(useDevice = useDevice)
-        self.proc = OCLProcessor(self.dev,absPath("volume_render.cl"))
+        self.proc = OCLProcessor(self.dev,absPath("kernels/myvolume_render.cl"))
         self.invMBuf = self.dev.createBuffer(16,dtype=float32,
+                                            mem_flags = cl.mem_flags.READ_ONLY)
+
+        self.invPBuf = self.dev.createBuffer(16,dtype=float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
         self.set_units()
@@ -201,29 +204,11 @@ class VolumeRenderer2:
     def set_units(self,stackUnits = ones(3)):
         self.stackUnits = stackUnits
 
+    def set_projection(self,projection = scaleMat()):
+        self.projection = projection
 
     def set_modelView(self, modelView = scaleMat()):
         self.modelView = 1.*modelView
-
-    # def set_dataFromFolder(self,fName,pos=0):
-    #     try:
-    #         data = SpimUtils.fromSpimFolder(
-    #             fName,pos=pos,count=1)[0,:,:,:]
-    #         self.set_data(data)
-    #     except Exception as e:
-    #         print "set_dataFromFolder: couldnt open %s" % fName
-    #         print e
-    #         return
-    #     try:
-    #         stackSize = SpimUtils.parseIndexFile(
-    #             os.path.join(fName,"data/index.txt"))[1:][::-1]
-    #         stackUnits = SpimUtils.parseMetaFile(
-    #             os.path.join(fName,"metadata.txt"))
-    #         print stackSize, stackUnits
-    #         self.set_units(stackUnits)
-    #     except Exception as e:
-    #         print e
-    #         print "couldnt open/parse index/meta file"
 
     def _get_user_coords(self,x,y,z):
         p = array([x,y,z,1])
@@ -236,7 +221,7 @@ class VolumeRenderer2:
         Nx,Ny,Nz = self.dataImg.shape
         dx,dy,dz = self.stackUnits
         # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
-        return  scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
+        return scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
 
 
     def render(self,data = None, stackUnits = None, modelView = None,
@@ -263,27 +248,21 @@ class VolumeRenderer2:
         mScale = self._stack_scale_mat()
 
         invM = inv(dot(self.modelView,mScale))
-
         self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(float32))
+
+        invP = inv(self.projection)
+        self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(float32))
 
         self.proc.runKernel("max_project",(self.width,self.height),None,
                    self.buf,
                    int32(self.width),int32(self.height),
+                   self.invPBuf,
                    self.invMBuf,
                    int32(isPerspective),
                    self.dataImg)
 
 
         return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
-
-
-# def plot_with_bounding_cube(modelView,out):
-#     ppairs = [[-1,-1,-1],[-1,-1,1]
-#                   ]
-#     for ppair in ppairs:
-#         x1,y1 = rend.get_user_coords(*ppair[0])
-#         x2,y2 = rend.get_user_coords(*ppair[1])
-
 
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
@@ -329,28 +308,48 @@ def test_render_movie():
 
 
 
+# two test functions to get the ray coordinates in the kernel...
+def _getOrig(P,M,u=1,v=0):
+    orig0 = dot(inv(P),[u,v,-1,1])
+    orig0 = dot(inv(M),orig0)
+    orig0 = orig0/orig0[-1]
+    return orig0
+def _getDirec(P,M,u=1,v=0):
+    direc0 = dot(inv(P),[u,v,1,1])
+    direc0 = direc0/direc0[-1];orig0 = dot(inv(P),[u,v,-1,1]);
+    direc0 = direc0 - orig0; direc0 = direc0/norm(direc0)
+    return dot(inv(M),direc0)
+
+
+
 if __name__ == "__main__":
 
     # pass
 
     from time import time, sleep
+    from SpimRender.data_model import DemoData
     import pylab
 
     rend = VolumeRenderer2((400,400))
 
-    Nx,Ny,Nz = 200,150,50
-    d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
+    # Nx,Ny,Nz = 200,150,50
+    # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = SpimUtils.fromSpimFolder("X:\Kate\Kate19",count=1)[0,...]
-
+    d = DemoData(256)[0]
     rend.set_data(d)
-    rend.set_units([1.,1.,4.])
+    rend.set_units([1.,1.,.1])
+    rend.set_projection(projMatPerspective(60,1.,1,10))
+    rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
+
 
     img = None
     pylab.ion()
-    for t in linspace(0,pi/2.+.4,4):
+    for t in linspace(0,pi,10):
         print t
-        rend.set_modelView(dot(transMatReal(0,0,-3),dot(rotMatX(t),scaleMat(.3,.3,.3))))
+        rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.3,.3,.3))))
+        # rend.set_modelView(dot(transMatReal(0,0,-2),rotMatX(t)))
+
+        # rend.set_modelView(transMatReal(0,0,-4))
 
         out = rend.render(isPerspective = True)
 
