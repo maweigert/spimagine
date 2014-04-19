@@ -9,7 +9,6 @@ from PyQt4 import QtGui
 from gui_glwidget import GLWidget
 from data_model import DataLoadModel, DemoData
 
-from QxtSpanSlider import QxtSpanSlider
 
 N_PREFETCH = 20
 

@@ -85,6 +85,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setAcceptDrops(True)
 
         self.renderer = VolumeRenderer2((800,800),useDevice=0)
+        self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
+        # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
+
         self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
 
         self.count = 0
@@ -200,35 +203,41 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         Ny, Nx = self.output.shape
-        w = 1.*min(self.width,self.height)/self.width
-        h = 1.*min(self.width,self.height)/self.height
+        w = 1.*max(self.width,self.height)/self.width
+        h = 1.*max(self.width,self.height)/self.height
 
         self.shaderBasic.bind()
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        GLU.gluPerspective(360*arctan(.5)/pi,1.*self.width/self.height,2,10.)
-        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,1,-1)
+        glMultMatrixf(self.renderer.projection.T)
+        
+        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
+        print glGetFloatv(GL_PROJECTION_MATRIX)
+
+
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        modelView = self.getModelView()
 
+        
+        # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
+        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
 
-        # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
+        # print glGetFloatv(GL_MODELVIEW_MATRIX).T
+        # print modelView
+
         mScale =  self.renderer._stack_scale_mat()
+        modelView = self.getModelView()
+        scaledModelView  = dot(modelView,mScale)
+        glScale(1,1.*h/w,1);
 
-        # glTranslatef(0,0,3)
-        glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
+        glMultMatrixf(scaledModelView.T)
 
-
-        glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
-        glMultMatrixf(mScale)
-
-
+        print scaledModelView
         glLineWidth(1)
-        glColor(1.,1.,1.,.4)
+        glColor(1.,1.,1.,.3)
 
-        GLUT.glutWireCube(2.)
+        GLUT.glutWireCube(2)
 
         self.shaderTex.bind()
 
@@ -388,7 +397,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(600,600))
+    win = GLWidget(size=QtCore.QSize(600,500))
     win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
 
     win.show()
