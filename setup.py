@@ -3,14 +3,14 @@ from distutils.core import setup
 setup(name='SpimRender',
       version='0.1',
       description='renders spim data in 3D',
-      url='git@bitbucket.org:mweigert/spimrender.git',
+      url='git@bitbucket.org:mweigert/spimagine.git',
       author='Martin Weigert',
       author_email='mweigert@mpi-cbg.de',
       license='MIT',
-      packages=['SpimRender'],
-      package_data={"SpimRender":['volume_render.cl']},
+      packages=['spimagine'],
+      package_data={"spimagine":['volume_render.cl']},
       data_files=[("images","images/icon_start.png")],
-      scripts=['SpimRender/spim_render.py',"SpimRender/spimagine.py"],
+      scripts=['spimagine/spim_render.py',"spimagine/spimagine.py"],
       install_requires=[
           'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
           ,"SpimUtils","PyOCL"

@@ -6,6 +6,7 @@ import numpy as np
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from quaternion import Quaternion
 from gui_glwidget import GLWidget
 from data_model import DataLoadModel, DemoData
 
@@ -68,7 +69,7 @@ class MainWindow(QtGui.QMainWindow):
         self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(0, 200)
         # self.gammaSlider.setValue(50)
-        
+
         self.scaleSlider.valueChanged.connect(
             lambda x: self.glWidget.transform.setScale(0,x**2))
         self.glWidget.transform._maxChanged.connect(
@@ -79,15 +80,7 @@ class MainWindow(QtGui.QMainWindow):
         self.glWidget.transform._gammaChanged.connect(
             lambda x: self.gammaSlider.setValue(200*(x-1.)+100))
 
-        # self.scaleSlider = QxtSpanSlider(self,QtCore.Qt.Vertical)
-        # self.scaleSlider.setRange(0, 100)
-        # self.scaleSlider.setSpan(30, 70)
-        # self.scaleSlider.setStyleSheet("background-color:darkgray;")
-        # self.scaleSlider.lowerValueChanged.connect(self.foo)
-        # self.scaleSlider.upperValueChanged.connect(self.foo)
-
         self.setStyleSheet("background-color:black;")
-
 
         hbox0 = QtGui.QHBoxLayout()
         hbox0.addWidget(self.glWidget)
@@ -117,7 +110,7 @@ class MainWindow(QtGui.QMainWindow):
         self.playDir = 1
 
 
-        self.dataModel = DataLoadModel(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
+        self.dataModel = DataLoadModel()
 
         self.dataModel._dataSourceChanged.connect(self.glWidget.dataSourceChanged)
         self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
@@ -125,6 +118,7 @@ class MainWindow(QtGui.QMainWindow):
         self.dataModel._dataPosChanged.connect(self.glWidget.dataPosChanged)
         self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
+        self.dataModel.load(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
         self.glWidget.setModel(self.dataModel)
 
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
@@ -166,6 +160,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def onPlayTimer(self):
+
         if self.dataModel.pos == self.dataModel.sizeT()-1:
             self.playDir = -1
         if self.dataModel.pos == 0:
@@ -174,6 +169,7 @@ class MainWindow(QtGui.QMainWindow):
         print self.dataModel.pos, self.playDir
         newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
+        self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
 
     def close(self):
         isAppRunning = False

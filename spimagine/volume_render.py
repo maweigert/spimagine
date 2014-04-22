@@ -327,7 +327,7 @@ if __name__ == "__main__":
     # pass
 
     from time import time, sleep
-    from SpimRender.data_model import DemoData
+    from spimagine.data_model import DemoData
     import pylab
 
     rend = VolumeRenderer2((400,400))
