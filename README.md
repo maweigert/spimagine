@@ -1,4 +1,4 @@
-# SpimRender
+# SpImagine
 
 renders spim data in 3D
 

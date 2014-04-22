@@ -205,7 +205,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         Ny, Nx = self.output.shape
         w = 1.*max(self.width,self.height)/self.width
         h = 1.*max(self.width,self.height)/self.height
-
+        print w,h
         self.shaderBasic.bind()
 
         glMatrixMode(GL_PROJECTION)
@@ -218,7 +218,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-
         
         # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
         # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
@@ -229,7 +228,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         mScale =  self.renderer._stack_scale_mat()
         modelView = self.getModelView()
         scaledModelView  = dot(modelView,mScale)
-        glScale(1,1.*h/w,1);
+        glScale(w,h,1);
 
         glMultMatrixf(scaledModelView.T)
 

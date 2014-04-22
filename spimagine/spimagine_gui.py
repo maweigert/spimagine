@@ -1,7 +1,7 @@
 import sys
 from PyQt4 import QtGui
 
-from SpimRender.gui_mainwindow import MainWindow
+from spimagine.gui_mainwindow import MainWindow
 
 if __name__ == '__main__':
 
