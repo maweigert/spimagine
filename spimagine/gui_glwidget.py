@@ -21,6 +21,8 @@ if os.name == "nt":
 import time
 from quaternion import Quaternion
 
+
+
 vertShaderStrBasic ="""#version 120
 void main() {
 gl_FrontColor = gl_Color;
@@ -49,7 +51,8 @@ gl_FragColor.w = 1.*length(gl_FragColor.xyz);
 class TransformModel(QtCore.QObject):
     _maxChanged = QtCore.pyqtSignal(int)
     _gammaChanged = QtCore.pyqtSignal(float)
-
+    _transformChanged = QtCore.pyqtSignal()
+    
     def __init__(self):
         super(TransformModel,self).__init__()
         self.reset()
@@ -60,6 +63,7 @@ class TransformModel(QtCore.QObject):
         self.zoom = 1.
         self.setScale(0,maxVal)
         self.setGamma(1.)
+        self.isBox = False
 
 
     def setGamma(self, gamma):
@@ -68,12 +72,17 @@ class TransformModel(QtCore.QObject):
         print "maxVal: ", self.maxVal
 
         self._gammaChanged.emit(self.gamma)
-
+        self._transformChanged.emit()
 
     def setScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
         print "maxVal: ", maxVal
         self._maxChanged.emit(self.maxVal)
+        self._transformChanged.emit()
+
+    def setBox(self,isBox = True):
+        self.isBox = isBox
+        self._transformChanged.emit()
 
 
 class GLWidget(QtOpenGL.QGLWidget):
@@ -105,8 +114,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.N_PREFETCH = N_PREFETCH
 
         self.setModel(None)
-        self.transform._maxChanged.connect(lambda x:self.refresh())
-        self.transform._gammaChanged.connect(lambda x:self.refresh())
+        self.transform._transformChanged.connect(self.refresh)
 
         self.refresh()
 
@@ -205,20 +213,19 @@ class GLWidget(QtOpenGL.QGLWidget):
         Ny, Nx = self.output.shape
         w = 1.*max(self.width,self.height)/self.width
         h = 1.*max(self.width,self.height)/self.height
-        print w,h
         self.shaderBasic.bind()
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glMultMatrixf(self.renderer.projection.T)
-        
+
         # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
-        print glGetFloatv(GL_PROJECTION_MATRIX)
+        # print glGetFloatv(GL_PROJECTION_MATRIX)
 
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        
+
         # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
         # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
 
@@ -232,11 +239,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glMultMatrixf(scaledModelView.T)
 
-        print scaledModelView
         glLineWidth(1)
         glColor(1.,1.,1.,.3)
 
-        GLUT.glutWireCube(2)
+        if self.transform.isBox:
+            GLUT.glutWireCube(2)
 
         self.shaderTex.bind()
 

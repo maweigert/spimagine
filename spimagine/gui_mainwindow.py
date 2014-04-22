@@ -46,6 +46,26 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setMaximumWidth(24)
         self.startButton.setMaximumHeight(24)
 
+
+        self.cubeCheck = QtGui.QCheckBox()
+        # self.cubeCheck.setStyleSheet("""
+        # QCheckBox::indicator:checked {
+        # background:black;
+        # border-image: url(../../scripts/wire_cube.png);}
+        # QCheckBox::indicator:unchecked {
+        # background:black;
+        # border-image: url(../../scripts/wire_cube_inactive.png);}
+        # """)
+        self.cubeCheck.setStyleSheet("""
+        QCheckBox::indicator:checked {
+        background:black;
+        border-image: url(images/wire_cube.png);}
+        QCheckBox::indicator:unchecked {
+        background:black;
+        border-image: url(images/wire_cube_inactive.png);}
+        """)
+
+
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.sliderTime.setTickInterval(1)
@@ -91,6 +111,7 @@ class MainWindow(QtGui.QMainWindow):
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
+        hbox.addWidget(self.cubeCheck)
 
 
         vbox = QtGui.QVBoxLayout()
@@ -108,6 +129,8 @@ class MainWindow(QtGui.QMainWindow):
         self.playTimer.setInterval(100)
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.playDir = 1
+
+        self.cubeCheck.stateChanged.connect(self.glWidget.transform.setBox)
 
 
         self.dataModel = DataLoadModel()
