@@ -8,6 +8,8 @@ from PyQt4 import QtGui
 
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
+from keyframe_view import *
+
 from data_model import DataLoadModel, DemoData
 
 
@@ -100,6 +102,15 @@ class MainWindow(QtGui.QMainWindow):
         self.glWidget.transform._gammaChanged.connect(
             lambda x: self.gammaSlider.setValue(200*(x-1.)+100))
 
+
+        k = KeyFrameList()
+        k.addKeyFrame(.5,TransformData(.5,.4,.3))
+        k.addKeyFrame(.9,TransformData(.5,.4,.3))
+
+        self.keyView = KeyListView()
+        self.keyView.setModel(k)
+
+
         self.setStyleSheet("background-color:black;")
 
         hbox0 = QtGui.QHBoxLayout()
@@ -118,6 +129,7 @@ class MainWindow(QtGui.QMainWindow):
         vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
+        # vbox.addWidget(self.keyView)
 
         widget = QtGui.QWidget()
         widget.setLayout(vbox)
@@ -131,6 +143,7 @@ class MainWindow(QtGui.QMainWindow):
         self.playDir = 1
 
         self.cubeCheck.stateChanged.connect(self.glWidget.transform.setBox)
+        self.glWidget.transform._boxChanged.connect(self.cubeCheck.setCheckState)
 
 
         self.dataModel = DataLoadModel()
@@ -145,10 +158,6 @@ class MainWindow(QtGui.QMainWindow):
         self.glWidget.setModel(self.dataModel)
 
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
-
-        # self.dataModel.load("/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif")
-
-        # self.dataModel.load("/Users/mweigert/python/Data/Drosophila_05")\
 
 
 

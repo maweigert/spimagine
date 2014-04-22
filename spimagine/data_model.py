@@ -27,7 +27,7 @@ class DemoData(GenericData):
         return self.nT
 
     def __getitem__(self,pos):
-        return (700+400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
+        return (400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
 
 
 

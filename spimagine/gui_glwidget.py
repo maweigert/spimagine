@@ -51,8 +51,10 @@ gl_FragColor.w = 1.*length(gl_FragColor.xyz);
 class TransformModel(QtCore.QObject):
     _maxChanged = QtCore.pyqtSignal(int)
     _gammaChanged = QtCore.pyqtSignal(float)
+    _boxChanged = QtCore.pyqtSignal(int)
+
     _transformChanged = QtCore.pyqtSignal()
-    
+
     def __init__(self):
         super(TransformModel,self).__init__()
         self.reset()
@@ -63,7 +65,7 @@ class TransformModel(QtCore.QObject):
         self.zoom = 1.
         self.setScale(0,maxVal)
         self.setGamma(1.)
-        self.isBox = False
+        self.setBox(False)
 
 
     def setGamma(self, gamma):
@@ -82,6 +84,7 @@ class TransformModel(QtCore.QObject):
 
     def setBox(self,isBox = True):
         self.isBox = isBox
+        self._boxChanged.emit(isBox)
         self._transformChanged.emit()
 
 
