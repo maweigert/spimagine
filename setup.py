@@ -3,7 +3,7 @@ from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-setup(name='SpimRender',
+setup(name='spimagine',
     version='0.1',
     description='renders spim data in 3D',
     url='http://mweigert@bitbucket.org/mweigert/spimagine',
@@ -17,10 +17,11 @@ setup(name='SpimRender',
     ],
 
     package_data={"spimagine":['kernels/*','images/*']},
-    # entry_points = {
-    # 'console_scripts': [
-    # 'mypkg_starter = mypkg:main',
-    # ] },
+    entry_points = {
+    'console_scripts': [
+    'spimagine = spimagine.spimagine_gui:main',
+    'spimagine_render = spimagine.spim_render:main'
+    ] },
 
 
 )

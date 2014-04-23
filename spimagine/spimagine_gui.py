@@ -3,7 +3,7 @@ from PyQt4 import QtGui
 
 from spimagine.gui_mainwindow import MainWindow
 
-if __name__ == '__main__':
+def main():
 
     app = QtGui.QApplication(sys.argv)
 
@@ -12,3 +12,8 @@ if __name__ == '__main__':
     win.raise_()
 
     sys.exit(app.exec_())
+
+
+
+if __name__== '__main__':
+    main()
