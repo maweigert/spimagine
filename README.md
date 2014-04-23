@@ -21,15 +21,7 @@ then with pip
 
 > pip install git+http://mweigert@bitbucket.org/mweigert/pyocl
 
-> pip install git+http://mweigert@bitbucket.org/mweigert/spimrender
+> pip install git+http://mweigert@bitbucket.org/mweigert/spimagine
 
-
-or standard python 
-
-> git clone http://mweigert@bitbucket.org/mweigert/spimrender
-
-> cd spimrender
-
-> python setup.py install
 
 -----
