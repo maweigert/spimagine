@@ -96,7 +96,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer2((800,800),useDevice=0)
+        self.renderer = VolumeRenderer((800,800),useDevice=0)
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 

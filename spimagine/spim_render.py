@@ -40,7 +40,7 @@ def read3dTiff(fName, depth = -1, dtype = np.uint16):
     return data
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description="3d max projects a file renders a file")
 
@@ -123,3 +123,7 @@ if __name__ == '__main__':
     # # pylab.imshow(out)
 
     # # pylab.show()
+
+
+if __name__ == '__main__':
+    main()
