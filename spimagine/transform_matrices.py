@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+
+"""
+
+compatible with OpenGL, i.e.
+
+projMatPerspective = gluPerspective
+...etc
+
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
 import numpy as np
 from quaternion import Quaternion
 

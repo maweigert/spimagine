@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+
+"""
+the (Qt) data models for usage in the gui frame
+
+generic containers are defined for BScope Spim Data (SpimData)
+and Tiff files (TiffData).
+Extend it if you want to and change the DataLoadModel.chooseContainer to
+accept it via drop
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
 import os
 import numpy as np
 from PyQt4 import QtCore

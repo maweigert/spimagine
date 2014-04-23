@@ -44,7 +44,6 @@ max_project(__global short *d_output,
 			uint Nx, uint Ny,
 			__constant float* invP,
 			__constant float* invM,
-			const int isPerspective,
 			__read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
@@ -66,11 +65,6 @@ max_project(__global short *d_output,
   float4 back,front;
 
 
-  if (isPerspective)
-	orig0 = (float4)(0, 0, .0f,1.0f);
-  else
-	orig0 = (float4)(u, v, .0f,1.0f);
-
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
   
@@ -88,11 +82,6 @@ max_project(__global short *d_output,
 
   orig *= 1.f/orig.w;
   
-  if (isPerspective)
-	direc0 = normalize(((float4)(u, v, -2.0f,0.0f)));
-  else
-	direc0 = normalize(((float4)(0, 0, -1.0f,0.0f)));
-
   direc0.x = dot(back, ((float4)(invP[0],invP[1],invP[2],invP[3])));
   direc0.y = dot(back, ((float4)(invP[4],invP[5],invP[6],invP[7])));
   direc0.z = dot(back, ((float4)(invP[8],invP[9],invP[10],invP[11])));
