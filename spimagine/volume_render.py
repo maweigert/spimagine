@@ -1,6 +1,32 @@
-import os
-# import pylab
+#!/usr/bin/env python
 
+"""
+the actual renderer class to max project 3d data
+
+the modelView and projection matrices are compatible with OpenGL
+
+usage:
+
+rend = VolumeRenderer((400,400))
+
+Nx,Ny,Nz = 200,150,50
+d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
+
+rend.set_data(d)
+rend.set_units([1.,1.,.1])
+rend.set_projection(projMatPerspective(60,1.,1,10))
+rend.set_modelView(dot(transMatReal(0,0,-7),scaleMat(.7,.7,.7)))
+
+out = rend.render()
+
+
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
+
+import os
 from PyOCL import cl, OCLDevice, OCLProcessor
 from scipy.misc import imsave
 import SpimUtils
@@ -14,7 +40,6 @@ def absPath(myPath):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-        print "\n".join(os.listdir(base_path))
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
         base_path = os.path.abspath(os.path.dirname(__file__))
@@ -29,7 +54,6 @@ class VolumeRenderer:
                rend.set_data(d)
                rend.set_units(1.,1.,2.)
                rend.set_modelView(rotMatX(.7))
-               out = rend.render(isPerspective = True)
     """
 
     def __init__(self, size = None, useDevice = 0):
@@ -92,8 +116,7 @@ class VolumeRenderer:
         return scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
 
 
-    def render(self,data = None, stackUnits = None, modelView = None,
-            isPerspective = True):
+    def render(self,data = None, stackUnits = None, modelView = None):
 
         if data != None:
             self.set_data(data)
@@ -126,15 +149,15 @@ class VolumeRenderer:
                    int32(self.width),int32(self.height),
                    self.invPBuf,
                    self.invMBuf,
-                   int32(isPerspective),
                    self.dataImg)
 
 
         return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
 
-
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):
+    """legacy"""
+
     rend = VolumeRenderer((500,500))
     for t in range(start,start+count):
         print "%i/%i"%(t+1,count)
@@ -151,28 +174,39 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
         imsave("%s_%s.png"%(outName,str(t+1).zfill(int(ceil(log10(count+1))))),out)
 
 
-def test_render_simple():
+def test_simple():
+
+    from time import time, sleep
+    from spimagine.data_model import DemoData
     # import pylab
 
-    rend = VolumeRenderer((600,600))
-    rend.set_dataFromFolder("../Data/ExampleData")
+    rend = VolumeRenderer((400,400))
 
-    rend.set_modelView(rotMatX(pi/2.))
-    out = rend.render(render_func="max_proj")
-    out = minimum(out,400)
-    print rend.mScale
+    # Nx,Ny,Nz = 200,150,50
+    # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    # pylab.ion()
-
-    pylab.imshow(out)
-    pylab.axis('off')
-    pylab.show()
+    d = DemoData(256)[0]
+    rend.set_data(d)
+    rend.set_units([1.,1.,.1])
+    rend.set_projection(projMatPerspective(60,1.,1,10))
+    rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
 
 
-def test_render_movie():
+    img = None
+    pylab.figure()
+    for t in linspace(0,pi,10):
+        print t
+        rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.7,.7,.7))))
 
-    renderSpimFolder("/Users/mweigert/Desktop/Phd/Denoise/SpimData/TestData/",
-                     "output/out", 400,400,0,100,rot = .2)
+        out = rend.render()
+
+        if not img:
+            img = pylab.imshow(out)
+        else:
+            img.set_data(out)
+        pylab.draw()
+
+        sleep(.4)
 
 
 
@@ -192,39 +226,4 @@ def _getDirec(P,M,u=1,v=0):
 
 if __name__ == "__main__":
 
-    pass
-
-    # from time import time, sleep
-    # from spimagine.data_model import DemoData
-    # import pylab
-
-    # rend = VolumeRenderer2((400,400))
-
-    # # Nx,Ny,Nz = 200,150,50
-    # # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
-
-    # d = DemoData(256)[0]
-    # rend.set_data(d)
-    # rend.set_units([1.,1.,.1])
-    # rend.set_projection(projMatPerspective(60,1.,1,10))
-    # rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
-
-
-    # img = None
-    # pylab.ion()
-    # for t in linspace(0,pi,10):
-    #     print t
-    #     rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.3,.3,.3))))
-    #     # rend.set_modelView(dot(transMatReal(0,0,-2),rotMatX(t)))
-
-    #     # rend.set_modelView(transMatReal(0,0,-4))
-
-    #     out = rend.render(isPerspective = True)
-
-    #     if not img:
-    #         img = pylab.imshow(out)
-    #     else:
-    #         img.set_data(out)
-    #     pylab.draw()
-
-    #     sleep(.4)
+    test_simple()

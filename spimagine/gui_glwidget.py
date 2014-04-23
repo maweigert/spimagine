@@ -1,3 +1,21 @@
+#!/usr/bin/env python
+
+"""
+
+The rendering widget
+
+It renderes a projection via the OpenCL (defined in volume_render.py)
+into a texture which is drawn by simple OpenGL calls onto the canvas.
+
+It should handle all user interaction via a transformation model.
+
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
+
+
 import sys
 import os
 from PyQt4 import QtCore
@@ -9,7 +27,8 @@ from OpenGL import GLUT
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
-from volume_render import *
+from volume_render import VolumeRenderer
+from transform_matrices import *
 
 from numpy import *
 
@@ -323,7 +342,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer.set_modelView(self.getModelView())
 
-        out = self.renderer.render(isPerspective = True)
+        out = self.renderer.render()
 
         self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
 

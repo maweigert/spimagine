@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+
+"""
+the main frame used for in spimagine_gui 
+
+the data model is member of the frame 
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
 import sys
 import os
 import numpy as np
@@ -9,11 +20,13 @@ from PyQt4 import QtGui
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
 from keyframe_view import *
-
 from data_model import DataLoadModel, DemoData
 
 
-N_PREFETCH = 20
+# the default number of data timeslices to prefetch 
+N_PREFETCH = 10
+
+
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """

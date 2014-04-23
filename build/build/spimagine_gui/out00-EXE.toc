@@ -1,0 +1,9 @@
+('/Users/mweigert/python/spimagine/build/dist/spimagine',
+ False,
+ False,
+ None,
+ None,
+ [],
+ None,
+ False,
+ 1398265286)

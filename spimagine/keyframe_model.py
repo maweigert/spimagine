@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+
+"""
+key frame data model
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
 from numpy import *
 import bisect
 from PyQt4 import QtCore

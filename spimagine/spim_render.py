@@ -1,4 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+"""
+command line rendering program, currently supports just 3d tiff files
+
+for all the options run
+python spim_render.py -h
+
+
+
+author: Martin Weigert
+email: mweigert@mpi-cbg.de
+"""
+
+
 
 import sys
 import argparse
@@ -50,11 +64,11 @@ def main():
 
     parser.add_argument("-o","--output",dest="output",metavar="outfile",
                         help = "name of the output file,  png extension is recommended",
-                        type=str,default = None, required = True)
+                        type=str,default = "out.png")
 
     parser.add_argument("-w","--width",dest="width",metavar="width",
                         help = "pixelwidth of the rendered output ",
-                        type=int,nargs=1,default = 400)
+                        type=int,default = 400)
 
     parser.add_argument("-s","--scale",dest="scale",metavar="scale",
                         type=float,nargs=1 ,default = [1.])
@@ -69,13 +83,15 @@ def main():
 
     parser.add_argument("-R","--range",dest="range", type =
                         float, nargs=2,default = None,
-                        help = "the range of the data values to consider",
+                        help = "if --16bit is set, the range of the data values to consider, defaults to [min,max]",
                         metavar=("min","max"))
 
 
-    parser.add_argument("-OV","--Orthoview",dest="ortho",action="store_true")
+    parser.add_argument("-O","--Orthoview",help="use parallel projection (default: perspective)",
+                        dest="ortho",action="store_true")
 
-    parser.add_argument("-16","--16bit",dest="is16Bit",action="store_true")
+    parser.add_argument("--16bit",help="render into 16 bit png",
+                        dest="is16Bit",action="store_true")
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -87,7 +103,7 @@ def main():
     for k,v in vars(args).iteritems():
         print k,v
 
-    rend = VolumeRenderer2((args.width,args.width))
+    rend = VolumeRenderer((args.width,args.width))
 
     data = read3dTiff(args.input)
 
@@ -95,12 +111,17 @@ def main():
     rend.set_units([1.,1.,4.])
 
     M = scaleMat(*(args.scale*3))
-    M = dot(M,rotMat(*args.rotation))
-    M = dot(M,transMatReal(*args.translate))
+    M = dot(rotMat(*args.rotation),M)
+    M = dot(transMatReal(*args.translate),M)
 
     rend.set_modelView(M)
 
-    out = rend.render(isPerspective = not args.ortho)
+    if args.ortho:
+        rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
+    else:
+        rend.set_projection(projMatPerspective(60,1.,1,10))
+
+    out = rend.render()
 
 
     if not args.is16Bit:
@@ -117,12 +138,6 @@ def main():
             print args.range
             img = toimage(out, low = args.range[0], high  = args.range[1], mode = "I")
         img.save(args.output)
-
-    # # import pylab
-
-    # # pylab.imshow(out)
-
-    # # pylab.show()
 
 
 if __name__ == '__main__':
