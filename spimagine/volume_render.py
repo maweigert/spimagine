@@ -7,10 +7,18 @@ import SpimUtils
 from transform_matrices import *
 from numpy import *
 from scipy.linalg import inv
+import sys
 
-def absPath(s):
-    return os.path.join(os.path.dirname(__file__),s)
-
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        print "\n".join(os.listdir(base_path))
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
 
 
 class VolumeRenderer:
@@ -184,39 +192,39 @@ def _getDirec(P,M,u=1,v=0):
 
 if __name__ == "__main__":
 
-    # pass
+    pass
 
-    from time import time, sleep
-    from spimagine.data_model import DemoData
-    import pylab
+    # from time import time, sleep
+    # from spimagine.data_model import DemoData
+    # import pylab
 
-    rend = VolumeRenderer2((400,400))
+    # rend = VolumeRenderer2((400,400))
 
-    # Nx,Ny,Nz = 200,150,50
-    # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
+    # # Nx,Ny,Nz = 200,150,50
+    # # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = DemoData(256)[0]
-    rend.set_data(d)
-    rend.set_units([1.,1.,.1])
-    rend.set_projection(projMatPerspective(60,1.,1,10))
-    rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
+    # d = DemoData(256)[0]
+    # rend.set_data(d)
+    # rend.set_units([1.,1.,.1])
+    # rend.set_projection(projMatPerspective(60,1.,1,10))
+    # rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
 
 
-    img = None
-    pylab.ion()
-    for t in linspace(0,pi,10):
-        print t
-        rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.3,.3,.3))))
-        # rend.set_modelView(dot(transMatReal(0,0,-2),rotMatX(t)))
+    # img = None
+    # pylab.ion()
+    # for t in linspace(0,pi,10):
+    #     print t
+    #     rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.3,.3,.3))))
+    #     # rend.set_modelView(dot(transMatReal(0,0,-2),rotMatX(t)))
 
-        # rend.set_modelView(transMatReal(0,0,-4))
+    #     # rend.set_modelView(transMatReal(0,0,-4))
 
-        out = rend.render(isPerspective = True)
+    #     out = rend.render(isPerspective = True)
 
-        if not img:
-            img = pylab.imshow(out)
-        else:
-            img.set_data(out)
-        pylab.draw()
+    #     if not img:
+    #         img = pylab.imshow(out)
+    #     else:
+    #         img.set_data(out)
+    #     pylab.draw()
 
-        sleep(.4)
+    #     sleep(.4)

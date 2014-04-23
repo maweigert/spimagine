@@ -20,10 +20,10 @@ def absPath(myPath):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
+        return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
         base_path = os.path.abspath(os.path.dirname(__file__))
-
-    return os.path.join(base_path, myPath)
+        return os.path.join(base_path, myPath)
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -49,14 +49,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
         self.cubeCheck = QtGui.QCheckBox()
-        # self.cubeCheck.setStyleSheet("""
-        # QCheckBox::indicator:checked {
-        # background:black;
-        # border-image: url(../../scripts/wire_cube.png);}
-        # QCheckBox::indicator:unchecked {
-        # background:black;
-        # border-image: url(../../scripts/wire_cube_inactive.png);}
-        # """)
         self.cubeCheck.setStyleSheet("""
         QCheckBox::indicator:checked {
         background:black;
