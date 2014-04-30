@@ -1,9 +1,0 @@
-('/Users/mweigert/python/spimagine/build/pyinstaller/dist/spimagine',
- False,
- False,
- None,
- None,
- [],
- None,
- False,
- 1398251951)

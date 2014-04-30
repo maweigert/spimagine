@@ -6,7 +6,7 @@ the (Qt) data models for usage in the gui frame
 generic containers are defined for BScope Spim Data (SpimData)
 and Tiff files (TiffData).
 Extend it if you want to and change the DataLoadModel.chooseContainer to
-accept it via drop
+accept it via dropg
 
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
@@ -26,23 +26,29 @@ class DemoData(GenericData):
         GenericData.__init__(self)
         self.load(N)
 
-    def load(self,N=200):
+    def load(self,N = 200):
         self.stackSize = (N,N,N/2)
         self.fName = ""
         self.nT = N
         self.stackUnits = (1,1,1)
         x = np.linspace(-1,1,N)
-        X,self.Y,Z = np.meshgrid(x[::2],x,x,indexing="ij")
-        self.R  = np.sqrt(X**2+self.Y**2+Z**2)
-        self.W = np.arctan2(Z,X)
+        Z,Y,X = np.meshgrid(x,x,x , indexing = "ij")
+        R = np.sqrt(X**2+Y**2+Z**2)
+        R2 = np.sqrt((X-.5)**2+Y**2+Z**2)
+        phi = np.arctan2(Z,Y)
+        theta = np.arctan2(X,np.sqrt(Y**2+Z**2))
+        u = np.exp(-500*(R-1.)**2)*np.sum(np.exp(-150*(-theta-t+.1*(t-np.pi/2.)*
+            np.exp(-np.sin(2*(phi+np.pi/2.))))**2)
+            for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
+        u2 = np.exp(-10*R2**2)
+        self.data = (10000*(u + 2*u2)).astype(np.int16)
 
 
     def sizeT(self):
         return self.nT
 
     def __getitem__(self,pos):
-        return (400*np.exp(-100*(self.R-.8)**2)*(1+np.sin(20*self.Y))*(1+np.sin(10*self.W+.4*pos))).astype(np.uint16)
-
+        return self.data
 
 
 
@@ -78,6 +84,7 @@ class DataLoadThread(QtCore.QThread):
                     self._rwLock.lockForWrite()
                     self.data[k] = newdata
                     self._rwLock.unlock()
+                    print "preload: ",k
                     time.sleep(.0001)
 
             time.sleep(.0001)
@@ -122,7 +129,7 @@ class DataLoadModel(QtCore.QObject):
 
         self.dataContainer = dataContainer
 
-
+        print "loading ...", fName, prefetchSize
         self.fName = fName
         self.prefetchSize = prefetchSize
         self.nset = []
@@ -200,29 +207,31 @@ class MyData(DataLoadModel):
 
 if __name__ == '__main__':
 
-    fName = "/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
-    # fName = "/Users/mweigert/python/Data/Drosophila_Full"
+    d = DemoData()
+    # fName = "/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
-    loader = DataLoadModel(fName,prefetchSize = 10)
+    # fName = "/Users/mweigert/Data/Drosophila_Full"
 
-
-    d = loader[0]
-
-    time.sleep(2)
+    # loader = DataLoadModel(fName,prefetchSize = 10)
 
 
-    dt = 0
+    # d = loader[0]
 
-    for i in range(10):
-        print i
-        # time.sleep(.1)
-        t = time.time()
-        # time.sleep(.1)
+    # time.sleep(2)
 
-        d = loader[i]
-        dt += (time.time()-t)
 
-    print "%.3fs per fetch "%(dt/10.)
+    # dt = 0
 
-    loader.stop()
+    # for i in range(10):
+    #     print i
+    #     # time.sleep(.1)
+    #     t = time.time()
+    #     # time.sleep(.1)
+
+    #     d = loader[i]
+    #     dt += (time.time()-t)
+
+    # print "%.3fs per fetch "%(dt/10.)
+
+    # loader.stop()

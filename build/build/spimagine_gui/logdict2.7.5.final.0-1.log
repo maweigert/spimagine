@@ -702,7 +702,7 @@ argparse: None -> <PyModule 'argparse' /System/Library/Frameworks/Python.framewo
 PIL.Image: None -> <PyModule 'PIL.Image' /Library/Python/2.7/site-packages/PIL/Image.pyc imports=[('PIL._binary.i8', 0, 0, -1), ('PIL', 1, 0, -1), ('os', 0, 0, -1), ('warnings', 0, 0, -1), ('__future__', 0, 0, -1), ('PIL.PngImagePlugin', 1, 0, -1), ('PIL._util.isStringType', 0, 0, -1), ('PIL.ImagePalette', 1, 0, -1), ('PIL._imaging', 0, 0, -1), ('PIL.ImageShow', 1, 0, -1), ('sys', 0, 0, -1), ('PIL.ImageColor', 1, 1, -1), ('PIL', 0, 0, -1), ('__builtin__', 0, 1, -1), ('PIL._util.isPath', 0, 0, -1), ('PIL.PILLOW_VERSION', 0, 0, -1), ('builtins', 0, 0, -1), ('PIL.ImageMode', 0, 0, -1), ('PIL.GifImagePlugin', 1, 0, -1), ('collections', 0, 0, -1), ('__future__.print_function', 0, 0, -1), ('math', 1, 1, -1), ('PIL._plugins', 0, 0, -1), ('PIL.PpmImagePlugin', 1, 0, -1), ('PIL', 1, 1, -1), ('PIL.VERSION', 0, 0, -1), ('PIL._util', 0, 0, -1), ('tempfile', 1, 0, -1), ('PIL.BmpImagePlugin', 1, 0, -1), ('PIL._binary.o8', 0, 0, -1), ('PIL._binary', 0, 0, -1), ('PIL.ImagePalette', 1, 1, -1), ('PIL.ImageChops', 1, 0, -1), ('PIL.JpegImagePlugin', 1, 0, -1), ('numbers', 0, 0, -1), ('PIL.MicImagePlugin', 0, 0, -1), ('PIL.WmfImagePlugin', 0, 0, -1), ('PIL.ImImagePlugin', 0, 0, -1), ('PIL.PdfImagePlugin', 0, 0, -1), ('PIL.ImtImagePlugin', 0, 0, -1), ('PIL.PcdImagePlugin', 0, 0, -1), ('PIL.GribStubImagePlugin', 0, 0, -1), ('PIL.BmpImagePlugin', 0, 0, -1), ('PIL.XbmImagePlugin', 0, 0, -1), ('PIL.BufrStubImagePlugin', 0, 0, -1), ('PIL.SgiImagePlugin', 0, 0, -1), ('PIL.FliImagePlugin', 0, 0, -1), ('PIL.TiffImagePlugin', 0, 0, -1), ('PIL.JpegImagePlugin', 0, 0, -1), ('PIL.WebPImagePlugin', 0, 0, -1), ('PIL.EpsImagePlugin', 0, 0, -1), ('PIL.XpmImagePlugin', 0, 0, -1), ('PIL.FitsStubImagePlugin', 0, 0, -1), ('PIL.CurImagePlugin', 0, 0, -1), ('PIL.PngImagePlugin', 0, 0, -1), ('PIL.GifImagePlugin', 0, 0, -1), ('PIL.TgaImagePlugin', 0, 0, -1), ('PIL.IcnsImagePlugin', 0, 0, -1), ('PIL.IptcImagePlugin', 0, 0, -1), ('PIL.Hdf5StubImagePlugin', 0, 0, -1), ('PIL.PixarImagePlugin', 0, 0, -1), ('PIL.XVThumbImagePlugin', 0, 0, -1), ('PIL.PalmImagePlugin', 0, 0, -1), ('PIL.FpxImagePlugin', 0, 0, -1), ('PIL.PsdImagePlugin', 0, 0, -1), ('PIL.MpegImagePlugin', 0, 0, -1), ('PIL.McIdasImagePlugin', 0, 0, -1), ('PIL.SpiderImagePlugin', 0, 0, -1), ('PIL.PcxImagePlugin', 0, 0, -1), ('PIL.IcoImagePlugin', 0, 0, -1), ('PIL.DcxImagePlugin', 0, 0, -1), ('PIL.PpmImagePlugin', 0, 0, -1), ('PIL.MspImagePlugin', 0, 0, -1), ('PIL.ArgImagePlugin', 0, 0, -1), ('PIL.GbrImagePlugin', 0, 0, -1), ('PIL.SunImagePlugin', 0, 0, -1)] binaries=[] datas=[]>
 PyOCL: None -> <PkgModule 'PyOCL' /Users/mweigert/python/PyOCL/PyOCL/__init__.pyc imports=[('OCLProcessor.OCLProcessor', 0, 0, -1), ('OCLProcessor.OCLDevice', 0, 0, -1), ('pyopencl', 0, 0, -1), ('OCLProcessor', 0, 0, -1)] binaries=[] datas=[]>
 PyOCL.OCLProcessor: None -> <PyModule 'PyOCL.OCLProcessor' /Users/mweigert/python/PyOCL/PyOCL/OCLProcessor.pyc imports=[('numpy', 0, 0, -1), ('pyopencl', 0, 0, -1)] binaries=[] datas=[]>
-spimagine: None -> <PkgModule 'spimagine' /Users/mweigert/python/spimagine/spimagine/__init__.pyc imports=[('volume_render', 0, 0, -1), ('volume_render.*', 0, 0, -1)] binaries=[] datas=[]>
+spimagine: None -> <PkgModule 'spimagine' /Users/mweigert/python/spimagine/spimagine/__init__.pyc imports=[('volume_render', 0, 0, -1), ('gui_glwidget', 0, 0, -1), ('volume_render.*', 0, 0, -1), ('gui_mainwindow', 0, 0, -1)] binaries=[] datas=[]>
 spimagine.data_model: None -> <PyModule 'spimagine.data_model' /Users/mweigert/python/spimagine/spimagine/data_model.pyc imports=[('collections', 0, 0, -1), ('re', 0, 0, -1), ('collections.defaultdict', 0, 0, -1), ('os', 0, 0, -1), ('dataloader.SpimData', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1), ('PyQt4', 0, 0, -1), ('numpy', 0, 0, -1), ('dataloader', 0, 0, -1), ('dataloader.TiffData', 0, 0, -1), ('dataloader.GenericData', 0, 0, -1), ('time', 0, 0, -1)] binaries=[] datas=[]>
 PyOCL.OCLDevice: None -> None
   DEL PyOCL.OCLDevice
@@ -715,7 +715,7 @@ PyOCL.cl: None -> None
 numpy: None -> <PkgModule 'numpy' /Library/Python/2.7/site-packages/numpy/__init__.pyc imports=[('version.version', 0, 1, 1), ('__future__.print_function', 0, 0, 0), ('version.git_revision', 0, 1, 1), ('matrixlib.*', 0, 1, 1), ('__future__.absolute_import', 0, 0, 0), ('builtins.float', 0, 1, 0), ('version', 0, 1, 1), ('_import_tools', 0, 1, 1), ('__builtin__.bool', 0, 1, 0), ('', 0, 1, 1), ('core.round', 0, 1, 1), ('__builtin__.str', 0, 1, 0), ('builtins.str', 0, 1, 0), ('sys', 0, 1, 0), ('random', 0, 1, 1), ('sys', 0, 0, 0), ('linalg', 0, 1, 1), ('numpy.__config__.show', 0, 1, 0), ('builtins.object', 0, 1, 0), ('fft', 0, 1, 1), ('builtins.bool', 0, 1, 0), ('__builtin__.complex', 0, 1, 0), ('testing', 0, 1, 1), ('__builtin__.int', 0, 1, 0), ('testing.Tester', 0, 1, 1), ('__future__.division', 0, 0, 0), ('matrixlib', 0, 1, 1), ('__builtin__', 0, 1, 0), ('compat.long', 0, 1, 1), ('builtins.int', 0, 1, 0), ('_import_tools.PackageLoader', 0, 1, 1), ('__builtin__.unicode', 0, 1, 0), ('lib', 0, 1, 1), ('core.min', 0, 1, 1), ('ctypeslib', 0, 1, 1), ('core', 0, 1, 1), ('core.max', 0, 1, 1), ('__future__', 0, 0, 0), ('numpy.__config__', 0, 1, 0), ('builtins.complex', 0, 1, 0), ('add_newdocs', 0, 1, 1), ('builtins', 0, 1, 0), ('warnings', 0, 1, 0), ('__builtin__.object', 0, 1, 0), ('lib.*', 0, 1, 1), ('core.abs', 0, 1, 1), ('compat', 0, 1, 1), ('__builtin__.float', 0, 1, 0), ('ma', 0, 1, 1), ('core.*', 0, 1, 1), ('polynomial', 0, 1, 1)] binaries=[] datas=[]>
 numpy.ModuleDeprecationWarning: None -> None
 numpy.add_newdocs: None -> <PyModule 'numpy.add_newdocs' /Library/Python/2.7/site-packages/numpy/add_newdocs.pyc imports=[('__future__.absolute_import', 0, 0, 0), ('__future__', 0, 0, 0), ('__future__.division', 0, 0, 0), ('numpy.lib.add_newdoc', 0, 0, 0), ('__future__.print_function', 0, 0, 0), ('numpy.lib', 0, 0, 0)] binaries=[] datas=[]>
-SpimUtils: None -> <PkgModule 'SpimUtils' /Users/mweigert/python/SpimUtils/SpimUtils/__init__.pyc imports=[('utils.*', 0, 0, -1), ('utils', 0, 0, -1)] binaries=[] datas=[]>
+SpimUtils: None -> <PkgModule 'SpimUtils' /Users/mweigert/python/SpimUtils/SpimUtils/__init__.pyc imports=[('utils.*', 0, 0, -1), ('utils', 0, 0, -1), ('test_images', 0, 0, -1)] binaries=[] datas=[]>
 scipy.misc.imsave: None -> None
   DEL scipy.misc.imsave
 PyOCL.pyopencl: None -> None
@@ -3668,6 +3668,8 @@ pytools.any: None -> None
 pytools.product: None -> None
   DEL pytools.product
 spimagine.volume_render: None -> <PyModule 'spimagine.volume_render' /Users/mweigert/python/spimagine/spimagine/volume_render.pyc imports=[('sys', 0, 0, -1), ('PyOCL', 0, 0, -1), ('PyOCL.OCLProcessor', 0, 0, -1), ('spimagine.data_model', 1, 0, -1), ('PyOCL.OCLDevice', 0, 0, -1), ('time.sleep', 1, 0, -1), ('time', 1, 0, -1), ('os', 0, 0, -1), ('scipy.linalg.inv', 0, 0, -1), ('transform_matrices.*', 0, 0, -1), ('PyOCL.cl', 0, 0, -1), ('scipy.misc', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('numpy.*', 0, 0, -1), ('transform_matrices', 0, 0, -1), ('numpy', 0, 0, -1), ('spimagine.data_model.DemoData', 1, 0, -1), ('time.time', 1, 0, -1), ('SpimUtils', 0, 0, -1), ('scipy.misc.imsave', 0, 0, -1)] binaries=[] datas=[]>
+spimagine.gui_glwidget: None -> <PyModule 'spimagine.gui_glwidget' /Users/mweigert/python/spimagine/spimagine/gui_glwidget.pyc imports=[('quaternion', 0, 0, -1), ('OpenGL.GL.*', 0, 0, -1), ('OpenGL.GLU', 0, 0, -1), ('os', 0, 0, -1), ('volume_render.VolumeRenderer', 0, 0, -1), ('volume_render', 0, 0, -1), ('sys', 0, 0, -1), ('scipy', 0, 1, -1), ('PyQt4.QtCore', 0, 0, -1), ('data_model.DataLoadModel', 0, 1, -1), ('data_model', 0, 1, -1), ('transform_matrices', 0, 0, -1), ('time', 0, 0, -1), ('PyQt4.QtOpenGL', 0, 0, -1), ('numpy', 0, 0, -1), ('OpenGL', 0, 0, -1), ('numpy.*', 0, 0, -1), ('PyQt4', 0, 0, -1), ('OpenGL.GLUT', 0, 0, -1), ('data_model.DemoData', 0, 1, -1), ('PyQt4.QtGui', 0, 0, -1), ('transform_matrices.*', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('quaternion.Quaternion', 0, 0, -1), ('OpenGL.GL.shaders', 0, 0, -1), ('scipy.linalg', 0, 1, -1)] binaries=[] datas=[]>
+spimagine.gui_mainwindow: None -> <PyModule 'spimagine.gui_mainwindow' /Users/mweigert/python/spimagine/spimagine/gui_mainwindow.pyc imports=[('keyframe_view.*', 0, 0, -1), ('data_model', 0, 0, -1), ('gui_glwidget.GLWidget', 0, 0, -1), ('quaternion', 0, 0, -1), ('data_model.DataLoadModel', 0, 0, -1), ('sys', 0, 0, -1), ('PyQt4.QtGui', 0, 0, -1), ('os', 0, 0, -1), ('keyframe_view', 0, 0, -1), ('data_model.DemoData', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1), ('PyQt4', 0, 0, -1), ('numpy', 0, 0, -1), ('quaternion.Quaternion', 0, 0, -1), ('gui_glwidget', 0, 0, -1)] binaries=[] datas=[]>
 spimagine.sys: None -> None
 spimagine.PyOCL: None -> None
 spimagine.spimagine: None -> None
@@ -3701,91 +3703,19 @@ PyQt4._qt: None -> None
   DEL PyQt4._qt
 PyQt4._qt: None -> None
   DEL PyQt4._qt
-SpimUtils.utils: None -> <PyModule 'SpimUtils.utils' /Users/mweigert/python/SpimUtils/SpimUtils/utils.pyc imports=[('re', 0, 0, -1), ('itertools', 0, 0, -1), ('os', 0, 0, -1), ('PIL', 0, 0, -1), ('numpy', 0, 0, -1), ('PIL.Image', 0, 0, -1)] binaries=[] datas=[]>
+SpimUtils.utils: None -> <PyModule 'SpimUtils.utils' /Users/mweigert/python/SpimUtils/SpimUtils/utils.pyc imports=[('re', 0, 0, -1), ('itertools', 0, 0, -1), ('PIL', 1, 0, -1), ('PIL.Image', 1, 0, -1), ('os', 0, 0, -1), ('PIL', 0, 0, -1), ('numpy', 0, 0, -1), ('PIL.Image', 0, 0, -1)] binaries=[] datas=[]>
+SpimUtils.test_images: None -> <PyModule 'SpimUtils.test_images' /Users/mweigert/python/SpimUtils/SpimUtils/test_images.pyc imports=[('os', 0, 0, -1), ('SpimUtils.utils.openImageFile', 0, 0, -1), ('scipy.misc', 0, 0, -1), ('SpimUtils.fromSpimFolder', 0, 0, -1), ('SpimUtils.utils', 0, 0, -1), ('scipy.misc.lena', 0, 0, -1), ('SpimUtils.utils.read3dTiff', 0, 0, -1), ('SpimUtils', 0, 0, -1)] binaries=[] datas=[]>
 SpimUtils.re: None -> None
 SpimUtils.itertools: None -> None
-SpimUtils.os: None -> None
 SpimUtils.PIL: None -> None
+SpimUtils.os: None -> None
 SpimUtils.numpy: None -> None
-scipy.linalg.decomp_lu: None -> <PyModule 'scipy.linalg.decomp_lu' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_lu.pyc imports=[('numpy.asarray', 0, 0, -1), ('flinalg.get_flinalg_funcs', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('warnings', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('flinalg', 0, 0, -1), ('misc', 0, 0, -1), ('warnings.warn', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.numpy: None -> None
-scipy.linalg._solvers: None -> <PyModule 'scipy.linalg._solvers' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_solvers.pyc imports=[('numpy.linalg.inv', 0, 0, -1), ('basic.solve', 0, 0, -1), ('special_matrices', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('special_matrices.kron', 0, 0, -1), ('numpy.linalg.LinAlgError', 0, 0, -1), ('numpy.linalg', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('basic', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.misc: None -> <PyModule 'scipy.linalg.misc' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/misc.pyc imports=[('numpy.linalg.LinAlgError', 0, 0, -1), ('numpy', 0, 0, -1), ('fblas', 0, 0, -1), ('numpy.linalg', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.decomp_schur: None -> <PyModule 'scipy.linalg.decomp_schur' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_schur.pyc imports=[('numpy.single', 0, 0, -1), ('decomp', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1), ('decomp.eigvals', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.decomp_svd: None -> <PyModule 'scipy.linalg.decomp_svd' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_svd.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('numpy.r_', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.zeros', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.decomp: None -> <PyModule 'scipy.linalg.decomp' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp.pyc imports=[('numpy.nonzero', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('numpy.conj', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.cast', 0, 0, -1), ('numpy.ones', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('numpy.isfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('numpy.zeros', 0, 0, -1), ('blas', 0, 0, -1), ('numpy.array', 0, 0, -1), ('numpy.inexact', 0, 0, -1), ('numpy', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.flatnonzero', 0, 0, -1), ('numpy.asarray', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('numpy.iscomplexobj', 0, 0, -1), ('blas.get_blas_funcs', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.special_matrices: None -> <PyModule 'scipy.linalg.special_matrices' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/special_matrices.pyc imports=[('numpy', 0, 0, -1), ('scipy.misc', 0, 0, -1), ('scipy.misc.comb', 0, 0, -1), ('math', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.decomp_qr: None -> <PyModule 'scipy.linalg.decomp_qr' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_qr.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('lapack.find_best_lapack_type', 0, 0, -1), ('blas.get_blas_funcs', 0, 0, -1), ('misc', 0, 0, -1), ('blas', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg._decomp_qz: None -> <PyModule 'scipy.linalg._decomp_qz' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_decomp_qz.pyc imports=[('numpy.single', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('warnings', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.decomp_cholesky: None -> <PyModule 'scipy.linalg.decomp_cholesky' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_cholesky.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-numpy.testing.Tester: None -> None
-  DEL numpy.testing.Tester
-scipy.linalg.matfuncs: None -> <PyModule 'scipy.linalg.matfuncs' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/matfuncs.pyc imports=[('special_matrices.triu', 0, 0, -1), ('misc.norm', 0, 0, -1), ('numpy.log', 0, 0, -1), ('numpy.imag', 0, 0, -1), ('warnings', 0, 0, -1), ('numpy.ceil', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.ravel', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('numpy.cast', 0, 0, -1), ('decomp_svd.orth', 0, 0, -1), ('numpy.single', 0, 0, -1), ('numpy.conjugate', 0, 0, -1), ('numpy.eye', 0, 0, -1), ('numpy.identity', 0, 0, -1), ('decomp_schur.rsf2csf', 0, 0, -1), ('numpy.isfinite', 0, 0, -1), ('numpy.exp', 0, 0, -1), ('numpy.transpose', 0, 0, -1), ('numpy.absolute', 0, 0, -1), ('numpy.sign', 0, 0, -1), ('decomp_svd', 0, 0, -1), ('basic', 0, 0, -1), ('numpy.logical_not', 0, 0, -1), ('decomp', 0, 0, -1), ('numpy.ogrid', 0, 0, -1), ('numpy', 0, 0, -1), ('basic.inv', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('decomp.eig', 0, 0, -1), ('numpy.sqrt', 0, 0, -1), ('decomp_svd.svd', 0, 0, -1), ('basic.solve', 0, 0, -1), ('special_matrices', 0, 0, -1), ('numpy.asarray', 0, 0, -1), ('numpy.Inf', 0, 0, -1), ('numpy.dot', 0, 0, -1), ('numpy.matrix', 0, 0, -1), ('numpy.log2', 0, 0, -1), ('numpy.real', 0, 0, -1), ('special_matrices.all_mat', 0, 0, -1), ('numpy.amax', 0, 0, -1), ('numpy.floor', 0, 0, -1), ('numpy.product', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.blas: None -> <PyModule 'scipy.linalg.blas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/blas.pyc imports=[('numpy', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('scipy.linalg.fblas', 0, 0, -1), ('scipy.linalg.cblas', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.basic: None -> <PyModule 'scipy.linalg.basic' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/basic.pyc imports=[('decomp_svd', 0, 0, -1), ('flinalg.get_flinalg_funcs', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('flinalg', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.linalg_version: None -> <PyModule 'scipy.linalg.linalg_version' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/linalg_version.pyc imports=[] binaries=[] datas=[]>
-numpy.asarray: None -> None
-  DEL numpy.asarray
-scipy.linalg.flinalg: None -> <PyModule 'scipy.linalg.flinalg' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/flinalg.pyc imports=[('_flinalg', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.lapack: None -> <PyModule 'scipy.linalg.lapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/lapack.pyc imports=[('numpy', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('scipy.linalg.clapack', 0, 0, -1), ('scipy.linalg.flapack', 0, 0, -1), ('types', 0, 0, -1)] binaries=[] datas=[]>
-scipy.linalg.warnings: None -> None
-numpy.asarray_chkfinite: None -> None
-  DEL numpy.asarray_chkfinite
-scipy.linalg._flinalg: None -> <ExtensionModule 'scipy.linalg._flinalg' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_flinalg.so imports=[] binaries=[] datas=[]>
-scipy.linalg.scipy: None -> None
-scipy.linalg.clapack: None -> <ExtensionModule 'scipy.linalg.clapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/clapack.so imports=[] binaries=[] datas=[]>
-scipy.linalg.flapack: None -> <ExtensionModule 'scipy.linalg.flapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/flapack.so imports=[] binaries=[] datas=[]>
-scipy.linalg.types: None -> None
-numpy.linalg.LinAlgError: None -> None
-  DEL numpy.linalg.LinAlgError
-scipy.linalg.fblas: None -> <ExtensionModule 'scipy.linalg.fblas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/fblas.so imports=[] binaries=[] datas=[]>
-numpy.linalg.inv: None -> None
-  DEL numpy.linalg.inv
-numpy.linalg.LinAlgError: None -> None
-  DEL numpy.linalg.LinAlgError
-scipy.linalg.calc_lwork: None -> <ExtensionModule 'scipy.linalg.calc_lwork' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/calc_lwork.so imports=[] binaries=[] datas=[]>
-numpy.diag: None -> None
-  DEL numpy.diag
-numpy.asarray_chkfinite: None -> None
-  DEL numpy.asarray_chkfinite
-numpy.r_: None -> None
-  DEL numpy.r_
-numpy.zeros: None -> None
-  DEL numpy.zeros
-numpy.single: None -> None
-  DEL numpy.single
-numpy.asarray_chkfinite: None -> None
-  DEL numpy.asarray_chkfinite
-numpy.nonzero: None -> None
-  DEL numpy.nonzero
-numpy.diag: None -> None
-  DEL numpy.diag
-numpy.conj: None -> None
-  DEL numpy.conj
-numpy.cast: None -> None
-  DEL numpy.cast
-numpy.ones: None -> None
-  DEL numpy.ones
-numpy.isfinite: None -> None
-  DEL numpy.isfinite
-numpy.zeros: None -> None
-  DEL numpy.zeros
-numpy.array: None -> None
-  DEL numpy.array
-numpy.inexact: None -> None
-  DEL numpy.inexact
-numpy.flatnonzero: None -> None
-  DEL numpy.flatnonzero
-numpy.asarray: None -> None
-  DEL numpy.asarray
-numpy.asarray_chkfinite: None -> None
-  DEL numpy.asarray_chkfinite
-numpy.iscomplexobj: None -> None
-  DEL numpy.iscomplexobj
-scipy.linalg.cblas: None -> <ExtensionModule 'scipy.linalg.cblas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/cblas.so imports=[] binaries=[] datas=[]>
-scipy.misc.comb: None -> None
-  DEL scipy.misc.comb
-scipy.linalg.math: None -> None
+SpimUtils.SpimUtils: None -> None
+SpimUtils.scipy: None -> None
+SpimUtils.fromSpimFolder: None -> None
+  DEL SpimUtils.fromSpimFolder
+scipy.misc.lena: None -> None
+  DEL scipy.misc.lena
 scipy.misc.numpy: None -> None
 numpy.info: None -> None
   DEL numpy.info
@@ -3963,6 +3893,85 @@ numpy.floor: None -> None
   DEL numpy.floor
 numpy.extract: None -> None
   DEL numpy.extract
+scipy.linalg.decomp_lu: None -> <PyModule 'scipy.linalg.decomp_lu' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_lu.pyc imports=[('numpy.asarray', 0, 0, -1), ('flinalg.get_flinalg_funcs', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('warnings', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('flinalg', 0, 0, -1), ('misc', 0, 0, -1), ('warnings.warn', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.numpy: None -> None
+scipy.linalg._solvers: None -> <PyModule 'scipy.linalg._solvers' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_solvers.pyc imports=[('numpy.linalg.inv', 0, 0, -1), ('basic.solve', 0, 0, -1), ('special_matrices', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('special_matrices.kron', 0, 0, -1), ('numpy.linalg.LinAlgError', 0, 0, -1), ('numpy.linalg', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('basic', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.misc: None -> <PyModule 'scipy.linalg.misc' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/misc.pyc imports=[('numpy.linalg.LinAlgError', 0, 0, -1), ('numpy', 0, 0, -1), ('fblas', 0, 0, -1), ('numpy.linalg', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.decomp_schur: None -> <PyModule 'scipy.linalg.decomp_schur' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_schur.pyc imports=[('numpy.single', 0, 0, -1), ('decomp', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1), ('decomp.eigvals', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.decomp_svd: None -> <PyModule 'scipy.linalg.decomp_svd' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_svd.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('numpy.r_', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.zeros', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.decomp: None -> <PyModule 'scipy.linalg.decomp' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp.pyc imports=[('numpy.nonzero', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('numpy.conj', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.cast', 0, 0, -1), ('numpy.ones', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('numpy.isfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('numpy.zeros', 0, 0, -1), ('blas', 0, 0, -1), ('numpy.array', 0, 0, -1), ('numpy.inexact', 0, 0, -1), ('numpy', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.flatnonzero', 0, 0, -1), ('numpy.asarray', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('numpy.iscomplexobj', 0, 0, -1), ('blas.get_blas_funcs', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.special_matrices: None -> <PyModule 'scipy.linalg.special_matrices' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/special_matrices.pyc imports=[('numpy', 0, 0, -1), ('scipy.misc', 0, 0, -1), ('scipy.misc.comb', 0, 0, -1), ('math', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.decomp_qr: None -> <PyModule 'scipy.linalg.decomp_qr' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_qr.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('lapack.find_best_lapack_type', 0, 0, -1), ('blas.get_blas_funcs', 0, 0, -1), ('misc', 0, 0, -1), ('blas', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg._decomp_qz: None -> <PyModule 'scipy.linalg._decomp_qz' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_decomp_qz.pyc imports=[('numpy.single', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('warnings', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.decomp_cholesky: None -> <PyModule 'scipy.linalg.decomp_cholesky' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/decomp_cholesky.pyc imports=[('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('numpy.asarray_chkfinite', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+numpy.testing.Tester: None -> None
+  DEL numpy.testing.Tester
+scipy.linalg.matfuncs: None -> <PyModule 'scipy.linalg.matfuncs' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/matfuncs.pyc imports=[('special_matrices.triu', 0, 0, -1), ('misc.norm', 0, 0, -1), ('numpy.log', 0, 0, -1), ('numpy.imag', 0, 0, -1), ('warnings', 0, 0, -1), ('numpy.ceil', 0, 0, -1), ('numpy.diag', 0, 0, -1), ('misc', 0, 0, -1), ('numpy.ravel', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('numpy.cast', 0, 0, -1), ('decomp_svd.orth', 0, 0, -1), ('numpy.single', 0, 0, -1), ('numpy.conjugate', 0, 0, -1), ('numpy.eye', 0, 0, -1), ('numpy.identity', 0, 0, -1), ('decomp_schur.rsf2csf', 0, 0, -1), ('numpy.isfinite', 0, 0, -1), ('numpy.exp', 0, 0, -1), ('numpy.transpose', 0, 0, -1), ('numpy.absolute', 0, 0, -1), ('numpy.sign', 0, 0, -1), ('decomp_svd', 0, 0, -1), ('basic', 0, 0, -1), ('numpy.logical_not', 0, 0, -1), ('decomp', 0, 0, -1), ('numpy.ogrid', 0, 0, -1), ('numpy', 0, 0, -1), ('basic.inv', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('decomp.eig', 0, 0, -1), ('numpy.sqrt', 0, 0, -1), ('decomp_svd.svd', 0, 0, -1), ('basic.solve', 0, 0, -1), ('special_matrices', 0, 0, -1), ('numpy.asarray', 0, 0, -1), ('numpy.Inf', 0, 0, -1), ('numpy.dot', 0, 0, -1), ('numpy.matrix', 0, 0, -1), ('numpy.log2', 0, 0, -1), ('numpy.real', 0, 0, -1), ('special_matrices.all_mat', 0, 0, -1), ('numpy.amax', 0, 0, -1), ('numpy.floor', 0, 0, -1), ('numpy.product', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.blas: None -> <PyModule 'scipy.linalg.blas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/blas.pyc imports=[('numpy', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('scipy.linalg.fblas', 0, 0, -1), ('scipy.linalg.cblas', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.basic: None -> <PyModule 'scipy.linalg.basic' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/basic.pyc imports=[('decomp_svd', 0, 0, -1), ('flinalg.get_flinalg_funcs', 0, 0, -1), ('numpy', 0, 0, -1), ('lapack.get_lapack_funcs', 0, 0, -1), ('misc._datacopied', 0, 0, -1), ('scipy.linalg.calc_lwork', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('decomp_schur', 0, 0, -1), ('flinalg', 0, 0, -1), ('misc.LinAlgError', 0, 0, -1), ('misc', 0, 0, -1), ('decomp_schur.schur', 0, 0, -1), ('lapack', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.linalg_version: None -> <PyModule 'scipy.linalg.linalg_version' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/linalg_version.pyc imports=[] binaries=[] datas=[]>
+numpy.asarray: None -> None
+  DEL numpy.asarray
+scipy.linalg.flinalg: None -> <PyModule 'scipy.linalg.flinalg' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/flinalg.pyc imports=[('_flinalg', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.lapack: None -> <PyModule 'scipy.linalg.lapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/lapack.pyc imports=[('numpy', 0, 0, -1), ('scipy.linalg', 0, 0, -1), ('scipy.linalg.clapack', 0, 0, -1), ('scipy.linalg.flapack', 0, 0, -1), ('types', 0, 0, -1)] binaries=[] datas=[]>
+scipy.linalg.warnings: None -> None
+numpy.asarray_chkfinite: None -> None
+  DEL numpy.asarray_chkfinite
+scipy.linalg._flinalg: None -> <ExtensionModule 'scipy.linalg._flinalg' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/_flinalg.so imports=[] binaries=[] datas=[]>
+scipy.linalg.scipy: None -> None
+scipy.linalg.clapack: None -> <ExtensionModule 'scipy.linalg.clapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/clapack.so imports=[] binaries=[] datas=[]>
+scipy.linalg.flapack: None -> <ExtensionModule 'scipy.linalg.flapack' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/flapack.so imports=[] binaries=[] datas=[]>
+scipy.linalg.types: None -> None
+numpy.linalg.LinAlgError: None -> None
+  DEL numpy.linalg.LinAlgError
+scipy.linalg.fblas: None -> <ExtensionModule 'scipy.linalg.fblas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/fblas.so imports=[] binaries=[] datas=[]>
+numpy.linalg.inv: None -> None
+  DEL numpy.linalg.inv
+numpy.linalg.LinAlgError: None -> None
+  DEL numpy.linalg.LinAlgError
+scipy.linalg.calc_lwork: None -> <ExtensionModule 'scipy.linalg.calc_lwork' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/calc_lwork.so imports=[] binaries=[] datas=[]>
+numpy.diag: None -> None
+  DEL numpy.diag
+numpy.asarray_chkfinite: None -> None
+  DEL numpy.asarray_chkfinite
+numpy.r_: None -> None
+  DEL numpy.r_
+numpy.zeros: None -> None
+  DEL numpy.zeros
+numpy.single: None -> None
+  DEL numpy.single
+numpy.asarray_chkfinite: None -> None
+  DEL numpy.asarray_chkfinite
+numpy.nonzero: None -> None
+  DEL numpy.nonzero
+numpy.diag: None -> None
+  DEL numpy.diag
+numpy.conj: None -> None
+  DEL numpy.conj
+numpy.cast: None -> None
+  DEL numpy.cast
+numpy.ones: None -> None
+  DEL numpy.ones
+numpy.isfinite: None -> None
+  DEL numpy.isfinite
+numpy.zeros: None -> None
+  DEL numpy.zeros
+numpy.array: None -> None
+  DEL numpy.array
+numpy.inexact: None -> None
+  DEL numpy.inexact
+numpy.flatnonzero: None -> None
+  DEL numpy.flatnonzero
+numpy.asarray: None -> None
+  DEL numpy.asarray
+numpy.asarray_chkfinite: None -> None
+  DEL numpy.asarray_chkfinite
+numpy.iscomplexobj: None -> None
+  DEL numpy.iscomplexobj
+scipy.linalg.cblas: None -> <ExtensionModule 'scipy.linalg.cblas' /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/scipy/linalg/cblas.so imports=[] binaries=[] datas=[]>
+scipy.misc.comb: None -> None
+  DEL scipy.misc.comb
+scipy.linalg.math: None -> None
 numpy.single: None -> None
   DEL numpy.single
 numpy.asarray_chkfinite: None -> None
@@ -4024,6 +4033,337 @@ numpy.floor: None -> None
 numpy.product: None -> None
   DEL numpy.product
 spimagine.quaternion: None -> <PyModule 'spimagine.quaternion' /Users/mweigert/python/spimagine/spimagine/quaternion.pyc imports=[('numpy', 0, 0, -1)] binaries=[] datas=[]>
+spimagine.OpenGL: None -> None
+PyQt4.QtOpenGL: None -> <ExtensionModule 'PyQt4.QtOpenGL' /usr/local/lib/python2.7/site-packages/PyQt4/QtOpenGL.so imports=[('sip', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1), ('PyQt4.QtGui', 0, 0, -1), ('PyQt4._qt', 0, 0, -1)] binaries=[] datas=[]>
+numpy.ModuleDeprecationWarning: None -> None
+OpenGL.GLUT: None -> <PkgModule 'OpenGL.GLUT' /Library/Python/2.7/site-packages/OpenGL/GLUT/__init__.pyc imports=[('OpenGL.GLUT.special', 0, 0, -1), ('OpenGL.GLUT.freeglut', 0, 0, -1), ('OpenGL.raw.GLUT.*', 0, 0, -1), ('OpenGL.GLUT.osx', 0, 0, -1), ('OpenGL.GLUT.special.*', 0, 0, -1), ('OpenGL.GLUT.fonts.*', 0, 0, -1), ('OpenGL.GLUT.fonts', 0, 0, -1), ('OpenGL.raw.GLUT', 0, 0, -1), ('OpenGL.GLUT.osx.*', 0, 0, -1), ('OpenGL.GLUT.freeglut.*', 0, 0, -1)] binaries=[] datas=[]>
+PyQt4.QtGui: None -> <ExtensionModule 'PyQt4.QtGui' /usr/local/lib/python2.7/site-packages/PyQt4/QtGui.so imports=[('sip', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1), ('PyQt4._qt', 0, 0, -1)] binaries=[('qt4_plugins/accessible/libqtaccessiblewidgets.dylib', '/usr/local/Cellar/qt/HEAD/plugins/accessible/libqtaccessiblewidgets.dylib', 'BINARY'), ('qt4_plugins/iconengines/libqsvgicon.dylib', '/usr/local/Cellar/qt/HEAD/plugins/iconengines/libqsvgicon.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqgif.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqgif.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqico.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqico.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqjpeg.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqjpeg.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqmng.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqmng.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqsvg.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqsvg.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqtga.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqtga.dylib', 'BINARY'), ('qt4_plugins/imageformats/libqtiff.dylib', '/usr/local/Cellar/qt/HEAD/plugins/imageformats/libqtiff.dylib', 'BINARY'), ('qt4_plugins/graphicssystems/libqglgraphicssystem.dylib', '/usr/local/Cellar/qt/HEAD/plugins/graphicssystems/libqglgraphicssystem.dylib', 'BINARY'), ('qt4_plugins/graphicssystems/libqtracegraphicssystem.dylib', '/usr/local/Cellar/qt/HEAD/plugins/graphicssystems/libqtracegraphicssystem.dylib', 'BINARY')] datas=[]>
+OpenGL.GL.shaders: None -> <PyModule 'OpenGL.GL.shaders' /Library/Python/2.7/site-packages/OpenGL/GL/shaders.pyc imports=[('OpenGL.GL.ARB.vertex_program', 0, 0, -1), ('OpenGL.arrays.GLbyteArray', 1, 0, -1), ('OpenGL.GL.ARB.vertex_shader', 0, 0, -1), ('OpenGL.constants.GLint', 1, 0, -1), ('OpenGL.GL.ARB.fragment_shader', 0, 0, -1), ('OpenGL.extensions.alternate', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.GL.ARB.separate_shader_objects', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.extensions', 0, 0, -1), ('logging', 0, 0, -1), ('OpenGL.GL.ARB', 0, 0, -1), ('OpenGL.arrays', 1, 0, -1), ('OpenGL.GL.ARB.geometry_shader4', 0, 0, -1), ('OpenGL.constants', 1, 0, -1), ('OpenGL.GL.ARB.shader_objects', 0, 0, -1), ('OpenGL.GL.ARB.get_program_binary', 0, 0, -1), ('OpenGL.constants.GLenum', 1, 0, -1)] binaries=[] datas=[]>
+PyQt4._qt: None -> None
+  DEL PyQt4._qt
+PyQt4._qt: None -> None
+  DEL PyQt4._qt
+OpenGL.GLUT.OpenGL: None -> None
+OpenGL.GLUT.special: None -> <PyModule 'OpenGL.GLUT.special' /Library/Python/2.7/site-packages/OpenGL/GLUT/special.pyc imports=[('OpenGL.platform.GLUT', 0, 0, -1), ('OpenGL._bytes.as_8_bit', 0, 0, -1), ('OpenGL.logs', 0, 0, -1), ('os', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.raw.GLUT', 0, 0, -1), ('OpenGL.error', 0, 0, -1), ('sys', 0, 0, -1), ('OpenGL.contextdata', 0, 0, -1), ('OpenGL._bytes.bytes', 0, 0, -1), ('OpenGL.platform.GLUT_GUARD_CALLBACKS', 0, 0, -1), ('OpenGL.raw', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.error', 1, 0, -1), ('OpenGL._bytes', 0, 0, -1), ('sys', 0, 1, -1), ('os', 1, 0, -1), ('ctypes', 0, 0, -1), ('OpenGL._bytes._NULL_8_BYTE', 0, 0, -1), ('OpenGL.platform.CurrentContextIsValid', 0, 0, -1), ('traceback', 0, 0, -1), ('OpenGL', 1, 0, -1)] binaries=[] datas=[]>
+OpenGL.GLUT.freeglut: None -> <PyModule 'OpenGL.GLUT.freeglut' /Library/Python/2.7/site-packages/OpenGL/GLUT/freeglut.pyc imports=[('ctypes', 0, 0, -1), ('OpenGL.constants.*', 0, 0, -1), ('OpenGL.GLUT.special', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GLUT', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GLUT: None -> <PkgModule 'OpenGL.raw.GLUT' /Library/Python/2.7/site-packages/OpenGL/raw/GLUT/__init__.pyc imports=[('ctypes', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.constant.Constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.constants.GLenum', 0, 0, -1), ('OpenGL.raw.GLUT.constants', 0, 0, -1), ('OpenGL.constants.GLint', 0, 0, -1), ('OpenGL.constants.GLdouble', 0, 0, -1), ('OpenGL.constants.GLfloat', 0, 0, -1), ('ctypes.*', 0, 0, -1), ('OpenGL.raw.GLUT.constants.*', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GLUT.glutWireTorus: None -> None
+OpenGL.raw.GLUT.glutWireTetrahedron: None -> None
+OpenGL.raw.GLUT.glutWireTeapot: None -> None
+OpenGL.raw.GLUT.glutWireSphere: None -> None
+OpenGL.raw.GLUT.glutWireOctahedron: None -> None
+OpenGL.raw.GLUT.glutWireIcosahedron: None -> None
+OpenGL.raw.GLUT.glutWireDodecahedron: None -> None
+OpenGL.raw.GLUT.glutWireCube: None -> None
+OpenGL.raw.GLUT.glutWireCone: None -> None
+OpenGL.raw.GLUT.glutWindowStatusFunc: None -> None
+OpenGL.raw.GLUT.glutWarpPointer: None -> None
+OpenGL.raw.GLUT.glutVisibilityFunc: None -> None
+OpenGL.raw.GLUT.glutVideoResizeGet: None -> None
+OpenGL.raw.GLUT.glutVideoResize: None -> None
+OpenGL.raw.GLUT.glutVideoPan: None -> None
+OpenGL.raw.GLUT.glutUseLayer: None -> None
+OpenGL.raw.GLUT.glutTimerFunc: None -> None
+OpenGL.raw.GLUT.glutTabletMotionFunc: None -> None
+OpenGL.raw.GLUT.glutTabletButtonFunc: None -> None
+OpenGL.raw.GLUT.glutSwapBuffers: None -> None
+OpenGL.raw.GLUT.glutStrokeWidth: None -> None
+OpenGL.raw.GLUT.glutStrokeLength: None -> None
+OpenGL.raw.GLUT.glutStrokeCharacter: None -> None
+OpenGL.raw.GLUT.glutStopVideoResizing: None -> None
+OpenGL.raw.GLUT.glutSpecialUpFunc: None -> None
+OpenGL.raw.GLUT.glutSpecialFunc: None -> None
+OpenGL.raw.GLUT.glutSpaceballRotateFunc: None -> None
+OpenGL.raw.GLUT.glutSpaceballMotionFunc: None -> None
+OpenGL.raw.GLUT.glutSpaceballButtonFunc: None -> None
+OpenGL.raw.GLUT.glutSolidTorus: None -> None
+OpenGL.raw.GLUT.glutSolidTetrahedron: None -> None
+OpenGL.raw.GLUT.glutSolidTeapot: None -> None
+OpenGL.raw.GLUT.glutSolidSphere: None -> None
+OpenGL.raw.GLUT.glutSolidOctahedron: None -> None
+OpenGL.raw.GLUT.glutSolidIcosahedron: None -> None
+OpenGL.raw.GLUT.glutSolidDodecahedron: None -> None
+OpenGL.raw.GLUT.glutSolidCube: None -> None
+OpenGL.raw.GLUT.glutSolidCone: None -> None
+OpenGL.raw.GLUT.glutShowWindow: None -> None
+OpenGL.raw.GLUT.glutShowOverlay: None -> None
+OpenGL.raw.GLUT.glutSetupVideoResizing: None -> None
+OpenGL.raw.GLUT.glutSetWindowTitle: None -> None
+OpenGL.raw.GLUT.glutSetWindow: None -> None
+OpenGL.raw.GLUT.glutSetMenu: None -> None
+OpenGL.raw.GLUT.glutSetKeyRepeat: None -> None
+OpenGL.raw.GLUT.glutSetIconTitle: None -> None
+OpenGL.raw.GLUT.glutSetCursor: None -> None
+OpenGL.raw.GLUT.glutSetColor: None -> None
+OpenGL.raw.GLUT.glutReshapeWindow: None -> None
+OpenGL.raw.GLUT.glutReshapeFunc: None -> None
+OpenGL.raw.GLUT.glutReportErrors: None -> None
+OpenGL.raw.GLUT.glutRemoveOverlay: None -> None
+OpenGL.raw.GLUT.glutRemoveMenuItem: None -> None
+OpenGL.raw.GLUT.glutPushWindow: None -> None
+OpenGL.raw.GLUT.glutPostWindowRedisplay: None -> None
+OpenGL.raw.GLUT.glutPostWindowOverlayRedisplay: None -> None
+OpenGL.raw.GLUT.glutPostRedisplay: None -> None
+OpenGL.raw.GLUT.glutPostOverlayRedisplay: None -> None
+OpenGL.raw.GLUT.glutPositionWindow: None -> None
+OpenGL.raw.GLUT.glutPopWindow: None -> None
+OpenGL.raw.GLUT.glutPassiveMotionFunc: None -> None
+OpenGL.raw.GLUT.glutOverlayDisplayFunc: None -> None
+OpenGL.raw.GLUT.glutMouseFunc: None -> None
+OpenGL.raw.GLUT.glutMotionFunc: None -> None
+OpenGL.raw.GLUT.glutMenuStatusFunc: None -> None
+OpenGL.raw.GLUT.glutMenuStateFunc: None -> None
+OpenGL.raw.GLUT.glutMainLoop: None -> None
+OpenGL.raw.GLUT.glutLeaveGameMode: None -> None
+OpenGL.raw.GLUT.glutLayerGet: None -> None
+OpenGL.raw.GLUT.glutKeyboardUpFunc: None -> None
+OpenGL.raw.GLUT.glutKeyboardFunc: None -> None
+OpenGL.raw.GLUT.glutJoystickFunc: None -> None
+OpenGL.raw.GLUT.glutInitWindowSize: None -> None
+OpenGL.raw.GLUT.glutInitWindowPosition: None -> None
+OpenGL.raw.GLUT.glutInitDisplayString: None -> None
+OpenGL.raw.GLUT.glutInitDisplayMode: None -> None
+OpenGL.raw.GLUT.glutInit: None -> None
+OpenGL.raw.GLUT.glutIgnoreKeyRepeat: None -> None
+OpenGL.raw.GLUT.glutIdleFunc: None -> None
+OpenGL.raw.GLUT.glutIconifyWindow: None -> None
+OpenGL.raw.GLUT.glutHideWindow: None -> None
+OpenGL.raw.GLUT.glutHideOverlay: None -> None
+OpenGL.raw.GLUT.glutGetWindow: None -> None
+OpenGL.raw.GLUT.glutGetModifiers: None -> None
+OpenGL.raw.GLUT.glutGetMenu: None -> None
+OpenGL.raw.GLUT.glutGetColor: None -> None
+OpenGL.raw.GLUT.glutGet: None -> None
+OpenGL.raw.GLUT.glutGameModeString: None -> None
+OpenGL.raw.GLUT.glutGameModeGet: None -> None
+OpenGL.raw.GLUT.glutFullScreen: None -> None
+OpenGL.raw.GLUT.glutForceJoystickFunc: None -> None
+OpenGL.raw.GLUT.glutExtensionSupported: None -> None
+OpenGL.raw.GLUT.glutEstablishOverlay: None -> None
+OpenGL.raw.GLUT.glutEntryFunc: None -> None
+OpenGL.raw.GLUT.glutEnterGameMode: None -> None
+OpenGL.raw.GLUT.glutDisplayFunc: None -> None
+OpenGL.raw.GLUT.glutDialsFunc: None -> None
+OpenGL.raw.GLUT.glutDeviceGet: None -> None
+OpenGL.raw.GLUT.glutDetachMenu: None -> None
+OpenGL.raw.GLUT.glutDestroyWindow: None -> None
+OpenGL.raw.GLUT.glutDestroyMenu: None -> None
+OpenGL.raw.GLUT.glutCreateWindow: None -> None
+OpenGL.raw.GLUT.glutCreateSubWindow: None -> None
+OpenGL.raw.GLUT.glutCreateMenu: None -> None
+OpenGL.raw.GLUT.glutCopyColormap: None -> None
+OpenGL.raw.GLUT.glutChangeToSubMenu: None -> None
+OpenGL.raw.GLUT.glutChangeToMenuEntry: None -> None
+OpenGL.raw.GLUT.glutButtonBoxFunc: None -> None
+OpenGL.raw.GLUT.glutBitmapWidth: None -> None
+OpenGL.raw.GLUT.glutBitmapLength: None -> None
+OpenGL.raw.GLUT.glutBitmapCharacter: None -> None
+OpenGL.raw.GLUT.glutAttachMenu: None -> None
+OpenGL.raw.GLUT.glutAddSubMenu: None -> None
+OpenGL.raw.GLUT.glutAddMenuEntry: None -> None
+OpenGL.raw.GLUT.GLint: None -> None
+OpenGL.raw.GLUT.GLfloat: None -> None
+OpenGL.raw.GLUT.GLenum: None -> None
+OpenGL.raw.GLUT.GLdouble: None -> None
+OpenGL.raw.GLUT.GLUT_XLIB_IMPLEMENTATION: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_Y: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_X: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_WIDTH: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_STEREO: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_STENCIL_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_RGBA: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_RED_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_PARENT: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_NUM_SAMPLES: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_NUM_CHILDREN: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_HEIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_GREEN_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_FORMAT_ID: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_DOUBLEBUFFER: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_DEPTH_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_CURSOR: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_COLORMAP_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_BUFFER_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_BLUE_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_ALPHA_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_ACCUM_RED_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_ACCUM_GREEN_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_ACCUM_BLUE_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_WINDOW_ACCUM_ALPHA_SIZE: None -> None
+OpenGL.raw.GLUT.GLUT_VISIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_Y_DELTA: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_Y: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_X_DELTA: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_X: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_WIDTH_DELTA: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_WIDTH: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_POSSIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_IN_USE: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_HEIGHT_DELTA: None -> None
+OpenGL.raw.GLUT.GLUT_VIDEO_RESIZE_HEIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_UP: None -> None
+OpenGL.raw.GLUT.GLUT_TRANSPARENT_INDEX: None -> None
+OpenGL.raw.GLUT.GLUT_STEREO: None -> None
+OpenGL.raw.GLUT.GLUT_STENCIL: None -> None
+OpenGL.raw.GLUT.GLUT_SINGLE: None -> None
+OpenGL.raw.GLUT.GLUT_SCREEN_WIDTH_MM: None -> None
+OpenGL.raw.GLUT.GLUT_SCREEN_WIDTH: None -> None
+OpenGL.raw.GLUT.GLUT_SCREEN_HEIGHT_MM: None -> None
+OpenGL.raw.GLUT.GLUT_SCREEN_HEIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_RIGHT_BUTTON: None -> None
+OpenGL.raw.GLUT.GLUT_RGBA: None -> None
+OpenGL.raw.GLUT.GLUT_RGB: None -> None
+OpenGL.raw.GLUT.GLUT_RED: None -> None
+OpenGL.raw.GLUT.GLUT_PARTIALLY_RETAINED: None -> None
+OpenGL.raw.GLUT.GLUT_OWNS_JOYSTICK: None -> None
+OpenGL.raw.GLUT.GLUT_OVERLAY_POSSIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_OVERLAY_DAMAGED: None -> None
+OpenGL.raw.GLUT.GLUT_OVERLAY: None -> None
+OpenGL.raw.GLUT.GLUT_NUM_TABLET_BUTTONS: None -> None
+OpenGL.raw.GLUT.GLUT_NUM_SPACEBALL_BUTTONS: None -> None
+OpenGL.raw.GLUT.GLUT_NUM_MOUSE_BUTTONS: None -> None
+OpenGL.raw.GLUT.GLUT_NUM_DIALS: None -> None
+OpenGL.raw.GLUT.GLUT_NUM_BUTTON_BOX_BUTTONS: None -> None
+OpenGL.raw.GLUT.GLUT_NOT_VISIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_NORMAL_DAMAGED: None -> None
+OpenGL.raw.GLUT.GLUT_NORMAL: None -> None
+OpenGL.raw.GLUT.GLUT_MULTISAMPLE: None -> None
+OpenGL.raw.GLUT.GLUT_MIDDLE_BUTTON: None -> None
+OpenGL.raw.GLUT.GLUT_MENU_NUM_ITEMS: None -> None
+OpenGL.raw.GLUT.GLUT_MENU_NOT_IN_USE: None -> None
+OpenGL.raw.GLUT.GLUT_MENU_IN_USE: None -> None
+OpenGL.raw.GLUT.GLUT_LUMINANCE: None -> None
+OpenGL.raw.GLUT.GLUT_LEFT_BUTTON: None -> None
+OpenGL.raw.GLUT.GLUT_LEFT: None -> None
+OpenGL.raw.GLUT.GLUT_LAYER_IN_USE: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_UP: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_RIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_REPEAT_ON: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_REPEAT_OFF: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_REPEAT_DEFAULT: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_PAGE_UP: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_PAGE_DOWN: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_LEFT: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_INSERT: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_HOME: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F9: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F8: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F7: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F6: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F5: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F4: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F3: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F2: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F12: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F11: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F10: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_F1: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_END: None -> None
+OpenGL.raw.GLUT.GLUT_KEY_DOWN: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_POLL_RATE: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_BUTTON_D: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_BUTTON_C: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_BUTTON_B: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_BUTTON_A: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_BUTTONS: None -> None
+OpenGL.raw.GLUT.GLUT_JOYSTICK_AXES: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_WINDOW_Y: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_WINDOW_X: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_WINDOW_WIDTH: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_WINDOW_HEIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_STATE: None -> None
+OpenGL.raw.GLUT.GLUT_INIT_DISPLAY_MODE: None -> None
+OpenGL.raw.GLUT.GLUT_INDEX: None -> None
+OpenGL.raw.GLUT.GLUT_HIDDEN: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_TABLET: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_SPACEBALL: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_OVERLAY: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_MOUSE: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_KEYBOARD: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_JOYSTICK: None -> None
+OpenGL.raw.GLUT.GLUT_HAS_DIAL_AND_BUTTON_BOX: None -> None
+OpenGL.raw.GLUT.GLUT_GREEN: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_WIDTH: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_REFRESH_RATE: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_POSSIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_PIXEL_DEPTH: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_HEIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_DISPLAY_CHANGED: None -> None
+OpenGL.raw.GLUT.GLUT_GAME_MODE_ACTIVE: None -> None
+OpenGL.raw.GLUT.GLUT_FULLY_RETAINED: None -> None
+OpenGL.raw.GLUT.GLUT_FULLY_COVERED: None -> None
+OpenGL.raw.GLUT.GLUT_ENTERED: None -> None
+OpenGL.raw.GLUT.GLUT_ELAPSED_TIME: None -> None
+OpenGL.raw.GLUT.GLUT_DOWN: None -> None
+OpenGL.raw.GLUT.GLUT_DOUBLE: None -> None
+OpenGL.raw.GLUT.GLUT_DISPLAY_MODE_POSSIBLE: None -> None
+OpenGL.raw.GLUT.GLUT_DEVICE_KEY_REPEAT: None -> None
+OpenGL.raw.GLUT.GLUT_DEVICE_IGNORE_KEY_REPEAT: None -> None
+OpenGL.raw.GLUT.GLUT_DEPTH: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_WAIT: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_UP_DOWN: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_TOP_SIDE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_TOP_RIGHT_CORNER: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_TOP_LEFT_CORNER: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_TEXT: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_SPRAY: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_RIGHT_SIDE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_RIGHT_ARROW: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_NONE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_LEFT_SIDE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_LEFT_RIGHT: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_LEFT_ARROW: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_INHERIT: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_INFO: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_HELP: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_FULL_CROSSHAIR: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_DESTROY: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_CYCLE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_CROSSHAIR: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_BOTTOM_SIDE: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_BOTTOM_RIGHT_CORNER: None -> None
+OpenGL.raw.GLUT.GLUT_CURSOR_BOTTOM_LEFT_CORNER: None -> None
+OpenGL.raw.GLUT.GLUT_BLUE: None -> None
+OpenGL.raw.GLUT.GLUT_API_VERSION: None -> None
+OpenGL.raw.GLUT.GLUT_ALPHA: None -> None
+OpenGL.raw.GLUT.GLUT_ACTIVE_SHIFT: None -> None
+OpenGL.raw.GLUT.GLUT_ACTIVE_CTRL: None -> None
+OpenGL.raw.GLUT.GLUT_ACTIVE_ALT: None -> None
+OpenGL.raw.GLUT.GLUT_ACCUM: None -> None
+OpenGL.GLUT.osx: None -> <PyModule 'OpenGL.GLUT.osx' /Library/Python/2.7/site-packages/OpenGL/GLUT/osx.pyc imports=[('OpenGL.platform', 0, 0, -1), ('OpenGL', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.GLUT.fonts: None -> <PyModule 'OpenGL.GLUT.fonts' /Library/Python/2.7/site-packages/OpenGL/GLUT/fonts.pyc imports=[('OpenGL.platform', 0, 0, -1), ('OpenGL', 0, 0, -1), ('logging', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.platform.GLUT: None -> None
+  DEL OpenGL.platform.GLUT
+OpenGL.GLUT.os: None -> None
+OpenGL.GLUT.sys: None -> None
+OpenGL.platform.GLUT_GUARD_CALLBACKS: None -> None
+  DEL OpenGL.platform.GLUT_GUARD_CALLBACKS
+OpenGL.GLUT.ctypes: None -> None
+OpenGL.platform.CurrentContextIsValid: None -> None
+  DEL OpenGL.platform.CurrentContextIsValid
+OpenGL.GLUT.traceback: None -> None
+OpenGL.raw.GLUT.ctypes: None -> None
+OpenGL.raw.GLUT.OpenGL: None -> None
+OpenGL.raw.GLUT.constants: None -> <PyModule 'OpenGL.raw.GLUT.constants' /Library/Python/2.7/site-packages/OpenGL/raw/GLUT/constants.pyc imports=[('ctypes', 0, 0, -1), ('ctypes.*', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.constant.Constant', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.GLUT.logging: None -> None
+OpenGL.GL.ARB.vertex_program: None -> <PyModule 'OpenGL.GL.ARB.vertex_program' /Library/Python/2.7/site-packages/OpenGL/GL/ARB/vertex_program.pyc imports=[('OpenGL.wrapper', 0, 0, -1), ('OpenGL.error', 0, 0, -1), ('OpenGL.arrays.arraydatatype.ArrayDatatype', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.lazywrapper', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.contextdata', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.raw.GL.ARB.vertex_program.*', 0, 0, -1), ('OpenGL.lazywrapper.lazy', 0, 0, -1), ('OpenGL.extensions', 0, 0, -1), ('OpenGL.arrays.arraydatatype', 0, 0, -1), ('ctypes', 0, 0, -1), ('OpenGL.raw.GL.ARB.vertex_program', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1), ('OpenGL.converters', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.arrays.GLbyteArray: None -> None
+  DEL OpenGL.arrays.GLbyteArray
+OpenGL.GL.ARB.vertex_shader: None -> <PyModule 'OpenGL.GL.ARB.vertex_shader' /Library/Python/2.7/site-packages/OpenGL/GL/ARB/vertex_shader.pyc imports=[('shader_objects', 0, 0, -1), ('OpenGL.wrapper', 0, 0, -1), ('shader_objects.glGetObjectParameterivARB', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL._bytes._NULL_8_BYTE', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.lazywrapper', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.lazywrapper.lazy', 0, 0, -1), ('OpenGL.extensions', 0, 0, -1), ('OpenGL._bytes', 0, 0, -1), ('ctypes', 0, 0, -1), ('OpenGL.raw.GL.ARB.vertex_shader.*', 0, 0, -1), ('OpenGL.raw.GL.ARB.vertex_shader', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL._bytes.bytes', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.GL.ARB.fragment_shader: None -> <PyModule 'OpenGL.GL.ARB.fragment_shader' /Library/Python/2.7/site-packages/OpenGL/GL/ARB/fragment_shader.pyc imports=[('OpenGL.wrapper', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.raw.GL.ARB.fragment_shader.*', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.extensions', 0, 0, -1), ('OpenGL.raw.GL.ARB.fragment_shader', 0, 0, -1), ('ctypes', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.GL.logging: None -> None
+OpenGL.GL.ARB.geometry_shader4: None -> <PyModule 'OpenGL.GL.ARB.geometry_shader4' /Library/Python/2.7/site-packages/OpenGL/GL/ARB/geometry_shader4.pyc imports=[('OpenGL.wrapper', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.constant', 0, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.extensions', 0, 0, -1), ('OpenGL.raw.GL.ARB.geometry_shader4.*', 0, 0, -1), ('ctypes', 0, 0, -1), ('OpenGL.arrays', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL.raw.GL.ARB.geometry_shader4', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GL.ARB.vertex_program: None -> <PyModule 'OpenGL.raw.GL.ARB.vertex_program' /Library/Python/2.7/site-packages/OpenGL/raw/GL/ARB/vertex_program.pyc imports=[('ctypes', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.extensions', 1, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL', 1, 0, -1), ('OpenGL.arrays', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GL.ARB.vertex_shader: None -> <PyModule 'OpenGL.raw.GL.ARB.vertex_shader' /Library/Python/2.7/site-packages/OpenGL/raw/GL/ARB/vertex_shader.pyc imports=[('ctypes', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.extensions', 1, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL', 1, 0, -1), ('OpenGL.arrays', 0, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GL.ARB.fragment_shader: None -> <PyModule 'OpenGL.raw.GL.ARB.fragment_shader' /Library/Python/2.7/site-packages/OpenGL/raw/GL/ARB/fragment_shader.pyc imports=[('OpenGL.extensions', 1, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL', 1, 0, -1)] binaries=[] datas=[]>
+OpenGL.raw.GL.ARB.geometry_shader4: None -> <PyModule 'OpenGL.raw.GL.ARB.geometry_shader4' /Library/Python/2.7/site-packages/OpenGL/raw/GL/ARB/geometry_shader4.pyc imports=[('ctypes', 0, 0, -1), ('OpenGL.constants', 0, 0, -1), ('OpenGL.extensions', 1, 0, -1), ('OpenGL', 0, 0, -1), ('OpenGL.platform', 0, 0, -1), ('OpenGL.GL', 0, 0, -1), ('OpenGL.GL.glget', 0, 0, -1), ('OpenGL', 1, 0, -1), ('OpenGL.arrays', 0, 0, -1)] binaries=[] datas=[]>
+spimagine.keyframe_view: None -> <PyModule 'spimagine.keyframe_view' /Users/mweigert/python/spimagine/spimagine/keyframe_view.pyc imports=[('keyframe_model.KeyFrame', 0, 0, -1), ('PyQt4.QtCore.*', 0, 0, -1), ('PyQt4.QtGui.*', 0, 0, -1), ('math', 0, 0, -1), ('PyQt4.QtGui', 0, 0, -1), ('numpy', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1), ('numpy.*', 0, 0, -1), ('os', 0, 0, -1), ('sys', 0, 1, -1), ('keyframe_model', 0, 0, -1), ('functools', 0, 0, -1), ('keyframe_model.KeyFrameList', 0, 0, -1), ('keyframe_model.TransformData', 0, 0, -1)] binaries=[] datas=[]>
+spimagine.keyframe_model: None -> <PyModule 'spimagine.keyframe_model' /Users/mweigert/python/spimagine/spimagine/keyframe_model.pyc imports=[('numpy', 0, 0, -1), ('numpy.*', 0, 0, -1), ('PyQt4', 0, 0, -1), ('bisect', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1)] binaries=[] datas=[]>
+spimagine.math: None -> None
+numpy.ModuleDeprecationWarning: None -> None
+spimagine.functools: None -> None
+numpy.ModuleDeprecationWarning: None -> None
+spimagine.bisect: None -> None
 quaternion: None -> <PyModule 'quaternion' /Users/mweigert/python/spimagine/spimagine/quaternion.pyc imports=[('numpy', 0, 0, -1)] binaries=[] datas=[]>
 __main__: <PyScript '__main__' ../spimagine/spim_render.py imports=[('volume_render', 0, 0, -1), ('scipy.misc.toimage', 0, 0, -1), ('sys', 0, 0, -1), ('scipy.misc', 0, 0, -1), ('PIL', 0, 0, -1), ('argparse', 0, 0, -1), ('PIL.Image', 0, 0, -1), ('volume_render.*', 0, 0, -1)] binaries=[] datas=[]> -> <PyScript '__main__' /Library/Python/2.7/site-packages/PyInstaller/loader/rthooks/pyi_rth_qt4plugins.py imports=[('os', 0, 0, -1), ('PyQt4.QtCore.QCoreApplication', 0, 0, -1), ('sys', 0, 0, -1), ('PyQt4.QtCore', 0, 0, -1)] binaries=[] datas=[]>
 _emx_link: None -> None

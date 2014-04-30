@@ -72,14 +72,15 @@ def projMatOrtho(x1 = -1, x2 = 1,
     return np.array([[2./bx,0,0,-1.*ax/bx],
                      [0,2./by,0,-1.*ay/by],
                      [0,0,-2./bz,-1.*az/bz],
-                     [0,0,0,1]])
+                     [0,0,0,1.]])
 
 
 
 
 
 if __name__ == '__main__':
-    orthoM = projMatOrtho(-1,1,-1,1,-1,1)
+    orthoM = projMatOrtho(-2,2,-2,2,-10,10)
+    
     perspM = projMatPerspective(45,1,.1,10)
 
     x  = np.dot(orthoM,[0,0,0,1])
@@ -88,3 +89,5 @@ if __name__ == '__main__':
 
     x  = np.dot(perspM,[0,0,.1,1])
     print x
+
+    print orthoM
