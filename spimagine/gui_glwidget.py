@@ -71,7 +71,7 @@ class TransformModel(QtCore.QObject):
     _maxChanged = QtCore.pyqtSignal(int)
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
-
+    _perspectiveChanged = QtCore.pyqtSignal(int)
     _transformChanged = QtCore.pyqtSignal()
 
     def __init__(self):
@@ -81,11 +81,15 @@ class TransformModel(QtCore.QObject):
     def reset(self,maxVal = 256.):
         self.quatRot = Quaternion()
         self.translate = [0,0,0]
+        self.cameraZ = 5
+        self.scaleAll = 1.
         self.zoom = 1.
+        self.isPerspective = True
+        self.setPerspective()
         self.setScale(0,maxVal)
         self.setGamma(1.)
-        self.setBox(False)
-
+        self.setBox(True)
+        self.update()
 
     def setGamma(self, gamma):
         self.gamma = gamma
@@ -106,6 +110,39 @@ class TransformModel(QtCore.QObject):
         self._boxChanged.emit(isBox)
         self._transformChanged.emit()
 
+    def setZoom(self,zoom = 1.):
+        self.zoom = clip(zoom,1,2)
+        self.update()
+
+    def update(self):
+        if self.isPerspective:
+            self.cameraZ = 7*(1-log(self.zoom)/log(2.))
+            self.scaleAll = 1.
+        else:
+            self.cameraZ = 0.
+            self.scaleAll = 2.5**(self.zoom-1.)
+
+    def setPerspective(self, isPerspective = True):
+        self.isPerspective = isPerspective
+        if isPerspective:
+            self.projection = projMatPerspective(60.,1.,.1,10)
+        else:
+            self.projection = projMatOrtho(-2.,2.,-2.,2.,-1.5,1.5)
+
+        self.update()
+        self._perspectiveChanged.emit(isPerspective)
+        self._transformChanged.emit()
+
+
+    def getModelView(self):
+        # modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
+        #                         dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
+
+        modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
+                                dot(self.quatRot.toRotation4(),transMatReal(*self.translate))))
+
+        return modelView
+
 
 class GLWidget(QtOpenGL.QGLWidget):
 
@@ -115,7 +152,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((800,800),useDevice=0)
+        self.renderer = VolumeRenderer((800,800),useDevice=1)
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
@@ -251,11 +288,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
         # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
 
-        # print glGetFloatv(GL_MODELVIEW_MATRIX).T
         # print modelView
 
         mScale =  self.renderer._stack_scale_mat()
-        modelView = self.getModelView()
+        modelView = self.transform.getModelView()
         scaledModelView  = dot(modelView,mScale)
         glScale(w,h,1);
 
@@ -298,50 +334,45 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.shaderBasic.bind()
 
-        rSphere = .05
+        # rSphere = .05
 
-        glEnable(GL_DEPTH_TEST)
+        # glEnable(GL_DEPTH_TEST)
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
+        # glMatrixMode(GL_PROJECTION)
+        # glLoadIdentity()
+        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
 
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glTranslatef(1.+2*rSphere,-1.+2*rSphere,0)
-        glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
-
-
-
-        quadric = GLU.gluNewQuadric()
-
-        glColor(101./255, 134./255, 167./255,.8)
-
-        for i,rots in enumerate([-90,90,90]):
-            vec = (arange(3)==i).astype(int)
-            glPushMatrix()
-            glRotatef(rots,*vec)
-            glTranslatef(0,0,rSphere)
-            GLU.gluCylinder(quadric,.2*rSphere,0,rSphere,30,30)
-            glPopMatrix()
-
-        glColor(14./255, 66./255, 108./255,.7)
-
-        GLU.gluSphere(quadric,rSphere,40,40)
+        # glMatrixMode(GL_MODELVIEW)
+        # glLoadIdentity()
+        # glTranslatef(1.+2*rSphere,-1.+2*rSphere,0)
+        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
 
 
 
-    def getModelView(self):
-        modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
-                                dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
+        # quadric = GLU.gluNewQuadric()
 
-        return modelView
+        # glColor(101./255, 134./255, 167./255,.8)
+
+        # for i,rots in enumerate([-90,90,90]):
+        #     vec = (arange(3)==i).astype(int)
+        #     glPushMatrix()
+        #     glRotatef(rots,*vec)
+        #     glTranslatef(0,0,rSphere)
+        #     GLU.gluCylinder(quadric,.2*rSphere,0,rSphere,30,30)
+        #     glPopMatrix()
+
+        # glColor(14./255, 66./255, 108./255,.7)
+
+        # GLU.gluSphere(quadric,rSphere,40,40)
+
+
+
 
 
     def render(self):
 
-        self.renderer.set_modelView(self.getModelView())
-
+        self.renderer.set_modelView(self.transform.getModelView())
+        self.renderer.set_projection(self.transform.projection)
         out = self.renderer.render()
 
         self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
@@ -367,8 +398,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
-        self.transform.zoom *= 1.2**(event.delta()/1400.)
-        self.transform.zoom = clip(self.transform.zoom,1,2)
+        newZoom = self.transform.zoom * 1.2**(event.delta()/1400.)
+        newZoom = clip(newZoom,.4,3)
+        self.transform.setZoom(newZoom)
+
+        print newZoom
         self.refresh()
 
 
@@ -427,6 +461,9 @@ if __name__ == '__main__':
 
     win = GLWidget(size=QtCore.QSize(600,500))
     win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
+
+    win.transform.setBox()
+    win.transform.setPerspective(False)
 
     win.show()
     win.raise_()

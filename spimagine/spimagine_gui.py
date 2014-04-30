@@ -26,6 +26,7 @@ def main():
 
     win = MainWindow()
     win.show()
+        
     win.raise_()
 
     sys.exit(app.exec_())

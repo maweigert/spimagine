@@ -3,8 +3,10 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 from OpenGL import GLU
+from OpenGL import GLUT
 from OpenGL.GL import *
 from numpy import array
+from transform_matrices import *
 
 class GLWidget(QtOpenGL.QGLWidget):
     def __init__(self, parent=None):
@@ -30,10 +32,21 @@ class GLWidget(QtOpenGL.QGLWidget):
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glTranslate(0.0, 0.0, -50.0)
-        glScale(20.0, 20.0, 20.0)
-        glTranslate(-0.5, -0.5, -0.5)
+
+        glOrtho(-2,2,-2,2,-10,10)
+
+        print glGetFloatv(GL_PROJECTION_MATRIX).T
+        print projMatOrtho(-2.,2.,-2.,2.,-10,10)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+
+
+        glLineWidth(1)
+        glColor(1.,1.,1.,1.)
+        GLUT.glutWireCube(2)
 
 
     def onTimer(self):

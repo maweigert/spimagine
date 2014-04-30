@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """
-the main frame used for in spimagine_gui 
+the main frame used for in spimagine_gui
 
-the data model is member of the frame 
+the data model is member of the frame
 
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
@@ -23,7 +23,7 @@ from keyframe_view import *
 from data_model import DataLoadModel, DemoData
 
 
-# the default number of data timeslices to prefetch 
+# the default number of data timeslices to prefetch
 N_PREFETCH = 10
 
 
@@ -45,6 +45,7 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow,self).__init__()
 
         self.resize(800, 700)
+        self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
         self.initActions()
@@ -61,6 +62,17 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setMaximumHeight(24)
 
 
+        self.projCheck = QtGui.QCheckBox()
+        self.projCheck.setStyleSheet("""
+        QCheckBox::indicator:checked {
+        background:black;
+        border-image: url(%s);}
+        QCheckBox::indicator:unchecked {
+        background:black;
+        border-image: url(%s);}
+        """%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
+
+
         self.cubeCheck = QtGui.QCheckBox()
         self.cubeCheck.setStyleSheet("""
         QCheckBox::indicator:checked {
@@ -70,6 +82,8 @@ class MainWindow(QtGui.QMainWindow):
         background:black;
         border-image: url(%s);}
         """%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
+
+
 
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -126,8 +140,8 @@ class MainWindow(QtGui.QMainWindow):
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
+        hbox.addWidget(self.projCheck)
         hbox.addWidget(self.cubeCheck)
-
 
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(hbox0)
@@ -147,19 +161,21 @@ class MainWindow(QtGui.QMainWindow):
         self.playDir = 1
 
         self.cubeCheck.stateChanged.connect(self.glWidget.transform.setBox)
-        self.glWidget.transform._boxChanged.connect(self.cubeCheck.setCheckState)
+        self.glWidget.transform._boxChanged.connect(self.cubeCheck.setChecked)
 
 
-        self.dataModel = DataLoadModel()
+        self.projCheck.stateChanged.connect(self.glWidget.transform.setPerspective)
+        self.glWidget.transform._perspectiveChanged.connect(self.projCheck.setChecked)
 
-        self.dataModel._dataSourceChanged.connect(self.glWidget.dataSourceChanged)
-        self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
 
-        self.dataModel._dataPosChanged.connect(self.glWidget.dataPosChanged)
-        self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+        self.dataModel = DataLoadModel(dataContainer=DemoData(100),
+                                       prefetchSize = N_PREFETCH)
+        
 
-        self.dataModel.load(dataContainer=DemoData(50),prefetchSize = N_PREFETCH)
         self.glWidget.setModel(self.dataModel)
+
+        self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+        self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
 
@@ -211,6 +227,17 @@ class MainWindow(QtGui.QMainWindow):
         isAppRunning = False
         QtGui.qApp.quit()
 
+    def mouseDoubleClickEvent(self,event):
+        super(MainWindow,self).mouseDoubleClickEvent(event)
+        if self.isFullScreen:
+            self.showNormal()
+        else:
+            self.showFullScreen()
+
+        # there's a bug in Qt that disables drop after fullscreen, so reset it...
+        self.setAcceptDrops(True)
+
+        self.isFullScreen = not self.isFullScreen
 
 
 if __name__ == '__main__':
