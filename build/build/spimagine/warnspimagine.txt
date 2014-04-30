@@ -654,6 +654,7 @@ W: name ModuleDeprecationWarning not found - numpy (/Library/Python/2.7/site-pac
 W: name ModuleDeprecationWarning not found - numpy (/Library/Python/2.7/site-packages/numpy/__init__.pyc)
 W: name ModuleDeprecationWarning not found - numpy (/Library/Python/2.7/site-packages/numpy/__init__.pyc)
 W: name ModuleDeprecationWarning not found - numpy (/Library/Python/2.7/site-packages/numpy/__init__.pyc)
+W: name ModuleDeprecationWarning not found - numpy (/Library/Python/2.7/site-packages/numpy/__init__.pyc)
 W: delayed conditional eval hack detected at line 0 - mako.codegen (/Library/Python/2.7/site-packages/mako/codegen.pyc)
 W: delayed conditional eval hack detected at line 0 - mako.codegen (/Library/Python/2.7/site-packages/mako/codegen.pyc)
 W: delayed conditional eval hack detected at line 0 - mako.codegen (/Library/Python/2.7/site-packages/mako/codegen.pyc)
