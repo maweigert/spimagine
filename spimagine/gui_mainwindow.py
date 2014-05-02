@@ -221,7 +221,7 @@ class MainWindow(QtGui.QMainWindow):
         print self.dataModel.pos, self.playDir
         newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
-        self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
+        # self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
 
     def close(self):
         isAppRunning = False

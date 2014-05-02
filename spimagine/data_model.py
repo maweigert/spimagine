@@ -22,11 +22,11 @@ from dataloader import GenericData, SpimData, TiffData
 
 
 class DemoData(GenericData):
-    def __init__(self, N = 200):
+    def __init__(self, N = 100):
         GenericData.__init__(self)
         self.load(N)
 
-    def load(self,N = 200):
+    def load(self,N = 100):
         self.stackSize = (N,N,N/2)
         self.fName = ""
         self.nT = N
@@ -40,6 +40,7 @@ class DemoData(GenericData):
         u = np.exp(-500*(R-1.)**2)*np.sum(np.exp(-150*(-theta-t+.1*(t-np.pi/2.)*
             np.exp(-np.sin(2*(phi+np.pi/2.))))**2)
             for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
+
         u2 = np.exp(-10*R2**2)
         self.data = (10000*(u + 2*u2)).astype(np.int16)
 
@@ -209,6 +210,7 @@ if __name__ == '__main__':
 
 
     d = DemoData()
+
     # fName = "/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
 
     # fName = "/Users/mweigert/Data/Drosophila_Full"
