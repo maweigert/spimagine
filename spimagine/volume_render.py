@@ -112,8 +112,10 @@ class VolumeRenderer:
         # scaling the data according to size and units
         Nx,Ny,Nz = self.dataImg.shape
         dx,dy,dz = self.stackUnits
+        
         # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
-        return scaleMat(1.,1.*dy*Ny/dx/Nx,1.*dz*Nz/dx/Nx)
+        maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
+        return scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
 
     def render(self,data = None, stackUnits = None, modelView = None):

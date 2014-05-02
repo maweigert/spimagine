@@ -28,7 +28,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='spimagine',
-          debug=False,
+          debug=True,
           strip=None,
           upx=True,
           console=False )
@@ -59,4 +59,3 @@ exe = EXE(pyz,
           strip=None,
           upx=True,
           console=True)
-

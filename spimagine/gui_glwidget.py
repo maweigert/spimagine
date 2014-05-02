@@ -111,12 +111,12 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
     def setZoom(self,zoom = 1.):
-        self.zoom = clip(zoom,1,2)
+        self.zoom = clip(zoom,.5,2)
         self.update()
 
     def update(self):
         if self.isPerspective:
-            self.cameraZ = 7*(1-log(self.zoom)/log(2.))
+            self.cameraZ = 4*(1-log(self.zoom)/log(2.))
             self.scaleAll = 1.
         else:
             self.cameraZ = 0.
@@ -152,7 +152,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((800,800),useDevice=1)
+        self.renderer = VolumeRenderer((800,800),useDevice=0)
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
