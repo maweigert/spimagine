@@ -34,14 +34,14 @@ class DemoData(GenericData):
         x = np.linspace(-1,1,N)
         Z,Y,X = np.meshgrid(x,x,x , indexing = "ij")
         R = np.sqrt(X**2+Y**2+Z**2)
-        R2 = np.sqrt((X-.5)**2+Y**2+Z**2)
+        R2 = np.sqrt((X-.4)**2+(Y+.2)**2+Z**2)
         phi = np.arctan2(Z,Y)
         theta = np.arctan2(X,np.sqrt(Y**2+Z**2))
         u = np.exp(-500*(R-1.)**2)*np.sum(np.exp(-150*(-theta-t+.1*(t-np.pi/2.)*
             np.exp(-np.sin(2*(phi+np.pi/2.))))**2)
             for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
 
-        u2 = np.exp(-10*R2**2)
+        u2 = np.exp(-7*R2**2)
         self.data = (10000*(u + 2*u2)).astype(np.int16)
 
 

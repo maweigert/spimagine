@@ -61,29 +61,30 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setMaximumWidth(24)
         self.startButton.setMaximumHeight(24)
 
-
-        self.projCheck = QtGui.QCheckBox()
-        self.projCheck.setStyleSheet("""
+        checkBoxStyleStr = """
         QCheckBox::indicator:checked {
         background:black;
         border-image: url(%s);}
         QCheckBox::indicator:unchecked {
         background:black;
         border-image: url(%s);}
-        """%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
+        """
 
+        self.checkProj  = QtGui.QCheckBox()
+        self.checkProj.setStyleSheet(
+            checkBoxStyleStr%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
 
-        self.cubeCheck = QtGui.QCheckBox()
-        self.cubeCheck.setStyleSheet("""
-        QCheckBox::indicator:checked {
-        background:black;
-        border-image: url(%s);}
-        QCheckBox::indicator:unchecked {
-        background:black;
-        border-image: url(%s);}
-        """%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
+        self.checkBox = QtGui.QCheckBox()
+        self.checkBox.setStyleSheet(
+            checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
 
+        self.checkSettings = QtGui.QCheckBox()
+        self.checkSettings.setStyleSheet(
+            checkBoxStyleStr%(absPath("images/settings.png"),absPath("images/settings_inactive.png")))
 
+        self.checkKey = QtGui.QCheckBox()
+        self.checkKey.setStyleSheet(
+            checkBoxStyleStr%(absPath("images/video.png"),absPath("images/video_inactive.png")))
 
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -121,13 +122,10 @@ class MainWindow(QtGui.QMainWindow):
             lambda x: self.gammaSlider.setValue(200*(x-1.)+100))
 
 
-        k = KeyFrameList()
-        k.addKeyFrame(.5,TransformData(.5,.4,.3))
-        k.addKeyFrame(.9,TransformData(.5,.4,.3))
-
+        self.keyframes = KeyFrameList()
         self.keyView = KeyListView()
-        self.keyView.setModel(k)
-
+        self.keyView.hide()
+        self.keyView.setModel(self.keyframes)
 
         self.setStyleSheet("background-color:black;")
 
@@ -140,14 +138,17 @@ class MainWindow(QtGui.QMainWindow):
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
-        hbox.addWidget(self.projCheck)
-        hbox.addWidget(self.cubeCheck)
+        hbox.addWidget(self.checkProj)
+        hbox.addWidget(self.checkBox)
+        hbox.addWidget(self.checkKey)
+
+        hbox.addWidget(self.checkSettings)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
-        # vbox.addWidget(self.keyView)
+        vbox.addWidget(self.keyView)
 
         widget = QtGui.QWidget()
         widget.setLayout(vbox)
@@ -160,17 +161,19 @@ class MainWindow(QtGui.QMainWindow):
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.playDir = 1
 
-        self.cubeCheck.stateChanged.connect(self.glWidget.transform.setBox)
-        self.glWidget.transform._boxChanged.connect(self.cubeCheck.setChecked)
+        self.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+        self.glWidget.transform._boxChanged.connect(self.checkBox.setChecked)
 
 
-        self.projCheck.stateChanged.connect(self.glWidget.transform.setPerspective)
-        self.glWidget.transform._perspectiveChanged.connect(self.projCheck.setChecked)
+        self.checkProj.stateChanged.connect(self.glWidget.transform.setPerspective)
+        self.glWidget.transform._perspectiveChanged.connect(self.checkProj.setChecked)
+
+        self.checkKey.stateChanged.connect(self.keyView.setVisible)
 
 
         self.dataModel = DataLoadModel(dataContainer=DemoData(100),
                                        prefetchSize = N_PREFETCH)
-        
+
 
         self.glWidget.setModel(self.dataModel)
 
@@ -180,6 +183,8 @@ class MainWindow(QtGui.QMainWindow):
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
 
 
+    def initUI(self):
+        pass
 
     def initActions(self):
         self.exitAction = QtGui.QAction('Quit', self)

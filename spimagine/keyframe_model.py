@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-
-"""
-key frame data model
-
-author: Martin Weigert
-email: mweigert@mpi-cbg.de
-"""
-
 from numpy import *
 import bisect
 from PyQt4 import QtCore
@@ -40,51 +31,76 @@ class KeyFrame(object):
 
 
 class KeyFrameList(QtCore.QObject):
+    _countID = 0
     _modelChanged = QtCore.pyqtSignal()
+    _itemChanged = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super(KeyFrameList,self).__init__()
-        self.keyFrames = [KeyFrame(0),KeyFrame(1.)]
+        self.keyDict = dict()
+        self.tFrames = list()
+        self.addItem(KeyFrame(0))
+        self.addItem(KeyFrame(1))
         self._modelChanged.emit()
 
     def __repr__(self):
-        return "\n".join(str(k) for k in self.keyFrames)
+        return "\n".join("%s \t %s"%(self.keyDict[k[1]],k[1]) for k in self.tFrames)
 
-    def addKeyFrame(self, tFrame, transformData = TransformData()):
-        bisect.insort(self.keyFrames,KeyFrame(tFrame,transformData))
+    def addItem(self, keyFrame = KeyFrame()):
+        newID = self._getNewID()
+        self.keyDict[newID] = keyFrame
+        bisect.insort(self.tFrames,[keyFrame.tFrame, newID])
         self._modelChanged.emit()
+        # self._itemChanged.emit(newID)
 
-    def removeKeyFrame(self, index):
-        if index<0 or index>len(self.keyFrames)-2:
-            raise KeyError()
-        self.keyFrames.pop(index)
+    def removeItem(self, ID):
+        self.tFrames = [t for t in self.tFrames if t[1]!=ID]
+        self.keyDict.pop(ID)
         self._modelChanged.emit()
+        # self._itemChanged.emit(ID)
+
+    def __getitem__(self,myID):
+        return self.keyDict[myID]
 
     def interpolate(self,x,y, lam):
         return  (1.-lam)*x.data.data + lam*y.data.data
 
+    def _getNewID(self):
+        self._countID += 1
+        return self._countID
+
+    def _NToID(self,index):
+        if index<0 or index >len(self.tFrames):
+            raise IndexError()
+
+        return self.tFrames[index][1]
+
+    def _IDToN(self,ID):
+        return bisect.bisect_left(self.tFrames,[self.keyDict[ID].tFrame,ID])
+
+
     def getTransform(self,tFrame):
-        #TODO: creating a instance of KeyFrame() just for comparing... not good
-        ind = bisect.bisect(self.keyFrames,KeyFrame(tFrame))
+        ind = bisect.bisect(self.tFrames,[tFrame,-1])
 
         # clamping
         left = max(ind-1,0)
-        right = min(ind,len(self.keyFrames)-1)
+        right = min(ind,len(self.tFrames)-1)
 
-        if left==right:
-            return self.keyFrames[left].data
+        leftID, rightID = self._NToID(left),self._NToID(right)
+        if leftID == rightID:
+            return self.keyDict[leftID].data
 
         # linear interpolating
-        frameLeft, frameRight = self.keyFrames[left], self.keyFrames[right]
+        frameLeft, frameRight = self.keyDict[leftID], self.keyDict[rightID]
         lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
-        return self.interpolate(self.keyFrames[left], self.keyFrames[right],lam)
+        return self.interpolate(self.keyDict[leftID],self.keyDict[rightID],lam)
 
 
 
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addKeyFrame(.5,TransformData(.5,.4,.3))
+    k.addItem(KeyFrame(.5,TransformData(.5,.4,.3)))
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)
@@ -94,7 +110,7 @@ if __name__ == '__main__':
 
 
     k = KeyFrameList()
-    k.addKeyFrame(.5,TransformData(.5,.4,.3))
+    k.addItem(KeyFrame(.5,TransformData(.5,.4,.3)))
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)

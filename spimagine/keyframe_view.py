@@ -81,12 +81,16 @@ class KeyEdge(QGraphicsItem):
 
 
 class KeyNode(QGraphicsItem):
-    def __init__(self,graphWidget, pos,fixed = False):
+    def __init__(self,graphWidget, keyList, ID,fixed = False):
         super(KeyNode, self).__init__()
         self.graph = graphWidget
 
         self.shapeSize = 6*array([-1,-1.,2,2])
         self.edgeList = []
+        self.keyList = keyList
+        self.ID = ID
+        pos = self.keyList[self.ID].tFrame*KeyFrameScene.WIDTH
+
         self.setPos(QPointF(pos,0))
 
         self.fixed = fixed
@@ -144,8 +148,10 @@ class KeyNode(QGraphicsItem):
             sceneRect = self.graph.scene.sceneRect()
             x = value.toPoint().x()
             x1, x2 = sceneRect.x(),sceneRect.x()+sceneRect.width()
-            newPos = QPointF(clip(x,x1,x2),0)
-            self.setPos(newPos)
+            pos = QPointF(clip(x,x1,x2),0)
+            tFrame = clip(1.*pos.x()/KeyFrameScene.WIDTH,0.,1.)
+            self.keyList[self.ID].tFrame = tFrame
+            self.setPos(pos)
             for edge in self.edgeList:
                 edge.adjust()
             self.setToolTip("KeyNode: t= %.2f"%self.pos().x())
@@ -171,7 +177,8 @@ class KeyNode(QGraphicsItem):
 
 
     def delete(self):
-        self.graph.scene.removeItem(self)
+        self.keyList.removeItem(self.ID)
+        # self.graph.scene.removeItem(self)
 
     def contextMenuEvent(self, contextEvent):
         actionMethods = {"delete" : self.delete}
@@ -190,14 +197,14 @@ class KeyNode(QGraphicsItem):
 
 class KeyFrameScene(QGraphicsScene):
     WIDTH = 100
-    HEIGHT = 100
+    HEIGHT = 50
 
-    def mousePressEvent(self, event):
-        print "Scene"
-        super(KeyFrameScene, self).mousePressEvent(event)
-        item = self.itemAt(event.scenePos())
-        if event.button() == Qt.RightButton and  type(item) != KeyNode:
-            print "Hurray"
+    # def mousePressEvent(self, event):
+    #     print "Scene"
+    #     super(KeyFrameScene, self).mousePressEvent(event)
+    #     item = self.itemAt(event.scenePos())
+    #     if event.button() == Qt.RightButton and  type(item) != KeyNode:
+    #         print "Hurray"
 
 
 class KeyListView(QGraphicsView):
@@ -218,7 +225,7 @@ class KeyListView(QGraphicsView):
 
         self.setScene(self.scene)
 
-        self.setMinimumSize(500,KeyFrameScene.HEIGHT)
+        # self.setMinimumSize(300,KeyFrameScene.HEIGHT)
         self.setWindowTitle("KeyFrameView")
         self.zoom = 1.
         self.relativeAspect = 1.
@@ -231,14 +238,15 @@ class KeyListView(QGraphicsView):
         self.keyList = keyList
         self.resetScene()
         self.keyList._modelChanged.connect(self.modelChanged)
+        # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
         print "reset!"
         self.scene.clear()
-        self.addKey(self.keyList.keyFrames[0], fixed = True)
-        self.addKey(self.keyList.keyFrames[-1], fixed = True)
-        for k in self.keyList.keyFrames[1:-1]:
-            self.addKey(k)
+        for myID in self.keyList.keyDict.keys():
+            n = self.keyList._IDToN(myID)
+            fixed = ( n == 0 or n == len(self.keyList.tFrames)-1)
+            self.scene.addItem(KeyNode(self,self.keyList,myID,fixed))
 
 
     def modelChanged(self):
@@ -246,8 +254,7 @@ class KeyListView(QGraphicsView):
 
 
     def addKey(self,keyFrame, fixed = False):
-        self.scene.addItem(KeyNode(self,keyFrame.tFrame*KeyFrameScene.WIDTH,fixed))
-
+        pass
 
     def itemMoved(self):
         pass
@@ -259,14 +266,12 @@ class KeyListView(QGraphicsView):
 
     def resizeEvent(self,event):
         print "resize"
-        super(KeyListView, self).resizeEvent(event)
+        # super(KeyListView, self).resizeEvent(event)
 
         self.relativeAspect = 1.*event.size().width()/KeyFrameScene.WIDTH
-        print self.relativeAspect*self.zoom
+        # print event.size()
         self.setTransform(QTransform.fromScale(self.relativeAspect*self.zoom, 1.))
-
-        # self.scale(self.relativeAspect*self.zoom,1.)
-        # self.fitInView(self.scene.sceneRect())
+        # self.resize(event.size().width(),KeyFrameScene.HEIGHT)
 
 
     def wheelEvent(self, event):
@@ -291,7 +296,7 @@ class KeyListView(QGraphicsView):
 
         posScene = self.mapToScene(event.pos())
 
-        actionMethods = {"insert keyframe" : functools.partial(self.keyList.addKeyFrame,1.*posScene.x()/KeyFrameScene.WIDTH)}
+        actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH))}
         actions = {}
 
         object_cntext_Menu = QMenu()
@@ -308,17 +313,19 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow,self).__init__()
 
-        self.resize(300, 100)
+        self.resize(500, 50)
         self.setWindowTitle("Key Frame View")
 
         self.keyView =  KeyListView()
 
 
         k = KeyFrameList()
-        k.addKeyFrame(.5,TransformData(.5,.4,.3))
-        k.addKeyFrame(.9,TransformData(.5,.4,.3))
+        k.addItem(KeyFrame(0.4))
+        k.addItem(KeyFrame(0.9))
 
         self.keyView.setModel(k)
+
+
 
 
         self.setCentralWidget(self.keyView)
@@ -336,4 +343,6 @@ if __name__ == '__main__':
     win.show()
     win.raise_()
 
-    sys.exit(app.exec_())
+    
+    app.exec_()
+
