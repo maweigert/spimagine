@@ -1,9 +1,11 @@
 # Compiled python modules.
 *.pyc
 
-# build folder.
-/build/dist
-/build/build
+# build folder
+
+build/dist
+build/build
+
 # /bin
 # /dist
 

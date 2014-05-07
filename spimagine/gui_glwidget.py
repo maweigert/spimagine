@@ -138,8 +138,10 @@ class TransformModel(QtCore.QObject):
         # modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
         #                         dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
 
+        # modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
+        #                         dot(self.quatRot.toRotation4(),transMatReal(*self.translate))))
         modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
-                                dot(self.quatRot.toRotation4(),transMatReal(*self.translate))))
+                                dot(transMatReal(*self.translate),self.quatRot.toRotation4())))
 
         return modelView
 
@@ -463,7 +465,7 @@ if __name__ == '__main__':
     win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
 
     win.transform.setBox()
-    win.transform.setPerspective(False)
+    win.transform.setPerspective(True)
 
     win.show()
     win.raise_()
