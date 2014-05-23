@@ -1,13 +1,11 @@
 /*
- * Copyright 1993-2010 NVIDIA Corporation.  All rights reserved.
- *
- * Please refer to the NVIDIA end user license agreement (EULA) associated
- * with this source code for terms and conditions that govern your use of
- * this software. Any use, reproduction, disclosure, or distribution of
- * this software and related documentation outside the terms of the EULA
- * is strictly prohibited.
- *
+  adapted from the Nvidia sdk sample
+  http://developer.download.nvidia.com/compute/cuda/4_2/rel/sdk/website/OpenCL/html/samples.html
+ 
+
+  mweigert@mpi-cbg.de
  */
+
 
 #define maxSteps 500
 #define tstep 0.01f
@@ -40,7 +38,7 @@ int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tn
 
 
 __kernel void
-max_project(__global short *d_output, 
+max_projectShort(__global short *d_output, 
 			uint Nx, uint Ny,
 			__constant float* invP,
 			__constant float* invM,

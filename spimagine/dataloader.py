@@ -131,6 +131,18 @@ class SpimData(GenericData):
                 self.fName = ""
                 raise Exception("couldnt open %s as SpimData"%fName)
 
+            try:
+                # try to figure out the dimension of the dark frame stack
+                darkSizeZ = os.path.getsize(os.path.join(self.fName,"data/darkstack.bin"))/2/self.stackSize[2]/self.stackSize[3]
+                print darkSizeZ
+                with open(os.path.join(self.fName,"data/darkstack.bin"),"rb") as f:
+                    self.darkStack = np.fromfile(f,dtype="<u2").reshape([darkSizeZ,self.stackSize[2],self.stackSize[3]])
+
+            except Exception as e:
+                print e
+                print "couldn't find darkstack"
+                
+
     def sizeT(self):
         if self.fName:
             return self.stackSize[0]
@@ -291,7 +303,9 @@ class DataLoader():
 
 
 def test_spimLoader():
-    loader = DataLoader("/Users/mweigert/python/Data/Drosophila_Full",0)
+    fName = "/Users/mweigert/Data/SIM/SIM_Hela3_18/"
+
+    data = SpimData(fName)
 
 
     dt = 0
@@ -306,6 +320,8 @@ def test_spimLoader():
     print "%.4s per fetch "%(dt/20.)
 
     loader.stop()
+
+
 
 
 if __name__ == '__main__':
@@ -324,15 +340,20 @@ if __name__ == '__main__':
 
     fName = "../../Data/Drosophila_Full"
 
-    data = DataLoader(fName,prefetchSize = 10)
+    # data = DataLoader(fName,prefetchSize = 10)
 
-    d = data[0]
+    # d = data[0]
 
-    time.sleep(1)
-    t = time.time()
+    # time.sleep(1)
+    # t = time.time()
 
-    for i in range(10):
-        d = data[i]
-        print d[10,10,10]
+    # for i in range(10):
+    #     d = data[i]
+    #     print d[10,10,10]
 
-    print time.time()-t
+    # print time.time()-t
+
+
+    fName = "/Users/mweigert/Data/SIM/DarkTest"
+
+    data = SpimData(fName)

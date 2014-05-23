@@ -73,6 +73,11 @@ def main():
     parser.add_argument("-s","--scale",dest="scale",metavar="scale",
                         type=float,nargs=1 ,default = [1.])
 
+
+    parser.add_argument("-u","--units",dest="units",metavar="units",
+                        type=float,nargs= 3 ,default = [1.,1.,5.])
+
+
     parser.add_argument("-t","--translate",dest="translate",
                         type = float, nargs=3,default = [0,0,-4],
                         metavar=("x","y","z"))
@@ -108,7 +113,7 @@ def main():
     data = read3dTiff(args.input)
 
     rend.set_data(data)
-    rend.set_units([1.,1.,4.])
+    rend.set_units(args.units)
 
     M = scaleMat(*(args.scale*3))
     M = dot(rotMat(*args.rotation),M)
@@ -123,19 +128,22 @@ def main():
 
     out = rend.render()
 
+    # image is saved by scipy.misc.toimage(out,low,high,cmin,cmax)
+    # p' = p * high/cmax
 
     if not args.is16Bit:
-        if not args.range:
-            imsave(args.output,out)
-        else:
-            img = toimage(out, low = args.range[0], high  = args.range[0])
-            img.save(args.output)
+        imsave(args.output,out)
+        # if not args.range:
+        #     imsave(args.output,out)
+        # else:
+        #     img = toimage(out, low = args.range[0], high  = args.range[1])
+        #     img.save(args.output)
 
     else:
         if not args.range:
+            print  "min/max: ", amin(out), amax(out)
             img = toimage(out, low = amin(out), high  = amax(out),mode = "I")
         else:
-            print args.range
             img = toimage(out, low = args.range[0], high  = args.range[1], mode = "I")
         img.save(args.output)
 
