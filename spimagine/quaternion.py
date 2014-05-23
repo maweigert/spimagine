@@ -2,7 +2,6 @@ import numpy as np
 
 class Quaternion():
     def __init__(self,w=1.,x=0.,y=0.,z=0.):
-
         self.data = np.array([w,x,y,z])
 
     def __getitem__(self,i):
@@ -20,7 +19,7 @@ class Quaternion():
     def __sub__(self,q):
         return Quaternion(self.data-q.data)
 
-    
+
     def __mul__(self,q):
         if isinstance(q,Quaternion):
             a1,b1,c1,d1 = self.data
@@ -56,6 +55,7 @@ class Quaternion():
     [2*(b*d-a*c), 2*(c*d+a*b),  a**2-b**2-c**2+d**2],
     ])
 
+    
 
 if __name__ == '__main__':
     q = Quaternion(2,0,0,0)

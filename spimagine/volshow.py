@@ -14,33 +14,41 @@ def createApp():
         app = QtGui.QApplication(sys.argv)
     return app
 
-def volshow(data, window = None, scale = True):
+def volshow(data, glWindow = None, scale = True, stackUnits = [1,1,1]):
     app = createApp()
 
-    if not window:
+    if not glWindow:
         window = MainWindow()
         window.show()
         window.raise_()
-
-    app.references = set()
-    app.references.add(window)
+        glWindow = window.glWidget
+        app.references = set()
+        app.references.add(window)
 
     if scale:
         ma,mi = amax(data), amin(data)
         data = 16000.*(data-mi)/(ma-mi)
-        
-    window.glWidget.renderer.set_data(data)
-    window.glWidget.transform.reset(amax(data))
-    return window
+
+
+    glWindow.renderer.set_data(data)
+    glWindow.renderer.set_units(stackUnits)
+
+    glWindow.transform.reset(amax(data))
+    return glWindow
 
 
 if __name__ == '__main__':
 
     app = createApp()
 
-    data = DemoData()[0]
+    data = DemoData(50)[0]
 
-    volshow(data)
+    w = volshow(data)
+
+
+
+    w.saveFrame("foo.png")
+
 
     if app:
         sys.exit(app.exec_())

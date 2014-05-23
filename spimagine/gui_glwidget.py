@@ -28,9 +28,14 @@ from OpenGL.GL import *
 from OpenGL.GL import shaders
 
 from volume_render import VolumeRenderer
+from volume_renderCPU import VolumeRendererCPU
+
 from transform_matrices import *
 
 from numpy import *
+
+
+# from scipy.misc import imsave
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
@@ -154,7 +159,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((800,800),useDevice=0)
+        self.renderer = VolumeRendererCPU((800,800))
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
@@ -336,39 +341,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.shaderBasic.bind()
 
-        # rSphere = .05
-
-        # glEnable(GL_DEPTH_TEST)
-
-        # glMatrixMode(GL_PROJECTION)
-        # glLoadIdentity()
-        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
-
-        # glMatrixMode(GL_MODELVIEW)
-        # glLoadIdentity()
-        # glTranslatef(1.+2*rSphere,-1.+2*rSphere,0)
-        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
-
-
-
-        # quadric = GLU.gluNewQuadric()
-
-        # glColor(101./255, 134./255, 167./255,.8)
-
-        # for i,rots in enumerate([-90,90,90]):
-        #     vec = (arange(3)==i).astype(int)
-        #     glPushMatrix()
-        #     glRotatef(rots,*vec)
-        #     glTranslatef(0,0,rSphere)
-        #     GLU.gluCylinder(quadric,.2*rSphere,0,rSphere,30,30)
-        #     glPopMatrix()
-
-        # glColor(14./255, 66./255, 108./255,.7)
-
-        # GLU.gluSphere(quadric,rSphere,40,40)
-
-
-
 
 
     def render(self):
@@ -389,12 +361,21 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.count += 1
 
+    # def saveFrame(self,fName):
+    #     self.render()
+    #     imsave(fName,self.output[::-1,:])
+
+    def saveFrame(self,fName):
+        self.render()
+        self.grabFrameBuffer().save(fName)
+
 
     def onRenderTimer(self):
         if self.renderUpdate:
             self.render()
             self.renderUpdate = False
             self.updateGL()
+            # print self.transform.maxVal,  amax(self.renderer._data), amax(self.output), self.renderer._data.dtype
 
 
 
@@ -457,17 +438,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
 if __name__ == '__main__':
-    from data_model import DataLoadModel, DemoData
+    from data_model import DataLoadModel, DemoData, SpimData
 
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(600,500))
     win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
+    # win.setModel(DataLoadModel(dataContainer=SpimData("/Users/mweigert/Data/HisBTub/"),prefetchSize = 0))
 
     win.transform.setBox()
     win.transform.setPerspective(True)
 
     win.show()
+
+    win.dataModel.load("/Users/mweigert/Data/Drosophila_05/",prefetchSize=0)
     win.raise_()
 
     sys.exit(app.exec_())

@@ -20,7 +20,7 @@ from PyQt4 import QtGui
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
 from keyframe_view import *
-from data_model import DataLoadModel, DemoData
+from data_model import DataLoadModel, DemoData, SpimData
 
 
 # the default number of data timeslices to prefetch
@@ -173,6 +173,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.dataModel = DataLoadModel(dataContainer=DemoData(100),
                                        prefetchSize = N_PREFETCH)
+
 
 
         self.glWidget.setModel(self.dataModel)
