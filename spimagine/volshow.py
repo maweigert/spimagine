@@ -46,9 +46,5 @@ if __name__ == '__main__':
     w = volshow(data)
 
 
-
-    w.saveFrame("foo.png")
-
-
     if app:
         sys.exit(app.exec_())
