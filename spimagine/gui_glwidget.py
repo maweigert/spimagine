@@ -28,7 +28,6 @@ from OpenGL.GL import *
 from OpenGL.GL import shaders
 
 from volume_render import VolumeRenderer
-from volume_renderCPU import VolumeRendererCPU
 
 from transform_matrices import *
 
@@ -159,7 +158,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRendererCPU((800,800))
+        self.renderer = VolumeRenderer((800,800))
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 

@@ -45,7 +45,6 @@ def absPath(myPath):
         base_path = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(base_path, myPath)
 
-
 class VolumeRenderer:
     """ renders a data volume by ray casting/max projection
 
@@ -56,11 +55,31 @@ class VolumeRenderer:
                rend.set_modelView(rotMatX(.7))
     """
 
-    def __init__(self, size = None, useDevice = 0):
+    def __init__(self, size = None):
         """ e.g. size = (300,300)"""
 
-        self.dev = OCLDevice(useDevice = useDevice)
-        self.proc = OCLProcessor(self.dev,absPath("kernels/myvolume_render.cl"))
+        try:
+            # simulate GPU fail...
+            # raise Exception()
+            
+            self.dev = OCLDevice(useGPU = True)
+            self.isGPU = True
+            self.dtype = uint16
+
+        except Exception as e:
+            print e
+            print "could not find GPU OpenCL device -  trying CPU..."
+
+            try:
+                self.dev = OCLDevice(useGPU = False)
+                self.isGPU = False
+                self.dtype = float32
+            except Exception as e:
+                print e
+                print "could not find any OpenCL device ... sorry"
+
+        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
+
         self.invMBuf = self.dev.createBuffer(16,dtype=float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
@@ -78,20 +97,25 @@ class VolumeRenderer:
 
     def resize(self,size):
         self.width, self.height = size
-        self.buf = self.dev.createBuffer(self.height*self.width,dtype=uint16)
+        self.buf = self.dev.createBuffer(self.height*self.width,dtype=self.dtype)
 
     def set_data(self,data):
-        self._data = data
-        self.set_shape(self._data.shape[::-1])
-        self.dev.writeImage(self.dataImg,self._data.astype(uint16))
+        self.set_shape(data.shape[::-1])
+        self.update_data(data)
 
     def set_shape(self,dataShape):
-        self.dataImg = self.dev.createImage(dataShape,
+        if self.isGPU:
+            self.dataImg = self.dev.createImage(dataShape,
                                             mem_flags = cl.mem_flags.READ_ONLY)
+        else:
+            self.dataImg = self.dev.createImage(dataShape,
+                                            mem_flags = cl.mem_flags.READ_ONLY,
+                                            channel_order = cl.channel_order.Rx,
+                                            channel_type = cl.channel_type.FLOAT)
 
     def update_data(self,data):
-        self._data = data
-        self.dev.writeImage(self.dataImg,data)
+        self._data = data.astype(self.dtype)
+        self.dev.writeImage(self.dataImg,self._data)
 
     def set_units(self,stackUnits = ones(3)):
         self.stackUnits = stackUnits
@@ -112,14 +136,13 @@ class VolumeRenderer:
         # scaling the data according to size and units
         Nx,Ny,Nz = self.dataImg.shape
         dx,dy,dz = self.stackUnits
-        
+
         # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
         maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
         return scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
 
     def render(self,data = None, stackUnits = None, modelView = None):
-
         if data != None:
             self.set_data(data)
 
@@ -129,14 +152,13 @@ class VolumeRenderer:
         if modelView != None:
             self.set_modelView(modelView)
 
-
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
+            return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
 
         if not modelView and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
+            return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
 
         mScale = self._stack_scale_mat()
 
@@ -146,15 +168,23 @@ class VolumeRenderer:
         invP = inv(self.projection)
         self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(float32))
 
-        self.proc.runKernel("max_projectShort",(self.width,self.height),None,
-                   self.buf,
-                   int32(self.width),int32(self.height),
-                   self.invPBuf,
-                   self.invMBuf,
-                   self.dataImg)
+        if self.isGPU:
+            self.proc.runKernel("max_project_Short",(self.width,self.height),None,
+                                self.buf,
+                                int32(self.width),int32(self.height),
+                                self.invPBuf,
+                                self.invMBuf,
+                                self.dataImg)
+        else:
+            self.proc.runKernel("max_project_Float",(self.width,self.height),None,
+                                self.buf,
+                                int32(self.width),int32(self.height),
+                                self.invPBuf,
+                                self.invMBuf,
+                                self.dataImg)
 
 
-        return self.dev.readBuffer(self.buf,dtype = uint16).reshape(self.width,self.height)
+        return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):
@@ -180,14 +210,14 @@ def test_simple():
 
     from time import time, sleep
     from spimagine.data_model import DemoData
-    # import pylab
+    import pylab
 
     rend = VolumeRenderer((400,400))
 
     # Nx,Ny,Nz = 200,150,50
     # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = DemoData(256)[0]
+    d = DemoData(100)[0]
     rend.set_data(d)
     rend.set_units([1.,1.,.1])
     rend.set_projection(projMatPerspective(60,1.,1,10))
@@ -196,6 +226,7 @@ def test_simple():
 
     img = None
     pylab.figure()
+    pylab.ion()
     for t in linspace(0,pi,10):
         print t
         rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.7,.7,.7))))
