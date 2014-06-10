@@ -118,7 +118,7 @@ class VolumeRenderer:
         self.dev.writeImage(self.dataImg,self._data)
 
     def set_units(self,stackUnits = ones(3)):
-        self.stackUnits = stackUnits
+        self.stackUnits = np.array(stackUnits)
 
     def set_projection(self,projection = scaleMat()):
         self.projection = projection

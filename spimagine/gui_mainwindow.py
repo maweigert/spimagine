@@ -20,6 +20,7 @@ from PyQt4 import QtGui
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
 from keyframe_view import *
+from gui_settings import SettingsPanel
 from data_model import DataLoadModel, DemoData, SpimData
 
 
@@ -61,6 +62,39 @@ class MainWindow(QtGui.QMainWindow):
         self.startButton.setMaximumWidth(24)
         self.startButton.setMaximumHeight(24)
 
+
+
+
+        buttonStyleStr = """
+        QPushButton {
+        background: black;
+        : none;
+        background-position: top center;
+        background-origin: content;
+        padding: 3px;
+        border-style: solid;
+        border-width: 3px;
+        border-color: red (120,0,0);
+        border-radius: 40px;
+        }
+
+        QPushButton:pressed {
+        background-color: rgb(255,0,0);
+        background-image: url(:/Images/alarmButtonReflection.png) ;
+        background-repeat: none;
+        background-position: top center;
+        background-origin: content;
+        }       """
+
+
+        self.screenshotButton = QtGui.QPushButton("",self)
+        self.screenshotButton.setStyleSheet("background-color: black")
+        self.screenshotButton.setIcon(QtGui.QIcon(absPath("images/icon_camera.png")))
+        self.screenshotButton.setIconSize(QtCore.QSize(24,24))
+        self.screenshotButton.clicked.connect(self.screenShot)
+        self.screenshotButton.setMaximumWidth(24)
+        self.screenshotButton.setMaximumHeight(24)
+
         checkBoxStyleStr = """
         QCheckBox::indicator:checked {
         background:black;
@@ -70,13 +104,13 @@ class MainWindow(QtGui.QMainWindow):
         border-image: url(%s);}
         """
 
-        self.checkProj  = QtGui.QCheckBox()
-        self.checkProj.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
+        # self.checkProj  = QtGui.QCheckBox()
+        # self.checkProj.setStyleSheet(
+        #     checkBoxStyleStr%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
 
-        self.checkBox = QtGui.QCheckBox()
-        self.checkBox.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
+        # self.checkBox = QtGui.QCheckBox()
+        # self.checkBox.setStyleSheet(
+        #     checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
 
         self.checkSettings = QtGui.QCheckBox()
         self.checkSettings.setStyleSheet(
@@ -127,20 +161,27 @@ class MainWindow(QtGui.QMainWindow):
         self.keyView.hide()
         self.keyView.setModel(self.keyframes)
 
+
+        self.settingsView = SettingsPanel()
+        self.settingsView.hide()
+
         self.setStyleSheet("background-color:black;")
 
         hbox0 = QtGui.QHBoxLayout()
-        hbox0.addWidget(self.glWidget)
+        hbox0.addWidget(self.glWidget,stretch =1)
         hbox0.addWidget(self.scaleSlider)
         hbox0.addWidget(self.gammaSlider)
+        hbox0.addWidget(self.settingsView)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
-        hbox.addWidget(self.checkProj)
-        hbox.addWidget(self.checkBox)
+        # hbox.addWidget(self.checkProj)
+        # hbox.addWidget(self.checkBox)
         hbox.addWidget(self.checkKey)
+        hbox.addWidget(self.screenshotButton)
+
 
         hbox.addWidget(self.checkSettings)
 
@@ -161,20 +202,23 @@ class MainWindow(QtGui.QMainWindow):
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.playDir = 1
 
-        self.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
-        self.glWidget.transform._boxChanged.connect(self.checkBox.setChecked)
+        self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+        self.glWidget.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
 
 
-        self.checkProj.stateChanged.connect(self.glWidget.transform.setPerspective)
-        self.glWidget.transform._perspectiveChanged.connect(self.checkProj.setChecked)
+        self.settingsView.checkProj.stateChanged.connect(self.glWidget.transform.setPerspective)
+        self.glWidget.transform._perspectiveChanged.connect(self.settingsView.checkProj.setChecked)
 
         self.checkKey.stateChanged.connect(self.keyView.setVisible)
+        self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
 
         self.dataModel = DataLoadModel(dataContainer=DemoData(100),
                                        prefetchSize = N_PREFETCH)
 
 
+        self.settingsView._stackUnitsChanged.connect(self.glWidget.transform.setStackUnits)
+        self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
         self.glWidget.setModel(self.dataModel)
 
@@ -215,6 +259,14 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.playTimer.start()
             self.startButton.setIcon(QtGui.QIcon(absPath("images/icon_pause.png")))
+
+
+    def screenShot(self):
+        fileName = QtGui.QFileDialog.getSaveFileName(self, 'Save screenshot as',
+                                                     '.', selectedFilter='*.png')
+
+        if fileName:
+            self.glWidget.saveFrame(fileName)
 
 
     def onPlayTimer(self):
