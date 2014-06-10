@@ -77,12 +77,13 @@ class TransformModel(QtCore.QObject):
     _boxChanged = QtCore.pyqtSignal(int)
     _perspectiveChanged = QtCore.pyqtSignal(int)
     _transformChanged = QtCore.pyqtSignal()
+    _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
 
     def __init__(self):
         super(TransformModel,self).__init__()
         self.reset()
 
-    def reset(self,maxVal = 256.):
+    def reset(self,maxVal = 256.,stackUnits=None):
         self.quatRot = Quaternion()
         self.translate = [0,0,0]
         self.cameraZ = 5
@@ -93,7 +94,11 @@ class TransformModel(QtCore.QObject):
         self.setScale(0,maxVal)
         self.setGamma(1.)
         self.setBox(True)
+        if not stackUnits:
+            stackUnits = [.16,.16,.8]
+        self.setStackUnits(*stackUnits)
         self.update()
+
 
     def setGamma(self, gamma):
         self.gamma = gamma
@@ -107,6 +112,13 @@ class TransformModel(QtCore.QObject):
         self.minVal, self.maxVal = minVal, maxVal
         print "maxVal: ", maxVal
         self._maxChanged.emit(self.maxVal)
+        self._transformChanged.emit()
+
+
+    def setStackUnits(self,px,py,pz):
+        print px,py,pz
+        self.stackUnits = px,py,pz
+        self._stackUnitsChanged.emit(px,py,pz)
         self._transformChanged.emit()
 
     def setBox(self,isBox = True):
@@ -180,6 +192,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setModel(None)
         self.transform._transformChanged.connect(self.refresh)
+        self.transform._stackUnitsChanged.connect(self.setStackUnits)
 
         self.refresh()
 
@@ -190,7 +203,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self.dataSourceChanged()
-            self.transform.reset(amax(self.dataModel[0]))
+            self.transform.reset(amax(self.dataModel[0]),self.dataModel.dataContainer.stackUnits)
 
 
     def dragEnterEvent(self, event):
@@ -244,14 +257,18 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0])
-        if self.dataModel.dataContainer.stackUnits != None:
-            self.renderer.set_units(self.dataModel.dataContainer.stackUnits)
-        else:
-            self.renderer.set_units([.16,.16,.8])
-        self.transform.reset(amax(self.dataModel[0]))
+        # if self.dataModel.dataContainer.stackUnits != None:
+        #     self.renderer.set_units(self.dataModel.dataContainer.stackUnits)
+        # else:
+        #     self.renderer.set_units([.16,.16,.8])
+        self.transform.reset(amax(self.dataModel[0]),self.dataModel.dataContainer.stackUnits)
 
         self.refresh()
 
+
+    def setStackUnits(self,px,py,pz):
+        print "set: ", px,py,pz
+        self.renderer.set_units([px,py,pz])
 
 
     def dataPosChanged(self,pos):
@@ -351,20 +368,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
 
 
-        # if self.count%20==0:
-        #     t2  = time.time()
-        #     fps = 20./(t2-self.t)
-        #     self.t = t2
-        #     if self.parentWidget():
-        #         self.parentWidget().setWindowTitle('%s   (%.1f fps)'%(self.dataModel.fName,fps))
-
         self.count += 1
 
-    # def saveFrame(self,fName):
-    #     self.render()
-    #     imsave(fName,self.output[::-1,:])
 
     def saveFrame(self,fName):
+        print "saving frame as ", fName
         self.render()
         self.grabFrameBuffer().save(fName)
 
@@ -442,15 +450,15 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(600,500))
-    win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
-    # win.setModel(DataLoadModel(dataContainer=SpimData("/Users/mweigert/Data/HisBTub/"),prefetchSize = 0))
+    # win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
+    win.setModel(DataLoadModel("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
 
     win.transform.setBox()
     win.transform.setPerspective(True)
 
     win.show()
 
-    win.dataModel.load("/Users/mweigert/Data/Drosophila_05/",prefetchSize=0)
+    # win.dataModel.load("/Users/mweigert/Data/droso_test",prefetchSize=0)
     win.raise_()
 
     sys.exit(app.exec_())

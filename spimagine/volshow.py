@@ -31,9 +31,8 @@ def volshow(data, glWindow = None, scale = True, stackUnits = [1,1,1]):
 
 
     glWindow.renderer.set_data(data)
-    glWindow.renderer.set_units(stackUnits)
 
-    glWindow.transform.reset(amax(data))
+    glWindow.transform.reset(amax(data),stackUnits)
     return glWindow
 
 
