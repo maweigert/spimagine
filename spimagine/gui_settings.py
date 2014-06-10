@@ -124,12 +124,13 @@ class SettingsPanel(QtGui.QWidget):
             print e
 
 
+            
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, ):
         super(QtGui.QMainWindow,self).__init__()
 
-        self.resize(300, 300)
+        self.resize(500, 300)
         self.setWindowTitle('Test')
 
         self.settings = SettingsPanel()
