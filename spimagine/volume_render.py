@@ -206,40 +206,40 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
         imsave("%s_%s.png"%(outName,str(t+1).zfill(int(ceil(log10(count+1))))),out)
 
 
-def test_simple():
+# def test_simple():
 
-    from time import time, sleep
-    from spimagine.data_model import DemoData
-    import pylab
+#     from time import time, sleep
+#     from spimagine.data_model import DemoData
+#     import pylab
 
-    rend = VolumeRenderer((400,400))
+#     rend = VolumeRenderer((400,400))
 
-    # Nx,Ny,Nz = 200,150,50
-    # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
+#     # Nx,Ny,Nz = 200,150,50
+#     # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 
-    d = DemoData(100)[0]
-    rend.set_data(d)
-    rend.set_units([1.,1.,.1])
-    rend.set_projection(projMatPerspective(60,1.,1,10))
-    rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
+#     d = DemoData(100)[0]
+#     rend.set_data(d)
+#     rend.set_units([1.,1.,.1])
+#     rend.set_projection(projMatPerspective(60,1.,1,10))
+#     rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
 
 
-    img = None
-    pylab.figure()
-    pylab.ion()
-    for t in linspace(0,pi,10):
-        print t
-        rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.7,.7,.7))))
+#     img = None
+#     pylab.figure()
+#     pylab.ion()
+#     for t in linspace(0,pi,10):
+#         print t
+#         rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.7,.7,.7))))
 
-        out = rend.render()
+#         out = rend.render()
 
-        if not img:
-            img = pylab.imshow(out)
-        else:
-            img.set_data(out)
-        pylab.draw()
+#         if not img:
+#             img = pylab.imshow(out)
+#         else:
+#             img.set_data(out)
+#         pylab.draw()
 
-        sleep(.4)
+#         sleep(.4)
 
 
 
