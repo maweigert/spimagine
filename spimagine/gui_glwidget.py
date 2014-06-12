@@ -33,6 +33,8 @@ from transform_matrices import *
 
 from numpy import *
 
+from keyframe_model import TransformData
+
 
 # from scipy.misc import imsave
 
@@ -76,6 +78,8 @@ class TransformModel(QtCore.QObject):
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
     _perspectiveChanged = QtCore.pyqtSignal(int)
+    # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
+
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
 
@@ -95,7 +99,7 @@ class TransformModel(QtCore.QObject):
         self.setGamma(1.)
         self.setBox(True)
         if not stackUnits:
-            stackUnits = [.16,.16,.8]
+            stackUnits = [.1,.1,.1]
         self.setStackUnits(*stackUnits)
         self.update()
 
@@ -130,6 +134,12 @@ class TransformModel(QtCore.QObject):
         self.zoom = clip(zoom,.5,2)
         self.update()
 
+    # def setRotation(self,w,x,y,z):
+    #     """ rotation in quaternion notation""" 
+    #     self.quat = quat.copy()
+
+
+
     def update(self):
         if self.isPerspective:
             self.cameraZ = 4*(1-log(self.zoom)/log(2.))
@@ -160,6 +170,12 @@ class TransformModel(QtCore.QObject):
                                 dot(transMatReal(*self.translate),self.quatRot.toRotation4())))
 
         return modelView
+
+    def fromTransformData(self,transformData):
+        pass
+
+    def toTransformData(self):
+        return TransformData(*self.quatRot)
 
 
 class GLWidget(QtOpenGL.QGLWidget):

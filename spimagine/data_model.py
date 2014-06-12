@@ -105,7 +105,8 @@ class DataLoadModel(QtCore.QObject):
         self._dataSourceChanged.connect(self.dataSourceChanged)
         self._dataPosChanged.connect(self.dataPosChanged)
 
-        self.load(fName, dataContainer, prefetchSize = prefetchSize)
+        if fName or dataContainer:
+            self.load(fName, dataContainer, prefetchSize = prefetchSize)
 
 
     def dataSourceChanged(self):
@@ -163,6 +164,10 @@ class DataLoadModel(QtCore.QObject):
     def sizeT(self):
         if self.dataContainer:
             return self.dataContainer.sizeT()
+
+    def stackSize(self):
+        if self.dataContainer:
+            return self.dataContainer.stackSize
 
 
     def setPos(self,pos):
