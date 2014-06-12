@@ -88,20 +88,25 @@ class SettingsPanel(QtGui.QWidget):
         self.checkBox.setStyleSheet(
             checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
 
+
+        self.checkLoopBounce = QtGui.QCheckBox()
+
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("projection:"))
         hbox.addWidget(self.checkProj)
         vbox.addLayout(hbox)
+
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("bounding box:"))
         hbox.addWidget(self.checkBox)
         vbox.addLayout(hbox)
 
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("loop bounce:"))
+        hbox.addWidget(self.checkLoopBounce)
+        vbox.addLayout(hbox)
+
         vbox.addStretch()
-
-
-
-
 
         self.setStyleSheet("""
         QFrame,QLabel,QLineEdit {
@@ -127,7 +132,7 @@ class SettingsPanel(QtGui.QWidget):
             print e
 
 
-            
+
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, ):

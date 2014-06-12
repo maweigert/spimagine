@@ -98,22 +98,14 @@ class MainWindow(QtGui.QMainWindow):
         checkBoxStyleStr = """
         QCheckBox::indicator:checked {
         background:black;
-        background-image: url(:%s);
+        border-image: url(%s);
 
 
         }
         QCheckBox::indicator:unchecked {
         background:black;
-        border-image: url(:%s);}
+        border-image: url(%s);}
         """
-
-        # self.checkProj  = QtGui.QCheckBox()
-        # self.checkProj.setStyleSheet(
-        #     checkBoxStyleStr%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
-
-        # self.checkBox = QtGui.QCheckBox()
-        # self.checkBox.setStyleSheet(
-        #     checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
 
         self.checkSettings = QtGui.QCheckBox()
         self.checkSettings.setStyleSheet(
@@ -128,6 +120,8 @@ class MainWindow(QtGui.QMainWindow):
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.sliderTime.setTickInterval(1)
+        self.sliderTime.setFocusPolicy(QtCore.Qt.ClickFocus)
+
         self.sliderTime.setTracking(False)
 
 
@@ -144,9 +138,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.scaleSlider.setRange(1, 250)
+        self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(0, 200)
+        self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+
         # self.gammaSlider.setValue(50)
 
         self.scaleSlider.valueChanged.connect(
@@ -205,7 +202,7 @@ class MainWindow(QtGui.QMainWindow):
         self.playTimer = QtCore.QTimer(self)
         self.playTimer.setInterval(100)
         self.playTimer.timeout.connect(self.onPlayTimer)
-        self.playDir = 1
+        self.setLoopBounce(True)
 
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
         self.glWidget.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
@@ -221,9 +218,11 @@ class MainWindow(QtGui.QMainWindow):
         self.dataModel = DataLoadModel()
 
 
+        self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
         self.settingsView._stackUnitsChanged.connect(self.glWidget.transform.setStackUnits)
         self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
+
 
 
         self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
@@ -283,21 +282,32 @@ class MainWindow(QtGui.QMainWindow):
             self.glWidget.saveFrame(fileName)
 
 
+    def setLoopBounce(self,loopBounce):
+        #if loopBounce = True, then while playing it should loop back and forth
+        self.loopBounce = loopBounce
+        self.settingsView.checkLoopBounce.setChecked(loopBounce)
+        self.playDir = 1
+
     def onPlayTimer(self):
 
         if self.dataModel.pos == self.dataModel.sizeT()-1:
-            self.playDir = -1
+            self.playDir = 1-2*self.loopBounce
         if self.dataModel.pos == 0:
             self.playDir = 1
 
         print self.dataModel.pos, self.playDir
         newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
-        # self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
 
     def close(self):
         isAppRunning = False
         QtGui.qApp.quit()
+
+    # def keyPressEvent(self,event):
+    #     super(MainWindow,self).keyPressEvent(event)
+
+    #     if event.key() == QtCore.Qt.KeyUp:
+    #         print "huuuu"
 
     def mouseDoubleClickEvent(self,event):
         super(MainWindow,self).mouseDoubleClickEvent(event)
