@@ -157,9 +157,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
         self.keyframes = KeyFrameList()
-        self.keyView = KeyListView()
-        self.keyView.hide()
-        self.keyView.setModel(self.keyframes)
+        self.keyPanel = KeyFramePanel()
+        self.keyPanel.hide()
+
+
 
 
         self.settingsView = SettingsPanel()
@@ -189,7 +190,7 @@ class MainWindow(QtGui.QMainWindow):
         vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
-        vbox.addWidget(self.keyView)
+        vbox.addWidget(self.keyPanel)
 
         widget = QtGui.QWidget()
         widget.setLayout(vbox)
@@ -209,23 +210,30 @@ class MainWindow(QtGui.QMainWindow):
         self.settingsView.checkProj.stateChanged.connect(self.glWidget.transform.setPerspective)
         self.glWidget.transform._perspectiveChanged.connect(self.settingsView.checkProj.setChecked)
 
-        self.checkKey.stateChanged.connect(self.keyView.setVisible)
+        self.checkKey.stateChanged.connect(self.keyPanel.setVisible)
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
 
-        self.dataModel = DataLoadModel(dataContainer=DemoData(100),
-                                       prefetchSize = N_PREFETCH)
+        self.dataModel = DataLoadModel()
+
 
 
         self.settingsView._stackUnitsChanged.connect(self.glWidget.transform.setStackUnits)
         self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
-        self.glWidget.setModel(self.dataModel)
 
         self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
         self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
         self.sliderTime.valueChanged.connect(self.dataModel.setPos)
+
+        self.dataModel.load(dataContainer=DemoData(100),
+                                       prefetchSize = N_PREFETCH)
+        self.glWidget.setModel(self.dataModel)
+
+
+        self.keyPanel.keyView.setDataTransformModel(self.dataModel,self.glWidget.transform)
+        self.keyPanel.keyView.setModel(self.keyframes)
 
 
     def initUI(self):
@@ -249,6 +257,7 @@ class MainWindow(QtGui.QMainWindow):
     def dataSourceChanged(self):
         self.sliderTime.setRange(0,self.dataModel.sizeT()-1)
         self.spinTime.setRange(0,self.dataModel.sizeT()-1)
+        self.settingsView.dimensionLabel.setText("Dim: %ix%ix%i"%self.dataModel.stackSize()[:0:-1])
 
 
     def startPlay(self,event):
@@ -277,7 +286,7 @@ class MainWindow(QtGui.QMainWindow):
             self.playDir = 1
 
         print self.dataModel.pos, self.playDir
-        newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
+        newpos = (self.dataModel.pos+selgf.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
         # self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
 

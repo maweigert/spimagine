@@ -19,12 +19,13 @@ class TransformData(object):
 
 
 class KeyFrame(object):
-    def __init__(self,tFrame = 0,data = TransformData()):
+    def __init__(self,tFrame = 0, dataPos = 0, transformData = TransformData()):
         self.tFrame = tFrame
-        self.data = data
+        self.transformData = transformData
+        self.dataPos = dataPos
 
     def __repr__(self):
-        return "t = %.3f \t %s"%(self.tFrame,self.data)
+        return "t = %.3f \t %i \t %s"%(self.tFrame,self.dataPos,self.transformData)
 
     def __cmp__(self,rhs):
         return cmp(self.tFrame,rhs.tFrame)
@@ -39,7 +40,7 @@ class KeyFrameList(QtCore.QObject):
         super(KeyFrameList,self).__init__()
         self.keyDict = dict()
         self.tFrames = list()
-        self.addItem(KeyFrame(0))
+        self.addItem(KeyFrame(0),)
         self.addItem(KeyFrame(1))
         self._modelChanged.emit()
 
@@ -62,8 +63,8 @@ class KeyFrameList(QtCore.QObject):
     def __getitem__(self,myID):
         return self.keyDict[myID]
 
-    def interpolate(self,x,y, lam):
-        return  (1.-lam)*x.data.data + lam*y.data.data
+    # def interpolate(self,x,y, lam):
+    #     return  (1.-lam)*x.transformData.data + lam*y.transformData.dat,(1.-lam)*x.transformData.data + lam*y.transformData.data
 
     def _getNewID(self):
         self._countID += 1
@@ -88,19 +89,25 @@ class KeyFrameList(QtCore.QObject):
 
         leftID, rightID = self._NToID(left),self._NToID(right)
         if leftID == rightID:
-            return self.keyDict[leftID].data
+            return self.keyDict[leftID]
 
         # linear interpolating
         frameLeft, frameRight = self.keyDict[leftID], self.keyDict[rightID]
         lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
-        return self.interpolate(self.keyDict[leftID],self.keyDict[rightID],lam)
+
+        #transforms:
+        newTrans = (1.-lam)*frameLeft.transformData.data + lam*frameRight.transformData.data
+        newPos = (1.-lam)*frameLeft.dataPos + lam*frameRight.dataPos
+        newPos = int(newPos)
+        
+        return KeyFrame(tFrame,newPos,TransformData(newTrans))
 
 
 
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,TransformData(.5,.4,.3)))
+    k.addItem(KeyFrame(.5,0,TransformData(.5,.4,.3)))
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)
@@ -110,7 +117,9 @@ if __name__ == '__main__':
 
 
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,TransformData(.5,.4,.3)))
+    k.addItem(KeyFrame(.5,4,TransformData(.5,.4,.3)))
+
+    print k
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)

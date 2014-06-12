@@ -19,7 +19,7 @@ import argparse
 
 from volume_render import *
 from scipy.misc import toimage
-
+from SpimUtils import read3dTiff, fromSpimFolder
 
 from PIL import Image
 
@@ -37,34 +37,50 @@ def getTiffSize(fName):
 
 
 
-def read3dTiff(fName, depth = -1, dtype = np.uint16):
+# def read3dTiff(fName, depth = -1, dtype = np.uint16):
 
-    if not depth>0:
-        depth = getTiffSize(fName)[0]
+#     if not depth>0:
+#         depth = getTiffSize(fName)[0]
 
-    img = Image.open(fName, 'r')
-    stackSize = (depth,) + img.size[::-1]
+#     img = Image.open(fName, 'r')
+#     stackSize = (depth,) + img.size[::-1]
 
-    data = np.empty(stackSize,dtype=dtype)
+#     data = np.empty(stackSize,dtype=dtype)
 
-    for i in range(stackSize[0]):
-        img.seek(i)
-        data[i,...] = np.asarray(img, dtype= dtype)
+#     for i in range(stackSize[0]):
+#         img.seek(i)
+#         data[i,...] = np.asarray(img, dtype= dtype)
 
-    return data
+#     return data
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="3d max projects a file renders a file")
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+        description="""renders max projectios of 3d data
+
+    example usage:
+
+    Tif data: \t \tspim_render  -i mydata.tif -o myoutput.png -t 0 0 -4 -u 1 1 4
+    Bscope data:  \tspim_render -f bscope -i mydataFolder -o myoutput.png -t 0 0 -4 -u 1 1 4
+    """)
+
+    parser.add_argument("-f","--format",dest="format",metavar="format",
+                        help = """format currently supported:
+    tif (default)
+    bscope  """,
+                        type=str,default = "tif", required = False)
 
     parser.add_argument("-i","--input",dest="input",metavar="infile",
-                        help = "name of the input file to render, currentlty only 3d Tiff is supported",
+                        help = "name of the input file to render, currently only 3d Tiff is supported",
                         type=str,default = None, required = True)
 
     parser.add_argument("-o","--output",dest="output",metavar="outfile",
                         help = "name of the output file,  png extension is recommended",
                         type=str,default = "out.png")
+
+    parser.add_argument("-p","--pos",dest="pos",metavar="timepoint position",
+                        help = "timepoint to render if format=='bscope' ",
+                        type=int,default = 0)
 
     parser.add_argument("-w","--width",dest="width",metavar="width",
                         help = "pixelwidth of the rendered output ",
@@ -100,7 +116,7 @@ def main():
 
     if len(sys.argv)==1:
         parser.print_help()
-        sys.exit(1)
+        return
 
     args = parser.parse_args()
 
@@ -110,7 +126,13 @@ def main():
 
     rend = VolumeRenderer((args.width,args.width))
 
-    data = read3dTiff(args.input)
+    if args.format=="tif":
+        data = read3dTiff(args.input)
+    elif args.format=="bscope":
+        data = fromSpimFolder(args.input,pos=args.pos,count=1)[0,...]
+    else:
+        print "ERROR: format", args.format, "not supported (should be tif/bscope)"
+        return
 
     rend.set_data(data)
     rend.set_units(args.units)

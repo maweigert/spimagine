@@ -14,7 +14,7 @@ def createApp():
         app = QtGui.QApplication(sys.argv)
     return app
 
-def volshow(data, glWindow = None, scale = True, stackUnits = [1,1,1]):
+def volshow(data, glWindow = None, scale = True, stackUnits = [.1,.1,.1]):
     app = createApp()
 
     if not glWindow:

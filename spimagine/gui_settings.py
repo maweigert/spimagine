@@ -34,6 +34,9 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox = QtGui.QVBoxLayout()
 
+        self.dimensionLabel = QtGui.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
+        vbox.addWidget(self.dimensionLabel)
+
 
         vbox.addWidget(QtGui.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
 

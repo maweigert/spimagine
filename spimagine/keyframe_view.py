@@ -6,7 +6,21 @@ import math
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from keyframe_model import KeyFrame, KeyFrameList, TransformData
+from keyframe_model import KeyFrame, KeyFrameList
+from data_model import DataLoadModel, DemoData
+from gui_glwidget import TransformModel
+
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
+
+
 
 class KeyEdge(QGraphicsItem):
     def __init__(self, sourceKeyNode, destKeyNode):
@@ -197,7 +211,7 @@ class KeyNode(QGraphicsItem):
 
 class KeyFrameScene(QGraphicsScene):
     WIDTH = 100
-    HEIGHT = 50
+    HEIGHT = 100
 
     # def mousePressEvent(self, event):
     #     print "Scene"
@@ -229,9 +243,11 @@ class KeyListView(QGraphicsView):
         self.setWindowTitle("KeyFrameView")
         self.zoom = 1.
         self.relativeAspect = 1.
+        self.isListening = True
 
 
-
+    def setDataTransformModel(self,dataModel, transformModel):
+        self.dataModel, self.transformModel = dataModel, transformModel
 
     def setModel(self,keyList):
 
@@ -296,15 +312,47 @@ class KeyListView(QGraphicsView):
 
         posScene = self.mapToScene(event.pos())
 
-        actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH))}
-        actions = {}
+        if self.dataModel:
+            actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH,self.dataModel.pos,self.transformModel.toTransformData()))}
+            actions = {}
 
-        object_cntext_Menu = QMenu()
-        for k, meth in actionMethods.iteritems():
-            actions[k] = object_cntext_Menu.addAction(k,meth)
+            object_cntext_Menu = QMenu()
+            for k, meth in actionMethods.iteritems():
+                actions[k] = object_cntext_Menu.addAction(k,meth)
 
-        object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
+                object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
+
+class KeyFramePanel(QWidget):
+    def __init__(self):
+        super(QWidget,self).__init__()
+
+        self.resize(500, 50)
+        self.initUI()
+
+
+    def initUI(self):
+        self.keyView =  KeyListView()
+
+
+
+        self.startButton = QPushButton("",self)
+        self.startButton.setStyleSheet("background-color: black")
+        self.startButton.setIcon(QIcon(absPath("images/icon_start.png")))
+        self.startButton.setIconSize(QSize(24,24))
+        self.startButton.clicked.connect(self.startPlay)
+        self.startButton.setMaximumWidth(24)
+        self.startButton.setMaximumHeight(24)
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.startButton)
+        
+        hbox.addWidget(self.keyView)
+
+        self.setLayout(hbox)
+
+    def startPlay(self,evt):
+        print "start"
 
 
 
@@ -313,22 +361,29 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow,self).__init__()
 
-        self.resize(500, 50)
-        self.setWindowTitle("Key Frame View")
+        self.resize(500, 100)
+        self.setWindowTitle("Key Frame View")   
 
-        self.keyView =  KeyListView()
+        
 
+        self.keyPanel = KeyFramePanel()
+
+        dataModel = DataLoadModel(dataContainer = DemoData(50),prefetchSize = 0)
+        transModel = TransformModel()
+
+        dataModel.setPos(2)
+        self.keyPanel.keyView.setDataTransformModel(dataModel,transModel)
 
         k = KeyFrameList()
         k.addItem(KeyFrame(0.4))
         k.addItem(KeyFrame(0.9))
 
-        self.keyView.setModel(k)
+        self.keyPanel.keyView.setModel(k)
 
+        
+        self.setCentralWidget(self.keyPanel)
 
-
-
-        self.setCentralWidget(self.keyView)
+        self.setStyleSheet("background-color:black;")
 
 
 
@@ -343,6 +398,5 @@ if __name__ == '__main__':
     win.show()
     win.raise_()
 
-    
-    app.exec_()
 
+    app.exec_()
