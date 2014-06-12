@@ -98,10 +98,13 @@ class MainWindow(QtGui.QMainWindow):
         checkBoxStyleStr = """
         QCheckBox::indicator:checked {
         background:black;
-        border-image: url(%s);}
+        background-image: url(:%s);
+
+
+        }
         QCheckBox::indicator:unchecked {
         background:black;
-        border-image: url(%s);}
+        border-image: url(:%s);}
         """
 
         # self.checkProj  = QtGui.QCheckBox()
@@ -115,6 +118,7 @@ class MainWindow(QtGui.QMainWindow):
         self.checkSettings = QtGui.QCheckBox()
         self.checkSettings.setStyleSheet(
             checkBoxStyleStr%(absPath("images/settings.png"),absPath("images/settings_inactive.png")))
+
 
         self.checkKey = QtGui.QCheckBox()
         self.checkKey.setStyleSheet(
@@ -257,6 +261,7 @@ class MainWindow(QtGui.QMainWindow):
     def dataSourceChanged(self):
         self.sliderTime.setRange(0,self.dataModel.sizeT()-1)
         self.spinTime.setRange(0,self.dataModel.sizeT()-1)
+        print "XXXX",self.dataModel.stackSize()
         self.settingsView.dimensionLabel.setText("Dim: %ix%ix%i"%self.dataModel.stackSize()[:0:-1])
 
 
@@ -286,7 +291,7 @@ class MainWindow(QtGui.QMainWindow):
             self.playDir = 1
 
         print self.dataModel.pos, self.playDir
-        newpos = (self.dataModel.pos+selgf.playDir)%self.dataModel.sizeT()
+        newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
         self.dataModel.setPos(newpos)
         # self.glWidget.transform.quatRot *= Quaternion(np.cos(.01),0,np.sin(0.01),0)
 

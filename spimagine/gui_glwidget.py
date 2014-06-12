@@ -339,7 +339,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glLineWidth(1)
         glColor(1.,1.,1.,.3)
 
-        if self.transform.isBox:
+        if not os.name == "nt" and self.transform.isBox:
             GLUT.glutWireCube(2)
 
         self.shaderTex.bind()
