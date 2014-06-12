@@ -27,7 +27,7 @@ class DemoData(GenericData):
         self.load(N)
 
     def load(self,N = 100):
-        self.stackSize = (N,N,N/2)
+        self.stackSize = (1,N,N,N/2)
         self.fName = ""
         self.nT = N
         self.stackUnits = (1,1,1)
