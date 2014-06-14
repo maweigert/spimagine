@@ -7,7 +7,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from keyframe_model import KeyFrame, KeyFrameList
-from data_model import DataLoadModel, DemoData
+from data_model import DataModel, DemoData
 from gui_glwidget import TransformModel
 
 def absPath(myPath):
@@ -368,7 +368,7 @@ class MainWindow(QMainWindow):
 
         self.keyPanel = KeyFramePanel()
 
-        dataModel = DataLoadModel(dataContainer = DemoData(50),prefetchSize = 0)
+        dataModel = DataModel(dataContainer = DemoData(50),prefetchSize = 0)
         transModel = TransformModel()
 
         dataModel.setPos(2)

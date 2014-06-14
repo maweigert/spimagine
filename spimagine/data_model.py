@@ -18,12 +18,133 @@ from PyQt4 import QtCore
 import time
 import re
 from collections import defaultdict
-from dataloader import GenericData, SpimData, TiffData
+import SpimUtils
+
+############################################################################
+"""
+Te next classes define simple 4d Data Structures that implement the interface
+given by GenericData
+"""
+
+class GenericData():
+    """abstract base class for 4d data"""
+    dataFileError = Exception("not a valid file")
+    def __init__(self, name = ""):
+        self.stackSize = None
+        self.stackUnits = None
+        self.name = name
+
+    def sizeT(self):
+        return self.stackSize[0]
+
+    def size(self):
+        return self.stackSize
+
+    def __getitem__(self,int):
+        return None
+
+
+class SpimData(GenericData):
+    """data class for spim data saved in folder fName
+    fname/
+    |-- metadata.txt
+    |-- data/
+       |--data.bin
+       |--index.txt
+    """
+    def __init__(self,fName = ""):
+        GenericData.__init__(self, fName)
+        self.load(fName)
+
+    def load(self,fName):
+        if fName:
+            try:
+                self.stackSize = SpimUtils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                self.stackUnits = SpimUtils.parseMetaFile(os.path.join(fName,"metadata.txt"))
+                self.fName = fName
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as SpimData"%fName)
+
+            try:
+                # try to figure out the dimension of the dark frame stack
+                darkSizeZ = os.path.getsize(os.path.join(self.fName,"data/darkstack.bin"))/2/self.stackSize[2]/self.stackSize[3]
+                print darkSizeZ
+                with open(os.path.join(self.fName,"data/darkstack.bin"),"rb") as f:
+                    self.darkStack = np.fromfile(f,dtype="<u2").reshape([darkSizeZ,self.stackSize[2],self.stackSize[3]])
+
+            except Exception as e:
+                print e
+                print "couldn't find darkstack"
+
+
+    def __getitem__(self,pos):
+        if self.stackSize and self.fName:
+            if pos<0 or pos>=self.stackSize[0]:
+                raise IndexError("0 <= pos <= %i, but pos = %i"%(self.stackSize[0]-1,pos))
+
+
+            pos = max(0,min(pos,self.stackSize[0]-1))
+            voxels = np.prod(self.stackSize[1:])
+            # use int64 for bigger files
+            offset = np.int64(2)*pos*voxels
+
+            with open(os.path.join(self.fName,"data/data.bin"),"rb") as f:
+                f.seek(offset)
+                return np.fromfile(f,dtype="<u2",
+                count=voxels).reshape(self.stackSize[1:])
+        else:
+            return None
+
+
+class TiffData(GenericData):
+    """3d tiff data"""
+    def __init__(self,fName = ""):
+        GenericData.__init__(self, fName)
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            try:
+                self.stackSize = (1,)+ SpimUtils.getTiffSize(fName)
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as TiffData"%fName)
+                return
+
+            self.stackUnits = stackUnits
+            self.fName = fName
+
+
+    def __getitem__(self,pos):
+        if self.stackSize and self.fName:
+            return SpimUtils.read3dTiff(self.fName)
+        else:
+            return None
+
+
+class NumpyData(GenericData):
+    def __init__(self, data, stackUnits = [1.,1.,1.]):
+        GenericData.__init__(self,"NumpyData")
+        if len(data.shape)==3:
+            self.stackSize = (1,) + data.shape
+            self.data = np.array([data])
+        elif len(data.shape)==4:
+            self.stackSize = data.shape
+            self.data = data.copy()
+        else:
+            print "data should be 3 or 4 dimensional! shape = %s" %data.shape
+        self.stackUnits = stackUnits
+
+    def __getitem__(self,pos):
+        return self.data[pos,...]
 
 
 class DemoData(GenericData):
     def __init__(self, N = 100):
-        GenericData.__init__(self)
+        GenericData.__init__(self,"DemoData")
         self.load(N)
 
     def load(self,N = 100):
@@ -51,10 +172,17 @@ class DemoData(GenericData):
     def __getitem__(self,pos):
         return self.data
 
+############################################################################
+"""
+this defines the qt enabled data models based on the GenericData structure
 
+each dataModel starts a prefetching thread, that loads next timepoints in
+the background
+"""
 
 
 class DataLoadThread(QtCore.QThread):
+    """the prefetching thread for each data model"""
     def __init__(self, _rwLock, nset = set(), data = None,dataContainer = None):
         QtCore.QThread.__init__(self)
         self._rwLock = _rwLock
@@ -91,69 +219,56 @@ class DataLoadThread(QtCore.QThread):
             time.sleep(.0001)
 
 
-class DataLoadModel(QtCore.QObject):
+class DataModel(QtCore.QObject):
+    """the data model
+    emits signals when source/time position has changed
+    """
     _dataSourceChanged = QtCore.pyqtSignal()
     _dataPosChanged = QtCore.pyqtSignal(int)
 
     _rwLock = QtCore.QReadWriteLock()
 
-    def __init__(self, fName = "", dataContainer = None, prefetchSize = 0):
-        print "prefetch: ", prefetchSize
-        super(DataLoadModel,self).__init__()
-
+    def __init__(self, dataContainer = None, prefetchSize = 0):
+        super(DataModel,self).__init__()
         self.dataLoadThread = DataLoadThread(self._rwLock)
         self._dataSourceChanged.connect(self.dataSourceChanged)
         self._dataPosChanged.connect(self.dataPosChanged)
+        if dataContainer:
+            self.setContainer(dataContainer, prefetchSize)
 
-        if fName or dataContainer:
-            self.load(fName, dataContainer, prefetchSize = prefetchSize)
+    @classmethod
+    def fromPath(self,fName, prefetchSize = 0):
+        d = DataModel()
+        d.loadFromPath(fName,prefetchSize)
+        return d
 
+    def setContainer(self,dataContainer = None, prefetchSize = 0):
+        self.dataContainer = dataContainer
+        self.prefetchSize = prefetchSize
+        self.nset = []
+        self.data = defaultdict(lambda: None)
+
+        if self.dataContainer:
+            if prefetchSize > 0:
+                self.stopDataLoadThread()
+                self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
+                self.dataLoadThread.start(priority=QtCore.QThread.LowPriority)
+            self._dataSourceChanged.emit()
+            self.setPos(0)
+
+
+    def __repr__(self):
+        return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())
 
     def dataSourceChanged(self):
-        print "data source changed"
+        print "data source changed:\n%s"%self
 
     def dataPosChanged(self, pos):
         print "data position changed to %i"%pos
 
 
 
-    def load(self,fName = "", dataContainer = None, prefetchSize = 0):
-        if not fName and not dataContainer:
-            return
-
-        if not dataContainer:
-            try:
-                dataContainer = self.chooseContainer(fName)
-            except Exception as e:
-                print "couldnt load abstract data container ", fName
-                print e
-                return
-
-        self.dataContainer = dataContainer
-
-        print "loading ...", fName, prefetchSize
-        self.fName = fName
-        self.prefetchSize = prefetchSize
-        self.nset = []
-        self.data = defaultdict(lambda: None)
-
-        if prefetchSize > 0:
-            self.dataLoadThread.stopped = True
-            self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
-            self.dataLoadThread.start(priority=QtCore.QThread.HighPriority)
-
-        self._dataSourceChanged.emit()
-        self.setPos(0)
-
-
-    def chooseContainer(self,fName):
-        if re.match(".*\.tif",fName):
-            return TiffData(fName)
-        else:
-            return SpimData(fName)
-
-
-    def stop(self):
+    def stopDataLoadThread(self):
         self.dataLoadThread.stopped = True
 
     def prefetch(self,pos):
@@ -165,17 +280,23 @@ class DataLoadModel(QtCore.QObject):
         if self.dataContainer:
             return self.dataContainer.sizeT()
 
-    def stackSize(self):
+    def size(self):
         if self.dataContainer:
-            return self.dataContainer.stackSize
+            return self.dataContainer.size()
 
+    def name(self):
+        if self.dataContainer:
+            return self.dataContainer.name
+
+    def stackUnits(self):
+        if self.dataContainer:
+            return self.dataContainer.stackUnits
 
     def setPos(self,pos):
         if pos<0 or pos>=self.sizeT():
             raise IndexError("setPos(pos): %i outside of [0,%i]!"%(pos,self.sizeT()-1))
             return
 
-        print "setPos: ",pos
         self.pos = pos
         self._dataPosChanged.emit(pos)
         self.prefetch(self.pos)
@@ -200,45 +321,61 @@ class DataLoadModel(QtCore.QObject):
         return self.data[pos]
 
 
+
     def neighborhood(self,pos):
         # FIXME mod stackSize!
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
+    def loadFromPath(self,fName, prefetchSize = 0):
+        if re.match(".*\.tif",fName):
+            self.setContainer(TiffData(fName),prefetchSize)
+        else:
+            self.setContainer(SpimData(fName),prefetchSize)
 
-class MyData(DataLoadModel):
-    def dataSourceChanged(self):
-        print "a new one!!"
 
+
+
+def test_spimdata():
+    d = SpimData("/Users/mweigert/Data/HisGFP")
+
+    m = DataModel(d)
+
+    for pos in range(m.sizeT()):
+        print pos
+        print np.mean(m[pos])
+
+
+def test_tiffdata():
+    d = TiffData("/Users/mweigert/Data/droso_test.tif")
+
+    m = DataModel(d)
+
+    for pos in range(m.sizeT()):
+        print pos
+        print np.mean(m[pos])
+
+
+def test_numpydata():
+    d = NumpyData(np.ones((10,100,100,100)))
+
+
+    m = DataModel(d)
+
+    print m
+    for pos in range(m.sizeT()):
+        print pos
+        print np.mean(m[pos])
+
+def test_frompath():
+    m = DataModel.fromPath("/Users/mweigert/Data/HisGFP")
+    m = DataModel.fromPath("/Users/mweigert/Data/droso_test.tif")
 
 
 if __name__ == '__main__':
 
+    test_spimdata()
 
-    d = DemoData()
+    test_tiffdata()
+    test_numpydata()
 
-    # fName = "/Users/mweigert/python/Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
-
-    # fName = "/Users/mweigert/Data/Drosophila_Full"
-
-    # loader = DataLoadModel(fName,prefetchSize = 10)
-
-
-    # d = loader[0]
-
-    # time.sleep(2)
-
-
-    # dt = 0
-
-    # for i in range(10):
-    #     print i
-    #     # time.sleep(.1)
-    #     t = time.time()
-    #     # time.sleep(.1)
-
-    #     d = loader[i]
-    #     dt += (time.time()-t)
-
-    # print "%.3fs per fetch "%(dt/10.)
-
-    # loader.stop()
+    test_frompath()
