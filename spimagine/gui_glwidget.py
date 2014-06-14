@@ -30,6 +30,7 @@ from OpenGL.GL import shaders
 from volume_render import VolumeRenderer
 
 from transform_matrices import *
+from data_model import DataModel
 
 from numpy import *
 
@@ -135,9 +136,8 @@ class TransformModel(QtCore.QObject):
         self.update()
 
     # def setRotation(self,w,x,y,z):
-    #     """ rotation in quaternion notation""" 
+    #     """ rotation in quaternion notation"""
     #     self.quat = quat.copy()
-
 
 
     def update(self):
@@ -161,11 +161,6 @@ class TransformModel(QtCore.QObject):
 
 
     def getModelView(self):
-        # modelView = dot(transMatReal(0,0,-7*(1-log(self.transform.zoom)/log(2.))),
-        #                         dot(self.transform.quatRot.toRotation4(),transMatReal(*self.transform.translate)))
-
-        # modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
-        #                         dot(self.quatRot.toRotation4(),transMatReal(*self.translate))))
         modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
                                 dot(transMatReal(*self.translate),self.quatRot.toRotation4())))
 
@@ -179,6 +174,7 @@ class TransformModel(QtCore.QObject):
 
 
 class GLWidget(QtOpenGL.QGLWidget):
+    _dataModelChanged = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, N_PREFETCH = 1,**kwargs):
 
@@ -218,8 +214,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
-            self.dataSourceChanged()
-            self.transform.reset(amax(self.dataModel[0]),self.dataModel.dataContainer.stackUnits)
+            self._dataModelChanged.connect(self.dataModelChanged)
+            self._dataModelChanged.emit()
+
 
 
     def dragEnterEvent(self, event):
@@ -231,7 +228,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
-            self.dataModel.load(path, prefetchSize = self.N_PREFETCH)
+            self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
 
 
     def initializeGL(self):
@@ -271,19 +268,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         print self.shaderTex.log()
         self.shaderTex.link()
 
+    def dataModelChanged(self):
+        if self.dataModel:
+            self.renderer.set_data(self.dataModel[0])
+            self.transform.reset(amax(self.dataModel[0]),self.dataModel.stackUnits())
+            self.refresh()
+
+
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0])
-        # if self.dataModel.dataContainer.stackUnits != None:
-        #     self.renderer.set_units(self.dataModel.dataContainer.stackUnits)
-        # else:
-        #     self.renderer.set_units([.16,.16,.8])
-        self.transform.reset(amax(self.dataModel[0]),self.dataModel.dataContainer.stackUnits)
-
+        self.transform.reset(amax(self.dataModel[0]),self.dataModel.stackUnits())
         self.refresh()
 
 
     def setStackUnits(self,px,py,pz):
-        print "set: ", px,py,pz
         self.renderer.set_units([px,py,pz])
 
 
@@ -294,7 +292,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def refresh(self):
         if self.parentWidget() and self.dataModel:
-            self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.fName)
+            self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name)
         self.renderUpdate = True
 
     def resizeGL(self, width, height):
@@ -305,78 +303,77 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def paintGL(self):
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        Ny, Nx = self.output.shape
-        w = 1.*max(self.width,self.height)/self.width
-        h = 1.*max(self.width,self.height)/self.height
-        self.shaderBasic.bind()
+        if self.dataModel:
+            Ny, Nx = self.output.shape
+            w = 1.*max(self.width,self.height)/self.width
+            h = 1.*max(self.width,self.height)/self.height
+            self.shaderBasic.bind()
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glMultMatrixf(self.renderer.projection.T)
+            glMatrixMode(GL_PROJECTION)
+            glLoadIdentity()
+            glMultMatrixf(self.renderer.projection.T)
 
-        # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
-        # print glGetFloatv(GL_PROJECTION_MATRIX)
-
-
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-        # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
-        # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
-
-        # print modelView
-
-        mScale =  self.renderer._stack_scale_mat()
-        modelView = self.transform.getModelView()
-        scaledModelView  = dot(modelView,mScale)
-        glScale(w,h,1);
-
-        glMultMatrixf(scaledModelView.T)
-
-        glLineWidth(1)
-        glColor(1.,1.,1.,.3)
-
-        if not os.name == "nt" and self.transform.isBox:
-            GLUT.glutWireCube(2)
-
-        self.shaderTex.bind()
+            # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
+            # print glGetFloatv(GL_PROJECTION_MATRIX)
 
 
-        glEnable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
+            glMatrixMode(GL_MODELVIEW)
+            glLoadIdentity()
 
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
+            # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
+            # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
 
-        glBindTexture(GL_TEXTURE_2D,self.texture)
-        glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
-                      0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
+            # print modelView
 
-        glBegin (GL_QUADS);
-        glTexCoord2f (0, 0);
-        glVertex2f (-w, -h);
-        glTexCoord2f (1, 0);
-        glVertex2f (w, -h);
-        glTexCoord2f (1, 1);
-        glVertex2f (w,h);
-        glTexCoord2f (0, 1);
-        glVertex2f (-w, h);
-        glEnd();
+            mScale =  self.renderer._stack_scale_mat()
+            modelView = self.transform.getModelView()
+            scaledModelView  = dot(modelView,mScale)
+            glScale(w,h,1);
+
+            glMultMatrixf(scaledModelView.T)
+
+            glLineWidth(1)
+            glColor(1.,1.,1.,.3)
+
+            if not os.name == "nt" and self.transform.isBox:
+                GLUT.glutWireCube(2)
+
+                self.shaderTex.bind()
 
 
-        glDisable(GL_TEXTURE_2D)
+            glEnable(GL_TEXTURE_2D)
+            glDisable(GL_DEPTH_TEST)
 
-        self.shaderBasic.bind()
+            glMatrixMode(GL_MODELVIEW)
+            glLoadIdentity()
+            glMatrixMode(GL_PROJECTION)
+            glLoadIdentity()
+
+            glBindTexture(GL_TEXTURE_2D,self.texture)
+            glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
+                         0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
+
+            glBegin (GL_QUADS);
+            glTexCoord2f (0, 0);
+            glVertex2f (-w, -h);
+            glTexCoord2f (1, 0);
+            glVertex2f (w, -h);
+            glTexCoord2f (1, 1);
+            glVertex2f (w,h);
+            glTexCoord2f (0, 1);
+            glVertex2f (-w, h);
+            glEnd();
+
+
+            glDisable(GL_TEXTURE_2D)
+
+            self.shaderBasic.bind()
 
 
 
     def render(self):
-
         self.renderer.set_modelView(self.transform.getModelView())
         self.renderer.set_projection(self.transform.projection)
         out = self.renderer.render()
@@ -461,20 +458,18 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
 if __name__ == '__main__':
-    from data_model import DataLoadModel, DemoData, SpimData
+    from data_model import DataModel, DemoData, SpimData
 
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(600,500))
-    # win.setModel(DataLoadModel(dataContainer=DemoData(50),prefetchSize = 10))
-    win.setModel(DataLoadModel("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
+    win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
 
-    win.transform.setBox()
-    win.transform.setPerspective(True)
+    # win.transform.setBox()
+    # win.transform.setPerspective(True)
 
     win.show()
 
-    # win.dataModel.load("/Users/mweigert/Data/droso_test",prefetchSize=0)
     win.raise_()
 
     sys.exit(app.exec_())

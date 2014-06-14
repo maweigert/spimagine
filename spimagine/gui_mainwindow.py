@@ -21,7 +21,7 @@ from quaternion import Quaternion
 from gui_glwidget import GLWidget
 from keyframe_view import *
 from gui_settings import SettingsPanel
-from data_model import DataLoadModel, DemoData, SpimData
+from data_model import DataModel, DemoData, SpimData
 
 
 # the default number of data timeslices to prefetch
@@ -215,8 +215,7 @@ class MainWindow(QtGui.QMainWindow):
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
 
-        self.dataModel = DataLoadModel()
-
+        dataModel = DataModel(DemoData(50),prefetchSize = N_PREFETCH)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
@@ -224,18 +223,14 @@ class MainWindow(QtGui.QMainWindow):
         self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
 
+        dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+        dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
-        self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-        self.dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+        self.glWidget._dataModelChanged.connect(self.dataModelChanged)
 
-        self.sliderTime.valueChanged.connect(self.dataModel.setPos)
-
-        self.dataModel.load(dataContainer=DemoData(100),
-                                       prefetchSize = N_PREFETCH)
-        self.glWidget.setModel(self.dataModel)
+        self.glWidget.setModel(dataModel)
 
 
-        self.keyPanel.keyView.setDataTransformModel(self.dataModel,self.glWidget.transform)
         self.keyPanel.keyView.setModel(self.keyframes)
 
 
@@ -257,11 +252,23 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menuBar.addMenu('&File')
 
 
+    def dataModelChanged(self):
+        print "data Model changed"
+        dataModel = self.glWidget.dataModel
+        dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+        dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+
+        self.sliderTime.valueChanged.connect(dataModel.setPos)
+        self.keyPanel.keyView.setDataTransformModel(dataModel,self.glWidget.transform)
+
+        self.dataSourceChanged()
+
     def dataSourceChanged(self):
-        self.sliderTime.setRange(0,self.dataModel.sizeT()-1)
-        self.spinTime.setRange(0,self.dataModel.sizeT()-1)
-        print "XXXX",self.dataModel.stackSize()
-        self.settingsView.dimensionLabel.setText("Dim: %ix%ix%i"%self.dataModel.stackSize()[:0:-1])
+        print "sliderTime: ",self.glWidget.dataModel.sizeT()
+        self.sliderTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
+        self.sliderTime.setValue(0)
+        self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
+        self.settingsView.dimensionLabel.setText("Dim: %ix%ix%i"%self.glWidget.dataModel.size()[:0:-1])
 
 
     def startPlay(self,event):
@@ -290,14 +297,14 @@ class MainWindow(QtGui.QMainWindow):
 
     def onPlayTimer(self):
 
-        if self.dataModel.pos == self.dataModel.sizeT()-1:
+        if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
             self.playDir = 1-2*self.loopBounce
-        if self.dataModel.pos == 0:
+        if self.glWidget.dataModel.pos == 0:
             self.playDir = 1
 
-        print self.dataModel.pos, self.playDir
-        newpos = (self.dataModel.pos+self.playDir)%self.dataModel.sizeT()
-        self.dataModel.setPos(newpos)
+        print self.glWidget.dataModel.pos, self.playDir
+        newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
+        self.glWidget.dataModel.setPos(newpos)
 
     def close(self):
         isAppRunning = False
