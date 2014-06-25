@@ -8,21 +8,29 @@ from spimagine.gui_mainwindow import MainWindow
 
 from spimagine.data_model import DataModel, DemoData, NumpyData
 
+_MAIN_APP = None
 
-def createApp():
+#FIXME app issue
 
-    app = QtCore.QCoreApplication.instance()
+def getCurrentApp():
+    app = QtGui.QApplication.instance()
 
-    if app == None:
+    if not app:
         app = QtGui.QApplication(sys.argv)
+
     if not hasattr(app,"volfigs"):
         app.volfigs = OrderedDict()
-    return app
+
+    global _MAIN_APP
+    _MAIN_APP = app
+    return _MAIN_APP
+
+
 
 def volfig(num=None):
     """return window"""
 
-    app = createApp()
+    app = getCurrentApp()
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
 
@@ -45,9 +53,9 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = True, stackUnits = [.1,.1,.1]):
-    """return window.glWidget"""
-    app = createApp()
+def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
+    """return window.glWidget if not in blocking mode """
+    app = getCurrentApp()
 
     try:
         num,window = [(n,w) for n,w in app.volfigs.iteritems()][-1]
@@ -65,18 +73,16 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1]):
 
     window.glWidget.transform.reset(np.amax(data),stackUnits)
 
-    app.exec_()
-    
-    return window.glWidget
+    if blocking:
+        getCurrentApp().exec_()
+    else:
+        return window.glWidget
 
 
 if __name__ == '__main__':
 
-    # app = createApp()
-
 
     d = np.linspace(0,100,100**3).reshape((100,)*3)
 
-    volshow(d)
-
+    volshow(d, blocking = True)
 
