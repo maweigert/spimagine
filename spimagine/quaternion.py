@@ -7,6 +7,11 @@ class Quaternion():
     def __getitem__(self,i):
         return self.data[i]
 
+    def __setitem__(self,i,val):
+        self.data[i] = val
+
+
+
     def conj(self):
         return Quaternion(self[0],-self[1],-self[2],-self[2])
 
@@ -55,10 +60,20 @@ class Quaternion():
     [2*(b*d-a*c), 2*(c*d+a*b),  a**2-b**2-c**2+d**2],
     ])
 
-    
+
 
 if __name__ == '__main__':
     q = Quaternion(2,0,0,0)
 
     q = q.normalize()
+
+    q2 = q
+
     print q
+    print q2
+
+
+    q2[0] = 99.
+
+    print q
+    print q2

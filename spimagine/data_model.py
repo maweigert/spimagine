@@ -75,8 +75,7 @@ class SpimData(GenericData):
                     self.darkStack = np.fromfile(f,dtype="<u2").reshape([darkSizeZ,self.stackSize[2],self.stackSize[3]])
 
             except Exception as e:
-                print e
-                print "couldn't find darkstack"
+                print "couldn't find darkstack (%s)"%e
 
 
     def __getitem__(self,pos):
@@ -128,6 +127,7 @@ class TiffData(GenericData):
 class NumpyData(GenericData):
     def __init__(self, data, stackUnits = [1.,1.,1.]):
         GenericData.__init__(self,"NumpyData")
+
         if len(data.shape)==3:
             self.stackSize = (1,) + data.shape
             self.data = np.array([data])
@@ -136,6 +136,7 @@ class NumpyData(GenericData):
             self.data = data.copy()
         else:
             print "data should be 3 or 4 dimensional! shape = %s" %data.shape
+
         self.stackUnits = stackUnits
 
     def __getitem__(self,pos):
@@ -256,6 +257,8 @@ class DataModel(QtCore.QObject):
             self._dataSourceChanged.emit()
             self.setPos(0)
 
+    def getName(self):
+        return self.dataContainer.name
 
     def __repr__(self):
         return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())

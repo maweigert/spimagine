@@ -18,6 +18,8 @@ def createApp():
     return app
 
 def volfig(num=None):
+    """return window"""
+    
     app = createApp()
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
@@ -32,7 +34,7 @@ def volfig(num=None):
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
-        window = MainWindow()
+        window = MainWindow(NDEMO=1)
         window.show()
 
     #make num the last window
@@ -42,6 +44,7 @@ def volfig(num=None):
 
 
 def volshow(data, scale = True, stackUnits = [.1,.1,.1]):
+    """return window.glWidget"""
     app = createApp()
 
     try:
@@ -55,11 +58,11 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1]):
         ma,mi = np.amax(data), np.amin(data)
         data = 16000.*(data-mi)/(ma-mi)
 
-    m = DataModel(NumpyData(data))
+    m = DataModel(NumpyData(data.astype(np.float32)))
     window.glWidget.setModel(m)
 
     window.glWidget.transform.reset(np.amax(data),stackUnits)
-
+    return window.glWidget
 
 
 def volshow2(data, win = None, scale = True, stackUnits = [.1,.1,.1]):
@@ -93,17 +96,13 @@ if __name__ == '__main__':
     app = createApp()
 
 
-    # data = DemoData(50)[0]
 
-    d = np.linspace(0,100,20*10**3).reshape((20,10,10,10))
+    d = np.linspace(0,100,400**3).reshape((400,)*3)
 
-    volfig(1)
+    volfig()
 
-    volshow2(d)
+    volshow(d)
 
-    volfig(2)
-
-    volshow2(d)
 
 
     if app:
