@@ -80,6 +80,7 @@ class TransformModel(QtCore.QObject):
     _boxChanged = QtCore.pyqtSignal(int)
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
+    _rotationChanged = QtCore.pyqtSignal()
 
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
@@ -107,15 +108,12 @@ class TransformModel(QtCore.QObject):
 
     def setGamma(self, gamma):
         self.gamma = gamma
-        print "gamma: ", self.gamma
-        print "maxVal: ", self.maxVal
-
         self._gammaChanged.emit(self.gamma)
         self._transformChanged.emit()
 
     def setScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
-        print "maxVal: ", maxVal
+        # print "maxVal: ", maxVal
         self._maxChanged.emit(self.maxVal)
         self._transformChanged.emit()
 
@@ -135,9 +133,13 @@ class TransformModel(QtCore.QObject):
         self.zoom = clip(zoom,.5,2)
         self.update()
 
-    # def setRotation(self,w,x,y,z):
-    #     """ rotation in quaternion notation"""
-    #     self.quat = quat.copy()
+    def setRotation(self,angle,x,y,z):
+        self.setQuaternion(Quaternion(cos(angle),sin(angle)*x,sin(angle)*y,sin(angle)*z))
+
+    def setQuaternion(self,quat):
+        self.quatRot = Quaternion(*quat.data)
+        self._rotationChanged.emit()
+        self._transformChanged.emit()
 
 
     def update(self):
@@ -385,8 +387,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def saveFrame(self,fName):
+        """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
         print "saving frame as ", fName
         self.render()
+        self.paintGL()
+        glFlush()
         self.grabFrameBuffer().save(fName)
 
 
@@ -447,7 +452,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             w = arcsin(nnorm)
             n *= 1./(nnorm+1.e-10)
             q = Quaternion(cos(.5*w),*(sin(.5*w)*n))
-            self.transform.quatRot = self.transform.quatRot*q
+            self.transform.setQuaternion(self.transform.quatRot*q)
 
         if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(),event.y())

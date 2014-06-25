@@ -42,7 +42,7 @@ def absPath(myPath):
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self):
+    def __init__(self, NDEMO = 70):
         super(MainWindow,self).__init__()
 
         self.resize(800, 700)
@@ -215,7 +215,7 @@ class MainWindow(QtGui.QMainWindow):
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
 
-        dataModel = DataModel(DemoData(50),prefetchSize = N_PREFETCH)
+        dataModel = DataModel(DemoData(NDEMO),prefetchSize = N_PREFETCH)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
@@ -268,7 +268,13 @@ class MainWindow(QtGui.QMainWindow):
         self.sliderTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
-        self.settingsView.dimensionLabel.setText("Dim: %ix%ix%i"%self.glWidget.dataModel.size()[:0:-1])
+        print "XXXXX %s"%str(self.glWidget.dataModel.size())
+        self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
+
+        self.setWindowTitle(self.glWidget.dataModel.getName())
+        d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
+        minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
+        self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
 
 
     def startPlay(self,event):
@@ -308,6 +314,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def close(self):
         isAppRunning = False
+        if self.playTimer.isActive():
+            self.playTimer.stop()
+
         QtGui.qApp.quit()
 
     # def keyPressEvent(self,event):

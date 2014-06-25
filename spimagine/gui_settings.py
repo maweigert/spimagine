@@ -34,8 +34,6 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox = QtGui.QVBoxLayout()
 
-        self.dimensionLabel = QtGui.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
-        vbox.addWidget(self.dimensionLabel)
 
 
         vbox.addWidget(QtGui.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
@@ -92,21 +90,31 @@ class SettingsPanel(QtGui.QWidget):
         self.checkLoopBounce = QtGui.QCheckBox()
 
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("projection:"))
+        hbox.addWidget(QtGui.QLabel("projection:\t"))
         hbox.addWidget(self.checkProj)
         vbox.addLayout(hbox)
 
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("bounding box:"))
+        hbox.addWidget(QtGui.QLabel("bounding box:\t"))
         hbox.addWidget(self.checkBox)
         vbox.addLayout(hbox)
 
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("loop bounce:"))
+        hbox.addWidget(QtGui.QLabel("loop bounce:\t"))
         hbox.addWidget(self.checkLoopBounce)
         vbox.addLayout(hbox)
 
         vbox.addStretch()
+        line =  QtGui.QFrame()
+        line.setFrameShape(QtGui.QFrame.HLine)
+
+        vbox.addWidget(line)
+
+        self.dimensionLabel = QtGui.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
+        vbox.addWidget(self.dimensionLabel)
+
+        self.statsLabel = QtGui.QLabel("Max: Min: Mean:",alignment = QtCore.Qt.AlignLeft)
+        vbox.addWidget(self.statsLabel)
 
         self.setStyleSheet("""
         QFrame,QLabel,QLineEdit {
