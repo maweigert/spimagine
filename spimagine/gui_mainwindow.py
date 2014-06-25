@@ -311,18 +311,15 @@ class MainWindow(QtGui.QMainWindow):
         newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
         self.glWidget.dataModel.setPos(newpos)
 
+    def closeEvent(self,event):
+        self.close()
+        event.accept()
+
     def close(self):
-        isAppRunning = False
         if self.playTimer.isActive():
             self.playTimer.stop()
+        QMainWindow.close(self)
 
-        QtGui.qApp.quit()
-
-    # def keyPressEvent(self,event):
-    #     super(MainWindow,self).keyPressEvent(event)
-
-    #     if event.key() == QtCore.Qt.KeyUp:
-    #         print "huuuu"
 
     def mouseDoubleClickEvent(self,event):
         super(MainWindow,self).mouseDoubleClickEvent(event)
