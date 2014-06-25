@@ -10,7 +10,9 @@ from spimagine.data_model import DataModel, DemoData, NumpyData
 
 
 def createApp():
+
     app = QtCore.QCoreApplication.instance()
+
     if app == None:
         app = QtGui.QApplication(sys.argv)
     if not hasattr(app,"volfigs"):
@@ -19,7 +21,7 @@ def createApp():
 
 def volfig(num=None):
     """return window"""
-    
+
     app = createApp()
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
@@ -62,48 +64,19 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1]):
     window.glWidget.setModel(m)
 
     window.glWidget.transform.reset(np.amax(data),stackUnits)
+
+    app.exec_()
+    
     return window.glWidget
-
-
-def volshow2(data, win = None, scale = True, stackUnits = [.1,.1,.1]):
-    app = createApp()
-
-    if not win:
-        window = MainWindow()
-        window.show()
-        window.raise_()
-        win = window.glWidget
-        if not hasattr(app,"volfigs"):
-            print "no figs"
-            app.volfigs = set()
-        app.volfigs  = set([w for w in app.volfigs if w.isVisible()])
-        app.volfigs.add(window)
-
-    if scale:
-        ma,mi = np.amax(data), np.amin(data)
-        data = 16000.*(data-mi)/(ma-mi)
-
-    m = DataModel(NumpyData(data))
-    win.setModel(m)
-
-
-    win.transform.reset(np.amax(data),stackUnits)
-    return win
 
 
 if __name__ == '__main__':
 
-    app = createApp()
+    # app = createApp()
 
 
-
-    d = np.linspace(0,100,400**3).reshape((400,)*3)
-
-    volfig()
+    d = np.linspace(0,100,100**3).reshape((100,)*3)
 
     volshow(d)
 
 
-
-    if app:
-        sys.exit(app.exec_())

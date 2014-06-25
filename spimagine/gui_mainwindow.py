@@ -268,7 +268,6 @@ class MainWindow(QtGui.QMainWindow):
         self.sliderTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
-        print "XXXXX %s"%str(self.glWidget.dataModel.size())
         self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
         self.setWindowTitle(self.glWidget.dataModel.getName())
