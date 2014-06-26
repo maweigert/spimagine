@@ -5,7 +5,7 @@ from PyQt4 import QtOpenGL
 from OpenGL import GLU
 from OpenGL import GLUT
 from OpenGL.GL import *
-from numpy import array
+from numpy import *
 from transform_matrices import *
 
 class GLWidget(QtOpenGL.QGLWidget):
@@ -16,7 +16,28 @@ class GLWidget(QtOpenGL.QGLWidget):
     def initializeGL(self):
         self.qglClearColor(QtGui.QColor(0, 0,  0))
 
-        glEnable(GL_DEPTH_TEST)
+        # glEnable(GL_DEPTH_TEST)
+        glEnable(GL_TEXTURE_2D)
+        glEnable(GL_BLEND)
+        # glEnable(GL_DEPTH_TEST)
+        glEnable( GL_LINE_SMOOTH )
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+
+        self.texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+        glTexParameterf (GL_TEXTURE_2D,
+                            GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameterf (GL_TEXTURE_2D,
+                            GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+
+
 
     def resizeGL(self, width, height):
         if height == 0: height = 1
@@ -35,18 +56,40 @@ class GLWidget(QtOpenGL.QGLWidget):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
 
-        glOrtho(-2,2,-2,2,-10,10)
+        Nx, Ny = 100,100
+        self.output = linspace(0,1.,Nx*Ny)
 
-        print glGetFloatv(GL_PROJECTION_MATRIX).T
-        print projMatOrtho(-2.,2.,-2.,2.,-10,10)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        glBindTexture(GL_TEXTURE_2D,self.texture)
+        # glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
+        #                  0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
+
+        glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
+                         0, GL_RED, GL_FLOAT, self.output.astype(float32))
+
+        w,h = 1,1
+        glBegin (GL_QUADS);
+        glTexCoord2f (0, 0);
+        glVertex2f (-w, -h);
+        glTexCoord2f (1, 0);
+        glVertex2f (w, -h);
+        glTexCoord2f (1, 1);
+        glVertex2f (w,h);
+        glTexCoord2f (0, 1);
+        glVertex2f (-w, h);
+        glEnd();
+
+        # glOrtho(-2,2,-2,2,-10,10)
+
+        # print glGetFloatv(GL_PROJECTION_MATRIX).T
+        # print projMatOrtho(-2.,2.,-2.,2.,-10,10)
+        # glMatrixMode(GL_MODELVIEW)
+        # glLoadIdentity()
 
 
 
-        glLineWidth(1)
-        glColor(1.,1.,1.,1.)
-        GLUT.glutWireCube(2)
+        # glLineWidth(1)
+        # glColor(1.,1.,1.,1.)
+        # GLUT.glutWireCube(2)
 
 
     def onTimer(self):

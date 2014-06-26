@@ -96,7 +96,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
-        self.output = zeros([self.renderer.height,self.renderer.width],dtype=uint8)
+        self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
         self.count = 0
 
@@ -268,9 +268,13 @@ class GLWidget(QtOpenGL.QGLWidget):
             glLoadIdentity()
 
             glBindTexture(GL_TEXTURE_2D,self.texture)
-            glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
-                         0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
+            # glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
+            #              0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
 
+            glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
+                         0, GL_RED, GL_FLOAT, self.output.astype(float32))
+
+            
             glBegin (GL_QUADS);
             glTexCoord2f (0, 0);
             glVertex2f (-w, -h);
@@ -294,8 +298,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_projection(self.transform.projection)
         out = self.renderer.render()
 
-        self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
+        # self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
 
+        self.output = 1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma
 
         self.count += 1
 
