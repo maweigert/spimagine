@@ -42,7 +42,7 @@ def absPath(myPath):
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self, NDEMO = 70):
+    def __init__(self, dataContainer = None):
         super(MainWindow,self).__init__()
 
         self.resize(800, 700)
@@ -215,7 +215,10 @@ class MainWindow(QtGui.QMainWindow):
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
 
-        dataModel = DataModel(DemoData(NDEMO),prefetchSize = N_PREFETCH)
+        if not dataContainer:
+            dataContainer = DemoData(70)
+            
+        dataModel = DataModel(dataContainer,prefetchSize = N_PREFETCH)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 

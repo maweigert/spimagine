@@ -128,18 +128,19 @@ class TiffData(GenericData):
 
 
 class NumpyData(GenericData):
+
     def __init__(self, data, stackUnits = [1.,1.,1.]):
         GenericData.__init__(self,"NumpyData")
 
         if len(data.shape)==3:
             self.stackSize = (1,) + data.shape
-            self.data = np.array([data])
+            self.data = data.copy().reshape(self.stackSize)
         elif len(data.shape)==4:
             self.stackSize = data.shape
             self.data = data.copy()
         else:
             raise TypeError("data should be 3 or 4 dimensional! shape = %s" %str(data.shape))
-            
+
 
         self.stackUnits = stackUnits
 
@@ -176,6 +177,24 @@ class DemoData(GenericData):
 
     def __getitem__(self,pos):
         return self.data
+
+
+class EmptyData(GenericData):
+    def __init__(self):
+        GenericData.__init__(self,"EmptyData")
+        self.stackSize = (1,1,1,1)
+        self.fName = ""
+        self.nT = 1
+        self.stackUnits = (1,1,1)
+        self.data = np.zeros((1,1,1)).astype(np.uint16)
+
+    def sizeT(self):
+        return self.nT
+
+    def __getitem__(self,pos):
+        return self.data
+
+    
 
 ############################################################################
 """
@@ -380,9 +399,13 @@ def test_frompath():
 
 if __name__ == '__main__':
 
-    test_spimdata()
+    # test_spimdata()
 
-    test_tiffdata()
-    test_numpydata()
+    # test_tiffdata()
+    # test_numpydata()
 
-    test_frompath()
+    # test_frompath()
+
+    N = 256
+
+    d = NumpyData(np.ones((N,N,N)))
