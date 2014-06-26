@@ -6,7 +6,7 @@ from PyQt4 import QtCore,QtGui
 from collections import OrderedDict
 from spimagine.gui_mainwindow import MainWindow
 
-from spimagine.data_model import DataModel, DemoData, NumpyData
+from spimagine.data_model import DataModel, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
@@ -44,7 +44,7 @@ def volfig(num=None):
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
-        window = MainWindow(NDEMO=1)
+        window = MainWindow(dataContainer=EmptyData())
         window.show()
 
     #make num the last window
@@ -53,10 +53,12 @@ def volfig(num=None):
     return window
 
 
+
 def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     """return window.glWidget if not in blocking mode """
     app = getCurrentApp()
 
+    # check whether there are already open windows, if not create one
     try:
         num,window = [(n,w) for n,w in app.volfigs.iteritems()][-1]
     except:
@@ -69,9 +71,10 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
         data = 16000.*(data-mi)/(ma-mi)
 
     m = DataModel(NumpyData(data.astype(np.float32)))
-    window.glWidget.setModel(m)
+    # m = NumpyData(data.astype(np.float32))
+    # window = MainWindow(dataContainer = m)
 
-    #window.glWidget.transform.set(np.amax(data))
+    window.glWidget.setModel(m)
 
     if blocking:
         getCurrentApp().exec_()
@@ -81,7 +84,7 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 
 if __name__ == '__main__':
 
-
-    d = np.linspace(0,100,100**3).reshape((100,)*3)
+    N = 256
+    d = np.linspace(0,100,N**3).reshape((N,)*3)
 
     volshow(d, blocking = True)
