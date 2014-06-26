@@ -1,3 +1,9 @@
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+
 from numpy import *
 import os
 import functools
@@ -46,9 +52,9 @@ class KeyEdge(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
-            print "changed"
+            logger.debug("changed")
         if change == QGraphicsItem.ItemSelectedChange:
-            print "selected!"
+            logger.debug("selected")
 
         return super(KeyEdge, self).itemChange(change, value)
 
@@ -171,13 +177,11 @@ class KeyNode(QGraphicsItem):
             self.setToolTip("KeyNode: t= %.2f"%self.pos().x())
 
             self.graph.itemMoved()
-            print "#####"
             print self.graph.keyList
 
 
         elif change == QGraphicsItem.ItemSelectedChange:
-            print "selected!"
-
+            logger.debug("selected")
 
         return super(KeyNode, self).itemChange(change, value)
 
@@ -257,7 +261,6 @@ class KeyListView(QGraphicsView):
         # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
-        print "reset!"
         self.scene.clear()
         for myID in self.keyList.keyDict.keys():
             n = self.keyList._IDToN(myID)
@@ -281,7 +284,6 @@ class KeyListView(QGraphicsView):
         super(KeyListView, self).keyPressEvent(event)
 
     def resizeEvent(self,event):
-        print "resize"
         # super(KeyListView, self).resizeEvent(event)
 
         self.relativeAspect = 1.*event.size().width()/KeyFrameScene.WIDTH
@@ -352,7 +354,7 @@ class KeyFramePanel(QWidget):
         self.setLayout(hbox)
 
     def startPlay(self,evt):
-        print "start"
+        pass
 
 
 

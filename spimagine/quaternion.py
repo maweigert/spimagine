@@ -4,6 +4,10 @@ class Quaternion():
     def __init__(self,w=1.,x=0.,y=0.,z=0.):
         self.data = np.array([w,x,y,z])
 
+    @classmethod
+    def copy(cls,rhs):
+        return Quaternion(*rhs.data)
+
     def __getitem__(self,i):
         return self.data[i]
 
@@ -26,7 +30,8 @@ class Quaternion():
 
 
     def __mul__(self,q):
-        if isinstance(q,Quaternion):
+        if hasattr(q,"data"):
+        # if isinstance(q,Quaternion):
             a1,b1,c1,d1 = self.data
             a2,b2,c2,d2 = q.data
             return Quaternion(a1*a2 - b1*b2 - c1*c2 - d1*d2,
@@ -34,6 +39,7 @@ class Quaternion():
                           a1*c2 - b1*d2 + c1*a2 + d1*b2,
                           a1*d2 + b1*c2 - c1*b2 + d1*a2)
         else:
+            print "scalar multiplication!"
             return Quaternion(*(q*self.data))
 
     def __repr__(self):

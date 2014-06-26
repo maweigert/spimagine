@@ -65,13 +65,13 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     window = volfig(num)
 
     if scale:
-        ma,mi = np.amax(data), np.amin(data)
+        ma,mi = np.amax(data)+1, np.amin(data)
         data = 16000.*(data-mi)/(ma-mi)
 
     m = DataModel(NumpyData(data.astype(np.float32)))
     window.glWidget.setModel(m)
 
-    window.glWidget.transform.reset(np.amax(data),stackUnits)
+    #window.glWidget.transform.set(np.amax(data))
 
     if blocking:
         getCurrentApp().exec_()
@@ -85,4 +85,3 @@ if __name__ == '__main__':
     d = np.linspace(0,100,100**3).reshape((100,)*3)
 
     volshow(d, blocking = True)
-

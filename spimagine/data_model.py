@@ -12,6 +12,9 @@ author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import numpy as np
 from PyQt4 import QtCore
@@ -19,6 +22,7 @@ import time
 import re
 from collections import defaultdict
 import SpimUtils
+
 
 ############################################################################
 """
@@ -70,12 +74,11 @@ class SpimData(GenericData):
             try:
                 # try to figure out the dimension of the dark frame stack
                 darkSizeZ = os.path.getsize(os.path.join(self.fName,"data/darkstack.bin"))/2/self.stackSize[2]/self.stackSize[3]
-                print darkSizeZ
                 with open(os.path.join(self.fName,"data/darkstack.bin"),"rb") as f:
                     self.darkStack = np.fromfile(f,dtype="<u2").reshape([darkSizeZ,self.stackSize[2],self.stackSize[3]])
 
             except Exception as e:
-                print "couldn't find darkstack (%s)"%e
+                logger.warning("couldn't find darkstack (%s)",e)
 
 
     def __getitem__(self,pos):
@@ -135,7 +138,8 @@ class NumpyData(GenericData):
             self.stackSize = data.shape
             self.data = data.copy()
         else:
-            print "data should be 3 or 4 dimensional! shape = %s" %data.shape
+            raise TypeError("data should be 3 or 4 dimensional! shape = %s" %str(data.shape))
+            
 
         self.stackUnits = stackUnits
 
@@ -208,13 +212,13 @@ class DataLoadThread(QtCore.QThread):
                 del(self.data[k])
 
             if dnset:
-                print "preloading ", list(dnset)
+                logger.debug("preloading %s", list(dnset))
                 for k in dnset:
                     newdata = self.dataContainer[k]
                     self._rwLock.lockForWrite()
                     self.data[k] = newdata
                     self._rwLock.unlock()
-                    print "preload: ",k
+                    logger.debug("preload: %s",k)
                     time.sleep(.0001)
 
             time.sleep(.0001)
@@ -264,10 +268,10 @@ class DataModel(QtCore.QObject):
         return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())
 
     def dataSourceChanged(self):
-        print "data source changed:\n%s"%self
+        logger.info("data source changed:\n%s",self)
 
     def dataPosChanged(self, pos):
-        print "data position changed to %i"%pos
+        logger.info("data position changed to %i",pos)
 
 
 
