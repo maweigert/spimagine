@@ -15,6 +15,10 @@ email: mweigert@mpi-cbg.de
 """
 
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 import sys
 import os
@@ -27,14 +31,18 @@ from OpenGL import GLUT
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
-from volume_render import VolumeRenderer
+from spimagine.volume_render import VolumeRenderer
 
-from transform_matrices import *
-from data_model import DataModel
+from spimagine.transform_matrices import *
+from spimagine.data_model import DataModel
+
+
+from spimagine.keyframe_model import TransformData
+
+from spimagine.transform_model import TransformModel
 
 from numpy import *
-
-from keyframe_model import TransformData
+import numpy as np
 
 
 # from scipy.misc import imsave
@@ -73,106 +81,6 @@ gl_FragColor.w = 1.*length(gl_FragColor.xyz);
 """
 
 
-
-class TransformModel(QtCore.QObject):
-    _maxChanged = QtCore.pyqtSignal(int)
-    _gammaChanged = QtCore.pyqtSignal(float)
-    _boxChanged = QtCore.pyqtSignal(int)
-    _perspectiveChanged = QtCore.pyqtSignal(int)
-    # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
-    _rotationChanged = QtCore.pyqtSignal()
-
-    _transformChanged = QtCore.pyqtSignal()
-    _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
-
-    def __init__(self):
-        super(TransformModel,self).__init__()
-        self.reset()
-
-    def reset(self,maxVal = 256.,stackUnits=None):
-        self.quatRot = Quaternion()
-        self.translate = [0,0,0]
-        self.cameraZ = 5
-        self.scaleAll = 1.
-        self.zoom = 1.
-        self.isPerspective = True
-        self.setPerspective()
-        self.setScale(0,maxVal)
-        self.setGamma(1.)
-        self.setBox(True)
-        if not stackUnits:
-            stackUnits = [.1,.1,.1]
-        self.setStackUnits(*stackUnits)
-        self.update()
-
-
-    def setGamma(self, gamma):
-        self.gamma = gamma
-        self._gammaChanged.emit(self.gamma)
-        self._transformChanged.emit()
-
-    def setScale(self,minVal,maxVal):
-        self.minVal, self.maxVal = minVal, maxVal
-        # print "maxVal: ", maxVal
-        self._maxChanged.emit(self.maxVal)
-        self._transformChanged.emit()
-
-
-    def setStackUnits(self,px,py,pz):
-        print px,py,pz
-        self.stackUnits = px,py,pz
-        self._stackUnitsChanged.emit(px,py,pz)
-        self._transformChanged.emit()
-
-    def setBox(self,isBox = True):
-        self.isBox = isBox
-        self._boxChanged.emit(isBox)
-        self._transformChanged.emit()
-
-    def setZoom(self,zoom = 1.):
-        self.zoom = clip(zoom,.5,2)
-        self.update()
-
-    def setRotation(self,angle,x,y,z):
-        self.setQuaternion(Quaternion(cos(angle),sin(angle)*x,sin(angle)*y,sin(angle)*z))
-
-    def setQuaternion(self,quat):
-        self.quatRot = Quaternion(*quat.data)
-        self._rotationChanged.emit()
-        self._transformChanged.emit()
-
-
-    def update(self):
-        if self.isPerspective:
-            self.cameraZ = 4*(1-log(self.zoom)/log(2.))
-            self.scaleAll = 1.
-        else:
-            self.cameraZ = 0.
-            self.scaleAll = 2.5**(self.zoom-1.)
-
-    def setPerspective(self, isPerspective = True):
-        self.isPerspective = isPerspective
-        if isPerspective:
-            self.projection = projMatPerspective(60.,1.,.1,10)
-        else:
-            self.projection = projMatOrtho(-2.,2.,-2.,2.,-1.5,1.5)
-
-        self.update()
-        self._perspectiveChanged.emit(isPerspective)
-        self._transformChanged.emit()
-
-
-    def getModelView(self):
-        modelView = dot(transMatReal(0,0,-self.cameraZ),dot(scaleMat(*[self.scaleAll]*3),
-                                dot(transMatReal(*self.translate),self.quatRot.toRotation4())))
-
-        return modelView
-
-    def fromTransformData(self,transformData):
-        pass
-
-    def toTransformData(self):
-        return TransformData(*self.quatRot)
 
 
 class GLWidget(QtOpenGL.QGLWidget):
@@ -261,25 +169,30 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.shaderBasic = QtOpenGL.QGLShaderProgram()
         self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
         self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrBasic)
-        print self.shaderBasic.log()
+
+        logger.debug("shader log:%s",self.shaderBasic.log())
+
         self.shaderBasic.link()
 
         self.shaderTex = QtOpenGL.QGLShaderProgram()
         self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
         self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrTex)
-        print self.shaderTex.log()
+
+        logger.debug("shader log:%s",self.shaderTex.log())
+
         self.shaderTex.link()
+
 
     def dataModelChanged(self):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0])
-            self.transform.reset(amax(self.dataModel[0]),self.dataModel.stackUnits())
+            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
             self.refresh()
 
 
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0])
-        self.transform.reset(amax(self.dataModel[0]),self.dataModel.stackUnits())
+        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
         self.refresh()
 
 
@@ -389,7 +302,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def saveFrame(self,fName):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
-        print "saving frame as ", fName
+        logger.info("saving frame as %s", fName)
+
         self.render()
         self.paintGL()
         glFlush()
@@ -411,7 +325,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         newZoom = clip(newZoom,.4,3)
         self.transform.setZoom(newZoom)
 
-        print newZoom
+        logger.debug("newZoom: %s",newZoom)
         self.refresh()
 
 
@@ -452,7 +366,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                 nnorm *= 1./abs(nnorm)
             w = arcsin(nnorm)
             n *= 1./(nnorm+1.e-10)
-            q = Quaternion(cos(.5*w),*(sin(.5*w)*n))
+            q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
             self.transform.setQuaternion(self.transform.quatRot*q)
 
         if event.buttons() == QtCore.Qt.RightButton:
