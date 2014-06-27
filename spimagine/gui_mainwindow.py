@@ -9,6 +9,11 @@ author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 import sys
 import os
 import numpy as np
@@ -161,18 +166,18 @@ class MainWindow(QtGui.QMainWindow):
         self.keyPanel = KeyFramePanel()
         self.keyPanel.hide()
 
-
-
-
         self.settingsView = SettingsPanel()
         self.settingsView.hide()
 
         self.setStyleSheet("background-color:black;")
 
         hbox0 = QtGui.QHBoxLayout()
-        hbox0.addWidget(self.glWidget,stretch =1)
         hbox0.addWidget(self.scaleSlider)
         hbox0.addWidget(self.gammaSlider)
+
+        hbox0.addWidget(self.glWidget,stretch =1)
+
+
         hbox0.addWidget(self.settingsView)
 
         hbox = QtGui.QHBoxLayout()
@@ -217,7 +222,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if not dataContainer:
             dataContainer = DemoData(70)
-            
+
         dataModel = DataModel(dataContainer,prefetchSize = N_PREFETCH)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
@@ -256,7 +261,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def dataModelChanged(self):
-        print "data Model changed"
+        logger.info("data Model changed")
         dataModel = self.glWidget.dataModel
         dataModel._dataSourceChanged.connect(self.dataSourceChanged)
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
@@ -267,7 +272,6 @@ class MainWindow(QtGui.QMainWindow):
         self.dataSourceChanged()
 
     def dataSourceChanged(self):
-        print "sliderTime: ",self.glWidget.dataModel.sizeT()
         self.sliderTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
@@ -310,7 +314,6 @@ class MainWindow(QtGui.QMainWindow):
         if self.glWidget.dataModel.pos == 0:
             self.playDir = 1
 
-        print self.glWidget.dataModel.pos, self.playDir
         newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
         self.glWidget.dataModel.setPos(newpos)
 
@@ -338,6 +341,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
+    import argparse
 
     app = QtGui.QApplication(sys.argv)
 

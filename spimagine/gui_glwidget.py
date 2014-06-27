@@ -253,10 +253,11 @@ class GLWidget(QtOpenGL.QGLWidget):
             glLineWidth(1)
             glColor(1.,1.,1.,.3)
 
+            # windows complains about glut, so we dont even bother to draw the cube :(
             if not os.name == "nt" and self.transform.isBox:
                 GLUT.glutWireCube(2)
 
-                self.shaderTex.bind()
+            self.shaderTex.bind()
 
 
             glEnable(GL_TEXTURE_2D)

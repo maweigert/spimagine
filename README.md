@@ -24,8 +24,6 @@ then with pip
 > pip install git+http://mweigert@bitbucket.org/mweigert/spimagine
 
 
------
-
 ## Usage
 
 ### Gui Application
@@ -55,12 +53,15 @@ list the options for the command line tool
 
 ### interactive usage
 
-the package provides an interactive visualisation to be used e.g. within IPython
+the package provides interactive visualisation to be used e.g. within IPython
 
     :::python 
 	from spimagine import volshow, volfig
-	data = ... #3d or 4d numpy array
-	volfig()   #similar behaviour like matplotlib.figure, e.g. can be omitted
+	
+	data = ...      #3d or 4d numpy array
+	
+	volfig()        #similar behaviour like matplotlib.figure, e.g. can be omitted
+	
 	volshow(data)
 
 

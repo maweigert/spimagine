@@ -7,7 +7,8 @@
  */
 
 
-#define maxSteps 500
+
+#define maxSteps 400
 #define tstep 0.01f
 
 // intersect ray with a box
@@ -45,7 +46,9 @@ max_project_Short(__global short *d_output,
 			__read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |	CLK_FILTER_LINEAR ;
+	CLK_ADDRESS_CLAMP_TO_EDGE |
+	// CLK_FILTER_NEAREST ;
+	CLK_FILTER_LINEAR ;
 
   uint x = get_global_id(0);
   uint y = get_global_id(1);
@@ -111,8 +114,8 @@ max_project_Short(__global short *d_output,
   float t = tfar;
 
   float4 pos;
-  
-  for(uint i=0; i<maxSteps; i++) {		
+  uint i;
+  for(i=0; i<maxSteps; i++) {		
   	pos = orig + t*direc;
 
 
@@ -127,11 +130,13 @@ max_project_Short(__global short *d_output,
   	if (t < tnear) break;
   }
 
-  if ((x < Nx) && (y < Ny)) {
 
+  if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
 
-  }
+  if (i==maxSteps)
+	d_output[x+Nx*y] = 8000;
+
 
 }
 
@@ -145,8 +150,11 @@ max_project_Float(__global float *d_output,
 			__read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |	CLK_FILTER_LINEAR ;
+	CLK_ADDRESS_CLAMP_TO_EDGE |
+	// CLK_FILTER_NEAREST ;
+	CLK_FILTER_LINEAR ;
 
+  
   uint xId = get_global_id(0);
   uint yId = get_global_id(1);
 

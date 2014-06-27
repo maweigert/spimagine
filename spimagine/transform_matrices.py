@@ -21,8 +21,17 @@ def rotMatX(phi):
                   -np.sin(phi),0, np.cos(phi),0,
                   0,0,0,1]).reshape(4,4)
 
-
 def rotMat(w=0,x=1,y=0,z=0):
+    """ the rotation matrix for a rotation by angle w around axis [x,y,z]"""
+    u_cross = np.array([[0,-z,y],
+                        [z,0,-x],
+                        [-y,x,0]])
+
+    u_tens = np.outer([x,y,z],[x,y,z])
+
+    return np.cos(w)*np.identity(3)+np.sin(w)*u_cross + (1-np.cos(w))*u_tens
+
+def rotMat4(w=0,x=1,y=0,z=0):
     n = np.array([x,y,z])
     n *= 1./np.sqrt(np.sum(n**2))
     q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
@@ -79,15 +88,17 @@ def projMatOrtho(x1 = -1, x2 = 1,
 
 
 if __name__ == '__main__':
-    orthoM = projMatOrtho(-2,2,-2,2,-10,10)
-    
-    perspM = projMatPerspective(45,1,.1,10)
 
-    x  = np.dot(orthoM,[0,0,0,1])
-    print x
+    print rotMat(.1,0,0,1)
+    # orthoM = projMatOrtho(-2,2,-2,2,-10,10)
+
+    # perspM = projMatPerspective(45,1,.1,10)
+
+    # x  = np.dot(orthoM,[0,0,0,1])
+    # print x
 
 
-    x  = np.dot(perspM,[0,0,.1,1])
-    print x
+    # x  = np.dot(perspM,[0,0,.1,1])
+    # print x
 
-    print orthoM
+    # print orthoM
