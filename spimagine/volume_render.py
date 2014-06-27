@@ -258,5 +258,6 @@ def _getDirec(P,M,u=1,v=0):
 
 
 if __name__ == "__main__":
+    pass
+    # test_simple()
 
-    test_simple()

@@ -85,6 +85,9 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 if __name__ == '__main__':
 
     N = 256
-    d = np.linspace(0,100,N**3).reshape((N,)*3)
+    # d = np.linspace(0,100,N**3).reshape((N,)*3)
+    d = np.zeros((100,)*3,dtype=np.float32)
+    d[50,:,:] = 1.
 
+    
     volshow(d, blocking = True)
