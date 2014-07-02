@@ -21,7 +21,7 @@ from PyQt4 import QtCore
 import time
 import re
 from collections import defaultdict
-import SpimUtils
+import imgtools
 
 
 ############################################################################
@@ -63,8 +63,8 @@ class SpimData(GenericData):
     def load(self,fName):
         if fName:
             try:
-                self.stackSize = SpimUtils.parseIndexFile(os.path.join(fName,"data/index.txt"))
-                self.stackUnits = SpimUtils.parseMetaFile(os.path.join(fName,"metadata.txt"))
+                self.stackSize = imgtools.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                self.stackUnits = imgtools.parseMetaFile(os.path.join(fName,"metadata.txt"))
                 self.fName = fName
             except Exception as e:
                 print e
@@ -109,7 +109,7 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.stackSize = (1,)+ SpimUtils.getTiffSize(fName)
+                self.stackSize = (1,)+ imgtools.getTiffSize(fName)
             except Exception as e:
                 print e
                 self.fName = ""
@@ -122,7 +122,7 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return SpimUtils.read3dTiff(self.fName)
+            return imgtools.read3dTiff(self.fName)
         else:
             return None
 

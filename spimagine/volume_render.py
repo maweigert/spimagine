@@ -29,7 +29,6 @@ email: mweigert@mpi-cbg.de
 import os
 from PyOCL import cl, OCLDevice, OCLProcessor
 from scipy.misc import imsave
-import SpimUtils
 from transform_matrices import *
 from numpy import *
 from scipy.linalg import inv

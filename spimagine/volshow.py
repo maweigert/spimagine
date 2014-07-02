@@ -67,7 +67,10 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     window = volfig(num)
 
     if scale:
-        ma,mi = np.amax(data)+1, np.amin(data)
+        ma,mi = np.amax(data), np.amin(data)
+        if ma==mi:
+            ma +=1.
+            
         data = 16000.*(data-mi)/(ma-mi)
 
     m = DataModel(NumpyData(data.astype(np.float32)))
@@ -89,5 +92,5 @@ if __name__ == '__main__':
     d = np.zeros((100,)*3,dtype=np.float32)
     d[50,:,:] = 1.
 
-    
+
     volshow(d, blocking = True)

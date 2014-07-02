@@ -8,8 +8,8 @@
 
 
 
-#define maxSteps 400
-#define tstep 0.01f
+#define maxSteps 700
+#define tstep 0.005f
 
 // intersect ray with a box
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -109,6 +109,10 @@ max_project_Short(__global short *d_output,
   }
   if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
 
+
+  // if ((x==400) &&(y==400))
+  // 	printf("XXXXXX\ntnear: %.2f \ntfar: %.2f \n",tnear,tfar);
+
   uint colVal = 0;
   
   float t = tfar;
@@ -134,8 +138,8 @@ max_project_Short(__global short *d_output,
   if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
 
-  if (i==maxSteps)
-	d_output[x+Nx*y] = 8000;
+  // if (i==maxSteps)
+  // 	d_output[x+Nx*y] = 8000;
 
 
 }

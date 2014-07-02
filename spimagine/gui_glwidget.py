@@ -53,7 +53,7 @@ if os.name == "nt":
 
 
 import time
-from quaternion import Quaternion
+from spimagine.quaternion import Quaternion
 
 
 
@@ -138,8 +138,11 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
-            self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
-
+            if self.dataModel:
+                self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
+            else:
+                self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
+                
 
     def initializeGL(self):
         glClearColor(0,0,0,1.)
@@ -275,7 +278,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
                          0, GL_RED, GL_FLOAT, self.output.astype(float32))
 
-            
+
             glBegin (GL_QUADS);
             glTexCoord2f (0, 0);
             glVertex2f (-w, -h);
