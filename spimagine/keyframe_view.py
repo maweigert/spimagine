@@ -14,7 +14,9 @@ from PyQt4.QtGui import *
 
 from keyframe_model import KeyFrame, KeyFrameList
 from data_model import DataModel, DemoData
-from gui_glwidget import TransformModel
+from transform_model import TransformModel
+
+
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -253,11 +255,17 @@ class KeyListView(QGraphicsView):
     def setDataTransformModel(self,dataModel, transformModel):
         self.dataModel, self.transformModel = dataModel, transformModel
 
-    def setModel(self,keyList):
+    def setKeyListModel(self,keyList):
 
         self.keyList = keyList
         self.resetScene()
         self.keyList._modelChanged.connect(self.modelChanged)
+        # self.keyList._itemChanged.connect(self.itemChanged)
+
+    def setTransformModel(self,transformModel):
+        self.transModel = transformModel
+        self.resetScene()
+        # self.keyList._modelChanged.connect(self.modelChanged)
         # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
@@ -380,8 +388,9 @@ class MainWindow(QMainWindow):
         k.addItem(KeyFrame(0.4))
         k.addItem(KeyFrame(0.9))
 
-        self.keyPanel.keyView.setModel(k)
+        self.keyPanel.keyView.setKeyListModel(k)
 
+        self.keyPanel.keyView.setTransformModel(None)
         
         self.setCentralWidget(self.keyPanel)
 

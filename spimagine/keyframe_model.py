@@ -1,20 +1,17 @@
 from numpy import *
 import bisect
 from PyQt4 import QtCore
-
+from spimagine.quaternion import *
 
 class TransformData(object):
-    def __init__(self,*args):
-        if args:
-            self.setData(*args)
-        else:
-            self.setData(0,0,0)
+    def __init__(self,quatRot = Quaternion()):
+        self.setData(quatRot)
 
     def __repr__(self):
-        return str(self.data)
+        return "Quaternion: %s "%str(self.quatRot)
 
-    def setData(self,*args):
-        self.data = array(args)
+    def setData(self,quatRot):
+        self.quatRot = Quaternion.copy(quatRot)
 
 
 
@@ -96,18 +93,18 @@ class KeyFrameList(QtCore.QObject):
         lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
 
         #transforms:
-        newTrans = (1.-lam)*frameLeft.transformData.data + lam*frameRight.transformData.data
+        newQuat = quaternion_slerp(frameLeft.transformData.quatRot, frameRight.transformData.quatRot, lam)
         newPos = (1.-lam)*frameLeft.dataPos + lam*frameRight.dataPos
         newPos = int(newPos)
-        
-        return KeyFrame(tFrame,newPos,TransformData(newTrans))
+
+        return KeyFrame(tFrame,newPos,TransformData(newQuat))
 
 
 
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,0,TransformData(.5,.4,.3)))
+    k.addItem(KeyFrame(.5,0,TransformData(Quaternion(.71,.71,0,0))))
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)
@@ -117,9 +114,10 @@ if __name__ == '__main__':
 
 
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,4,TransformData(.5,.4,.3)))
+
+    k.addItem(KeyFrame(.5,0,TransformData(Quaternion(.71,.71,0,0))))
 
     print k
 
-    for t in linspace(0,1,10):
+    for t in linspace(0,1,11):
         print t, k.getTransform(t)
