@@ -45,17 +45,17 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWidget(QtGui.QWidget):
 
-    def __init__(self, dataContainer = None):
-        super(MainWindow,self).__init__()
+    def __init__(self, parent = None,dataContainer = None, N_PREFTECH = 0):
+        super(QWidget,self).__init__(parent)
 
         self.resize(800, 700)
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
         self.initActions()
-        self.initMenus()
+        # self.initMenus()
 
         self.glWidget = GLWidget(self,N_PREFETCH = N_PREFETCH)
 
@@ -198,9 +198,16 @@ class MainWindow(QtGui.QMainWindow):
         vbox.addLayout(hbox)
         vbox.addWidget(self.keyPanel)
 
-        widget = QtGui.QWidget()
-        widget.setLayout(vbox)
-        self.setCentralWidget(widget)
+
+        for box in [hbox,vbox,hbox0]:
+            box.setContentsMargins(0,0,0,0)
+
+        vbox.setSpacing(1)
+        hbox.setSpacing(11)
+        hbox0.setSpacing(5)
+
+        # widget = QtGui.QWidget()
+        self.setLayout(vbox)
 
 
 
@@ -219,7 +226,6 @@ class MainWindow(QtGui.QMainWindow):
         self.checkKey.stateChanged.connect(self.keyPanel.setVisible)
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
-
         if not dataContainer:
             dataContainer = DemoData(70)
 
@@ -236,10 +242,13 @@ class MainWindow(QtGui.QMainWindow):
 
         self.glWidget._dataModelChanged.connect(self.dataModelChanged)
 
-        self.glWidget.setModel(dataModel)
+        self.setModel(dataModel)
 
-
+        self.hiddableControls = [self.checkSettings,
+                                 self.startButton,self.sliderTime,self.spinTime,
+                                 self.checkKey,self.screenshotButton ]
         # self.keyPanel.keyView.setModel(self.keyframes)
+
 
 
     def initUI(self):
@@ -252,13 +261,15 @@ class MainWindow(QtGui.QMainWindow):
         self.exitAction.triggered.connect(self.close)
 
 
-    def initMenus(self):
-        menuBar = self.menuBar()
-        fileMenu = menuBar.addMenu('&File')
-        fileMenu.addAction(self.exitAction)
-        # this has to be repeated in MAC OSX for some magic reason
-        fileMenu = menuBar.addMenu('&File')
+    # def initMenus(self):
+    #     menuBar = self.menuBar()
+    #     fileMenu = menuBar.addMenu('&File')
+    #     fileMenu.addAction(self.exitAction)
+    #     # this has to be repeated in MAC OSX for some magic reason
+    #     fileMenu = menuBar.addMenu('&File')
 
+    def setModel(self,dataModel):
+        self.glWidget.setModel(dataModel)
 
     def dataModelChanged(self):
         logger.info("data Model changed")
@@ -277,7 +288,7 @@ class MainWindow(QtGui.QMainWindow):
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
-        self.setWindowTitle(self.glWidget.dataModel.getName())
+        self.setWindowTitle(self.glWidget.dataModel.name())
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
         minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
         self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
@@ -317,6 +328,22 @@ class MainWindow(QtGui.QMainWindow):
         newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
         self.glWidget.dataModel.setPos(newpos)
 
+
+    def contextMenuEvent(self,event):
+         # create context menu
+        popMenu = QtGui.QMenu(self)
+        action = QtGui.QAction('toggle controls', self)
+        action.triggered.connect(self.toggleControls)
+        popMenu.addAction(action)
+        popMenu.setStyleSheet("background-color: white")
+        popMenu.exec_(QtGui.QCursor.pos())
+
+
+    def toggleControls(self):
+        for c in self.hiddableControls:
+            c.setVisible(not c.isVisible())
+
+
     def closeEvent(self,event):
         self.close()
         event.accept()
@@ -324,11 +351,11 @@ class MainWindow(QtGui.QMainWindow):
     def close(self):
         if self.playTimer.isActive():
             self.playTimer.stop()
-        QMainWindow.close(self)
+        QWidget.close(self)
 
 
     def mouseDoubleClickEvent(self,event):
-        super(MainWindow,self).mouseDoubleClickEvent(event)
+        super(MainWidget,self).mouseDoubleClickEvent(event)
         if self.isFullScreen:
             self.showNormal()
         else:
@@ -340,12 +367,13 @@ class MainWindow(QtGui.QMainWindow):
         self.isFullScreen = not self.isFullScreen
 
 
+
 if __name__ == '__main__':
     import argparse
 
     app = QtGui.QApplication(sys.argv)
 
-    win = MainWindow()
+    win = MainWidget()
     win.show()
     win.raise_()
 
