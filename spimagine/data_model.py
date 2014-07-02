@@ -280,8 +280,6 @@ class DataModel(QtCore.QObject):
             self._dataSourceChanged.emit()
             self.setPos(0)
 
-    def getName(self):
-        return self.dataContainer.name
 
     def __repr__(self):
         return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())

@@ -53,7 +53,6 @@ def volfig(num=None):
     return window
 
 
-
 def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     """return window.glWidget if not in blocking mode """
     app = getCurrentApp()
@@ -77,12 +76,12 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     # m = NumpyData(data.astype(np.float32))
     # window = MainWindow(dataContainer = m)
 
-    window.glWidget.setModel(m)
+    window.setModel(m)
 
     if blocking:
         getCurrentApp().exec_()
     else:
-        return window.glWidget
+        return window.mainWidget.glWidget
 
 
 if __name__ == '__main__':

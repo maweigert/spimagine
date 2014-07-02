@@ -210,7 +210,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def refresh(self):
         if self.parentWidget() and self.dataModel:
-            self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name)
+            self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
         self.renderUpdate = True
 
     def resizeGL(self, width, height):
