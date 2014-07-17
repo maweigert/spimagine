@@ -18,7 +18,7 @@ def absPath(myPath):
 
 class SettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
-
+    _playIntervalChanged = QtCore.pyqtSignal(int)
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
 
@@ -37,19 +37,6 @@ class SettingsPanel(QtGui.QWidget):
 
 
         vbox.addWidget(QtGui.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
-
-        # hbox = QtGui.QHBoxLayout()
-        # for lab in stackLabels:
-        #     hbox.addWidget(QtGui.QLabel(lab,alignment = QtCore.Qt.AlignCenter))
-        # vbox.addLayout(hbox)
-        # hbox = QtGui.QHBoxLayout()
-
-        # for lab in stackLabels:
-        #     edit = QtGui.QLineEdit("1.0",alignment = QtCore.Qt.AlignCenter)
-        #     edit.setFixedWidth(50)
-        #     edit.setValidator(QtGui.QDoubleValidator(bottom=1e-10))
-        #     hbox.addWidget(edit)
-        # vbox.addLayout(hbox)
 
 
         self.stackEdits = []
@@ -89,20 +76,29 @@ class SettingsPanel(QtGui.QWidget):
 
         self.checkLoopBounce = QtGui.QCheckBox()
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("projection:\t"))
-        hbox.addWidget(self.checkProj)
-        vbox.addLayout(hbox)
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("bounding box:\t"))
-        hbox.addWidget(self.checkBox)
-        vbox.addLayout(hbox)
+        gridBox = QtGui.QGridLayout()
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("loop bounce:\t"))
-        hbox.addWidget(self.checkLoopBounce)
-        vbox.addLayout(hbox)
+        gridBox.addWidget(QtGui.QLabel("projection:\t"),1,0)
+        gridBox.addWidget(self.checkProj,1,1)
+
+        gridBox.addWidget(QtGui.QLabel("bounding box:\t"),2,0)
+        gridBox.addWidget(self.checkBox,2,1)
+
+
+        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),3,0)
+        gridBox.addWidget(self.checkLoopBounce,3,1)
+
+
+        gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
+
+        self.playInterval = QtGui.QLineEdit("50")
+        self.playInterval.setValidator(QtGui.QIntValidator(bottom=10))
+        self.playInterval.returnPressed.connect(self.playIntervalChanged)
+        gridBox.addWidget(self.playInterval)
+
+        vbox.addLayout(gridBox)
+
 
         vbox.addStretch()
         line =  QtGui.QFrame()
@@ -139,7 +135,8 @@ class SettingsPanel(QtGui.QWidget):
             print "couldnt parse text"
             print e
 
-
+    def playIntervalChanged(self):
+        self._playIntervalChanged.emit(int(self.playInterval.text()))
 
 class MainWindow(QtGui.QMainWindow):
 

@@ -21,7 +21,9 @@ from PyQt4 import QtCore
 import time
 import re
 from collections import defaultdict
-import imgtools
+
+import imgutils
+
 
 
 ############################################################################
@@ -63,8 +65,8 @@ class SpimData(GenericData):
     def load(self,fName):
         if fName:
             try:
-                self.stackSize = imgtools.parseIndexFile(os.path.join(fName,"data/index.txt"))
-                self.stackUnits = imgtools.parseMetaFile(os.path.join(fName,"metadata.txt"))
+                self.stackSize = imgutils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                self.stackUnits = imgutils.parseMetaFile(os.path.join(fName,"metadata.txt"))
                 self.fName = fName
             except Exception as e:
                 print e
@@ -109,7 +111,7 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.stackSize = (1,)+ imgtools.getTiffSize(fName)
+                self.stackSize = (1,)+ imgutils.getTiffSize(fName)
             except Exception as e:
                 print e
                 self.fName = ""
@@ -122,7 +124,7 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return imgtools.read3dTiff(self.fName)
+            return imgutils.read3dTiff(self.fName)
         else:
             return None
 
@@ -194,7 +196,7 @@ class EmptyData(GenericData):
     def __getitem__(self,pos):
         return self.data
 
-    
+
 
 ############################################################################
 """
@@ -363,7 +365,7 @@ def test_spimdata():
     d = SpimData("/Users/mweigert/Data/HisGFP")
 
     m = DataModel(d)
-
+    print m
     for pos in range(m.sizeT()):
         print pos
         print np.mean(m[pos])
@@ -373,7 +375,7 @@ def test_tiffdata():
     d = TiffData("/Users/mweigert/Data/droso_test.tif")
 
     m = DataModel(d)
-
+    print m
     for pos in range(m.sizeT()):
         print pos
         print np.mean(m[pos])
@@ -397,10 +399,10 @@ def test_frompath():
 
 if __name__ == '__main__':
 
-    # test_spimdata()
+    test_spimdata()
 
-    # test_tiffdata()
-    # test_numpydata()
+    test_tiffdata()
+    test_numpydata()
 
     # test_frompath()
 
