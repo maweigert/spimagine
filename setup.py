@@ -13,7 +13,7 @@ setup(name='spimagine',
     packages=['spimagine'],
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
-        ,"SpimUtils","PyOCL"
+        ,"PyOCL"
     ],
 
     package_data={"spimagine":['kernels/*','images/*']},

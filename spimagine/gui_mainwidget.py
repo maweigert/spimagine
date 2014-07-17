@@ -50,6 +50,8 @@ class MainWidget(QtGui.QWidget):
     def __init__(self, parent = None,dataContainer = None, N_PREFTECH = 0):
         super(QWidget,self).__init__(parent)
 
+        self.myparent = parent
+
         self.resize(800, 700)
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
@@ -58,6 +60,22 @@ class MainWidget(QtGui.QWidget):
         # self.initMenus()
 
         self.glWidget = GLWidget(self,N_PREFETCH = N_PREFETCH)
+
+        self.fwdButton = QtGui.QPushButton("",self)
+        self.fwdButton.setStyleSheet("background-color: black")
+        self.fwdButton.setIcon(QtGui.QIcon(absPath("images/icon_forward.png")))
+        self.fwdButton.setIconSize(QtCore.QSize(18,18))
+        self.fwdButton.clicked.connect(self.forward)
+        self.fwdButton.setMaximumWidth(18)
+        self.fwdButton.setMaximumHeight(18)
+
+        self.bwdButton = QtGui.QPushButton("",self)
+        self.bwdButton.setStyleSheet("background-color: black")
+        self.bwdButton.setIcon(QtGui.QIcon(absPath("images/icon_backward.png")))
+        self.bwdButton.setIconSize(QtCore.QSize(18,18))
+        self.bwdButton.clicked.connect(self.backward)
+        self.bwdButton.setMaximumWidth(18)
+        self.bwdButton.setMaximumHeight(18)
 
         self.startButton = QtGui.QPushButton("",self)
         self.startButton.setStyleSheet("background-color: black")
@@ -181,7 +199,9 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.settingsView)
 
         hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.bwdButton)
         hbox.addWidget(self.startButton)
+        hbox.addWidget(self.fwdButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
         # hbox.addWidget(self.checkProj)
@@ -214,6 +234,7 @@ class MainWidget(QtGui.QWidget):
         self.playTimer = QtCore.QTimer(self)
         self.playTimer.setInterval(100)
         self.playTimer.timeout.connect(self.onPlayTimer)
+        self.settingsView._playIntervalChanged.connect(self.playIntervalChanged)
         self.setLoopBounce(True)
 
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
@@ -288,10 +309,24 @@ class MainWidget(QtGui.QWidget):
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
-        self.setWindowTitle(self.glWidget.dataModel.name())
+        if self.myparent:
+            self.myparent.setWindowTitle(self.glWidget.dataModel.name())
+        else:
+            self.setWindowTitle(self.glWidget.dataModel.name())
+
+
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
         minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
         self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
+
+
+    def forward(self,event):
+        newpos = (self.glWidget.dataModel.pos+1)%self.glWidget.dataModel.sizeT()
+        self.glWidget.dataModel.setPos(newpos)
+
+    def backward(self,event):
+        newpos = (self.glWidget.dataModel.pos-1)%self.glWidget.dataModel.sizeT()
+        self.glWidget.dataModel.setPos(newpos)
 
 
     def startPlay(self,event):
@@ -318,6 +353,16 @@ class MainWidget(QtGui.QWidget):
         self.settingsView.checkLoopBounce.setChecked(loopBounce)
         self.playDir = 1
 
+
+    def playIntervalChanged(self,val):
+        if self.playTimer.isActive():
+            self.playTimer.stop()
+        self.playTimer.setInterval(val)
+
+        print val
+
+
+
     def onPlayTimer(self):
 
         if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
@@ -336,7 +381,7 @@ class MainWidget(QtGui.QWidget):
         action.triggered.connect(self.toggleControls)
         popMenu.addAction(action)
         popMenu.setStyleSheet("background-color: white")
-        popMenu.exec_(QtGui.QCursor.pos())
+        # popMenu.exec_(QtGui.QCursor.pos())
 
 
     def toggleControls(self):

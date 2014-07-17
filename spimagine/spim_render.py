@@ -19,7 +19,7 @@ import argparse
 
 from volume_render import *
 from scipy.misc import toimage
-from SpimUtils import read3dTiff, fromSpimFolder
+from imgutils import read3dTiff, fromSpimFolder
 
 from PIL import Image
 

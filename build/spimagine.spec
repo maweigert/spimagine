@@ -2,14 +2,6 @@
 
 import os
 
-a = Analysis(['../spimagine/spimagine_gui.py'],
-             pathex=['/Users/mweigert/python/spimagine/spimagine'],
-             hiddenimports=[],
-             hookspath=None,
-             runtime_hooks=None)
-pyz = PYZ(a.pure)
-
-
 def addAll(folderPath):
     res = []
     for fold, subs, files in os.walk(folderPath):
@@ -17,6 +9,16 @@ def addAll(folderPath):
             res += [(fName,os.path.join(fold,fName),'Data')]
 
     return res
+
+
+a = Analysis(['../spimagine/spimagine_gui.py'],
+             pathex=['/Users/mweigert/python/spimagine/spimagine'],
+             hiddenimports=["libtiff"],
+             hookspath=None,
+             runtime_hooks=None)
+pyz = PYZ(a.pure)
+
+
 
 a.datas += addAll("../spimagine/kernels")
 a.datas += addAll("../spimagine/images")
@@ -55,7 +57,7 @@ exe = EXE(pyz,
           b.zipfiles,
           b.datas,
           name='spimagine_render',
-          debug=False,
+          debug=True,
           strip=None,
           upx=True,
           console=True)
