@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 import re
 
-def read3dTiff(fName):
+def read3dTiff_old(fName):
     img = Image.open(fName)
     i = 0
     data = []
@@ -17,6 +17,13 @@ def read3dTiff(fName):
 
     return np.array(data)
 
+def read3dTiff(fName):
+    from libtiff import TIFFfile
+
+    """ still has problems with matlab created tif"""
+    tif = TIFFfile(fName)
+    data = tif.get_samples()[0][0]
+    return data
 
 def getTiffSize(fName):
     img = Image.open(fName, 'r')
@@ -99,9 +106,20 @@ def fromSpimFile(fName,stackSize):
     return np.fromfile(fName,dtype="<u2").reshape(stackSize)
 
 
-if __name__ == '__main__':
-    d = read3dTiff("/Users/mweigert/Data/droso_test.tif")
-    print d.shape
 
-    d = fromSpimFolder("/Users/mweigert/Data/Drosophila_05")
-    print d.shape
+
+if __name__ == '__main__':
+    from time import time
+    t = time()
+    d = getTiffSize_old("/Users/mweigert/Data/Wing_cropped.tif")
+
+    print d
+    print time()-t
+
+    t = time()
+    d = getTiffSize("/Users/mweigert/Data/Wing_cropped.tif")
+    print d
+    print time()-t
+
+
+
