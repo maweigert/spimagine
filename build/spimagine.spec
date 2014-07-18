@@ -13,7 +13,7 @@ def addAll(folderPath):
 
 a = Analysis(['../spimagine/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine'],
-             hiddenimports=["libtiff"],
+             hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
 pyz = PYZ(a.pure)
@@ -22,6 +22,9 @@ pyz = PYZ(a.pure)
 
 a.datas += addAll("../spimagine/kernels")
 a.datas += addAll("../spimagine/images")
+
+a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
+
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -49,6 +52,7 @@ pyz = PYZ(b.pure)
 
 
 b.datas += addAll("../spimagine/kernels")
+b.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
 
 pyz = PYZ(b.pure)
 exe = EXE(pyz,

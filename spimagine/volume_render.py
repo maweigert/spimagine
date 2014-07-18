@@ -25,6 +25,10 @@ author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 import os
 from PyOCL import cl, OCLDevice, OCLProcessor
@@ -60,8 +64,9 @@ class VolumeRenderer:
         try:
             # simulate GPU fail...
             # raise Exception()
-            
+
             self.dev = OCLDevice(useGPU = True)
+
             self.isGPU = True
             self.dtype = uint16
 
@@ -77,6 +82,9 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
+        self.memMax = self.dev.device.get_info(getattr(
+            cl.device_info,"MAX_MEM_ALLOC_SIZE"))
+
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
 
         self.invMBuf = self.dev.createBuffer(16,dtype=float32,
@@ -91,15 +99,29 @@ class VolumeRenderer:
             self.resize(size)
         else:
             self.resize((200,200))
-        self.set_modelView(scaleMat())
+        self.set_modelView()
+        self.set_projection()
 
 
     def resize(self,size):
         self.width, self.height = size
         self.buf = self.dev.createBuffer(self.height*self.width,dtype=self.dtype)
 
+
+    def get_data_slices(self,data):
+        """returns the slice of data to be rendered
+        in case data is bigger then gpu texture memory, we should downsample it
+        """
+        Nstep = int(ceil(sqrt(1.*data.nbytes/self.memMax)))
+        slices = [slice(0,d,Nstep) for d in data.shape]
+        if Nstep>1: 
+            logger.info("downsample image by factor of  %s"%Nstep)
+
+        return slices
+
     def set_data(self,data):
-        self.set_shape(data.shape[::-1])
+        self.dataSlices = self.get_data_slices(data)
+        self.set_shape(data[self.dataSlices].shape[::-1])
         self.update_data(data)
 
     def set_shape(self,dataShape):
@@ -113,7 +135,10 @@ class VolumeRenderer:
                                             channel_type = cl.channel_type.FLOAT)
 
     def update_data(self,data):
-        self._data = data.astype(self.dtype)
+        self._data = data[self.dataSlices].copy()
+        if self._data.dtype != self.dtype:
+            self._data = self._data.astype(self.dtype)
+
         self.dev.writeImage(self.dataImg,self._data)
 
     def set_units(self,stackUnits = ones(3)):
@@ -255,8 +280,21 @@ def _getDirec(P,M,u=1,v=0):
     return dot(inv(M),direc0)
 
 
+def test_simple():
+    from spimagine.data_model import TiffData
+    import pylab
+
+    # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
+    d = TiffData("/Users/mweigert/Data/Droso07.tif")[0]
+
+    rend = VolumeRenderer((400,400))
+
+    rend.set_data(d)
+    out = rend.render()
+    pylab.imshow(out)
+    pylab.show()
+
 
 if __name__ == "__main__":
     pass
     # test_simple()
-
