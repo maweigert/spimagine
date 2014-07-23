@@ -2,6 +2,7 @@
 
 iconName=spimagine 
 
+rm -rf build
 rm -rf dist
 
 pyinstaller -w -F -y spimagine.spec 

@@ -1,9 +1,29 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 import os
 import numpy as np
-from PIL import Image
 import re
+from PIL import Image
 
-def read3dTiff_old(fName):
+
+try:
+    import libtiff
+except ImportError as e:
+    print e
+    logger.warning("couldnt import libtiff... falling back to PIL which\
+    is rather slow in reading tiff files")
+    _LIBTIFF_SUPPORT = False
+else:
+    logger.info("loading libtiff... ")
+
+    _LIBTIFF_SUPPORT = True
+
+
+
+
+def _read3dTiff_PIL(fName):
     img = Image.open(fName)
     i = 0
     data = []
@@ -17,13 +37,19 @@ def read3dTiff_old(fName):
 
     return np.array(data)
 
-def read3dTiff(fName):
-    from libtiff import TIFFfile
 
-    """ still has problems with matlab created tif"""
-    tif = TIFFfile(fName)
+def _read3dTiff_libtiff(fName):
+    import libtiff
+    tif = libtiff.TIFFfile(fName)
     data = tif.get_samples()[0][0]
     return data
+
+def read3dTiff(fName):
+    if _LIBTIFF_SUPPORT:
+        return _read3dTiff_libtiff(fName)
+    else:
+        return _read3dTiff_PIL(fName)
+
 
 def getTiffSize(fName):
     img = Image.open(fName, 'r')
@@ -111,15 +137,6 @@ def fromSpimFile(fName,stackSize):
 if __name__ == '__main__':
     from time import time
     t = time()
-    d = getTiffSize_old("/Users/mweigert/Data/Wing_cropped.tif")
-
+    d = read3dTiff("/Users/mweigert/Data/Wing_cropped.tif")
     print d
     print time()-t
-
-    t = time()
-    d = getTiffSize("/Users/mweigert/Data/Wing_cropped.tif")
-    print d
-    print time()-t
-
-
-

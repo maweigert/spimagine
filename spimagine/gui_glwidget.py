@@ -121,6 +121,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def setModel(self,dataModel):
         self.dataModel = dataModel
+        self.transform.setModel(dataModel)
         if self.dataModel:
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
@@ -142,7 +143,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
             else:
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
-                
+
 
     def initializeGL(self):
         glClearColor(0,0,0,1.)

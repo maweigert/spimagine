@@ -280,19 +280,19 @@ def _getDirec(P,M,u=1,v=0):
     return dot(inv(M),direc0)
 
 
-def test_simple():
-    from spimagine.data_model import TiffData
-    import pylab
+# def test_simple():
+#     from spimagine.data_model import TiffData
+#     import pylab
 
-    # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
-    d = TiffData("/Users/mweigert/Data/Droso07.tif")[0]
+#     # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
+#     d = TiffData("/Users/mweigert/Data/Droso07.tif")[0]
 
-    rend = VolumeRenderer((400,400))
+#     rend = VolumeRenderer((400,400))
 
-    rend.set_data(d)
-    out = rend.render()
-    pylab.imshow(out)
-    pylab.show()
+#     rend.set_data(d)
+#     out = rend.render
+#     pylab.imshow(out)
+#     pylab.show()
 
 
 if __name__ == "__main__":
