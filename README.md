@@ -5,6 +5,18 @@ OpenCL accelerated rendering of 3D and 4D data
 
 ## Installing
 
+### Mac
+
+#### as app bundle
+
+just find the dmg in the download section, open and drag to Applications
+
+you wanna install libtiff to speed up opening of tiff files   
+> brew install libtiff
+
+
+#### as python package
+  
 On Mac, clang might complain about non supported compiler flags, a quick fix to which is
 
 > export CFLAGS=-Qunused-arguments
@@ -13,6 +25,9 @@ On Mac, clang might complain about non supported compiler flags, a quick fix to 
 
 install PyQt4, e.g. with homebrew:
 > brew install pyqt
+
+install libtiff (optional)
+> brew install libtiff
 
 
 then with pip
@@ -63,5 +78,3 @@ the package provides interactive visualisation to be used e.g. within IPython
 	volfig()        #similar behaviour like matplotlib.figure, e.g. can be omitted
 	
 	volshow(data)
-
-
