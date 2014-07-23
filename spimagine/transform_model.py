@@ -24,13 +24,16 @@ class TransformModel(QtCore.QObject):
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
     _rotationChanged = QtCore.pyqtSignal()
-
+    _dataPosChanged =  QtCore.pyqtSignal(int)
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
 
     def __init__(self):
         super(TransformModel,self).__init__()
         self.reset()
+
+    def setModel(self,dataModel):
+        self.dataModel = dataModel
 
     def reset(self,maxVal = 256.,stackUnits=None):
         logger.debug("reset")
@@ -40,6 +43,7 @@ class TransformModel(QtCore.QObject):
         self.cameraZ = 5
         self.scaleAll = 1.
         self.zoom = 1.
+        self.dataPos = 0
         self.isPerspective = True
         self.setPerspective()
         self.setScale(0,maxVal)
@@ -50,6 +54,11 @@ class TransformModel(QtCore.QObject):
         self.setStackUnits(*stackUnits)
         self.update()
 
+    def setPos(self,pos):
+        logger.debug("setPos(%s)",pos)
+        self.dataPos = pos
+        self.dataModel.setPos(pos) 
+        self._transformChanged.emit()
 
     def setGamma(self, gamma):
         logger.debug("setGamma(%s)",gamma)

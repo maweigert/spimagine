@@ -258,8 +258,8 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
 
-        dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-        dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+        # dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+        # dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
         self.glWidget._dataModelChanged.connect(self.dataModelChanged)
 
@@ -296,9 +296,13 @@ class MainWidget(QtGui.QWidget):
         logger.info("data Model changed")
         dataModel = self.glWidget.dataModel
         dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-        dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
-        self.sliderTime.valueChanged.connect(dataModel.setPos)
+        # self.sliderTime.valueChanged.connect(dataModel.setPos)
+
+        dataModel._dataPosChanged.connect(self.sliderTime.setValue)
+        self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
+
+        
         self.keyPanel.keyView.setDataTransformModel(dataModel,self.glWidget.transform)
 
         self.dataSourceChanged()
@@ -320,13 +324,14 @@ class MainWidget(QtGui.QWidget):
         self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
 
 
+
     def forward(self,event):
         newpos = (self.glWidget.dataModel.pos+1)%self.glWidget.dataModel.sizeT()
-        self.glWidget.dataModel.setPos(newpos)
+        self.glWidget.transform.setPos(newpos)
 
     def backward(self,event):
         newpos = (self.glWidget.dataModel.pos-1)%self.glWidget.dataModel.sizeT()
-        self.glWidget.dataModel.setPos(newpos)
+        self.glWidget.transform.setPos(newpos)
 
 
     def startPlay(self,event):
@@ -371,7 +376,8 @@ class MainWidget(QtGui.QWidget):
             self.playDir = 1
 
         newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
-        self.glWidget.dataModel.setPos(newpos)
+        self.glWidget.transform.setPos(newpos)
+        # self.glWidget.dataModel.setPos(newpos)
 
 
     def contextMenuEvent(self,event):
