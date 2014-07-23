@@ -1,28 +1,42 @@
+
+
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+
 from numpy import *
 import bisect
 from PyQt4 import QtCore
 from spimagine.quaternion import *
 
 class TransformData(object):
-    def __init__(self,quatRot = Quaternion()):
-        self.setData(quatRot)
+    def __init__(self,quatRot = Quaternion(), zoom = 1):
+        self.setData(quatRot,zoom)
+
 
     def __repr__(self):
-        return "Quaternion: %s "%str(self.quatRot)
+        return "Quaternion: %s \t %s: "%(str(self.quatRot),self.zoom)
 
-    def setData(self,quatRot):
+    def setData(self,quatRot,zoom):
         self.quatRot = Quaternion.copy(quatRot)
+        self.zoom = zoom
 
+    @classmethod
+    def interp(cls,x1,x2,t):
+        newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
+        newZoom = (1.-t)*x1.zoom + t*x2.zoom
+        return TransformData(quatRot = newQuat,zoom = newZoom)
 
 
 class KeyFrame(object):
-    def __init__(self,tFrame = 0, dataPos = 0, transformData = TransformData()):
+    def __init__(self,tFrame = 0, transformData = TransformData()):
         self.tFrame = tFrame
         self.transformData = transformData
-        self.dataPos = dataPos
 
     def __repr__(self):
-        return "t = %.3f \t %i \t %s"%(self.tFrame,self.dataPos,self.transformData)
+        return "t = %.3f \t %s"%(self.tFrame,self.transformData)
 
     def __cmp__(self,rhs):
         return cmp(self.tFrame,rhs.tFrame)
@@ -45,6 +59,7 @@ class KeyFrameList(QtCore.QObject):
         return "\n".join("%s \t %s"%(self.keyDict[k[1]],k[1]) for k in self.tFrames)
 
     def addItem(self, keyFrame = KeyFrame()):
+        logger.debug("KeyFrameList.addItem: %s",keyFrame)
         newID = self._getNewID()
         self.keyDict[newID] = keyFrame
         bisect.insort(self.tFrames,[keyFrame.tFrame, newID])
@@ -93,18 +108,19 @@ class KeyFrameList(QtCore.QObject):
         lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
 
         #transforms:
-        newQuat = quaternion_slerp(frameLeft.transformData.quatRot, frameRight.transformData.quatRot, lam)
-        newPos = (1.-lam)*frameLeft.dataPos + lam*frameRight.dataPos
-        newPos = int(newPos)
+        newTrans = TransformData.interp(frameLeft.transformData,frameRight.transformData,lam)
+        # newQuat = quaternion_slerp(frameLeft.transformData.quatRot, frameRight.transformData.quatRot, lam)
+        # newPos = (1.-lam)*frameLeft.dataPos + lam*frameRight.dataPos
+        # newPos = int(newPos)
 
-        return KeyFrame(tFrame,newPos,TransformData(newQuat))
+        return newTrans
 
 
 
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,0,TransformData(Quaternion(.71,.71,0,0))))
+    k.addItem(KeyFrame(.5,0,TransformData(quatRot=Quaternion(.71,.71,0,0))))
 
     for t in linspace(0,1,10):
         print t, k.getTransform(t)

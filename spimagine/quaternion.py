@@ -72,6 +72,8 @@ class Quaternion():
 
 def quaternion_slerp(q1,q2,t):
     w = np.arccos(q1.dot(q2))
+    if w<1.e-10:
+        return Quaternion.copy(q1)
     return (q1*(np.sin((1.-t)*w)/np.sin(w)))+q2*(np.sin(t*w)/np.sin(w))
 
 if __name__ == '__main__':

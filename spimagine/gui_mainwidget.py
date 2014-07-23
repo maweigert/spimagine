@@ -14,7 +14,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-import sys
 import os
 import numpy as np
 
@@ -24,7 +23,7 @@ from PyQt4 import QtGui
 
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
-from keyframe_view import *
+from keyframe_view import KeyFramePanel
 from gui_settings import SettingsPanel
 from data_model import DataModel, DemoData, SpimData
 
@@ -36,9 +35,13 @@ N_PREFETCH = 10
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
+        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
         base_path = os.path.abspath(os.path.dirname(__file__))
@@ -48,7 +51,7 @@ def absPath(myPath):
 class MainWidget(QtGui.QWidget):
 
     def __init__(self, parent = None,dataContainer = None, N_PREFTECH = 0):
-        super(QWidget,self).__init__(parent)
+        super(QtGui.QWidget,self).__init__(parent)
 
         self.myparent = parent
 
@@ -63,6 +66,8 @@ class MainWidget(QtGui.QWidget):
 
         self.fwdButton = QtGui.QPushButton("",self)
         self.fwdButton.setStyleSheet("background-color: black")
+
+
         self.fwdButton.setIcon(QtGui.QIcon(absPath("images/icon_forward.png")))
         self.fwdButton.setIconSize(QtCore.QSize(18,18))
         self.fwdButton.clicked.connect(self.forward)
@@ -180,7 +185,7 @@ class MainWidget(QtGui.QWidget):
             lambda x: self.gammaSlider.setValue(200*(x-1.)+100))
 
 
-        self.keyframes = KeyFrameList()
+        # self.keyframes = KeyFrameList()
         self.keyPanel = KeyFramePanel()
         self.keyPanel.hide()
 
@@ -268,6 +273,7 @@ class MainWidget(QtGui.QWidget):
         self.hiddableControls = [self.checkSettings,
                                  self.startButton,self.sliderTime,self.spinTime,
                                  self.checkKey,self.screenshotButton ]
+
         # self.keyPanel.keyView.setModel(self.keyframes)
 
 
@@ -302,8 +308,8 @@ class MainWidget(QtGui.QWidget):
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
         self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
 
-        
-        self.keyPanel.keyView.setDataTransformModel(dataModel,self.glWidget.transform)
+
+        self.keyPanel.keyView.setTransformModel(self.glWidget.transform)
 
         self.dataSourceChanged()
 
