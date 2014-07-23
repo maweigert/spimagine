@@ -20,12 +20,19 @@ from transform_model import TransformModel
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
+        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
+
         base_path = os.path.abspath(os.path.dirname(__file__))
+        logger.debug("didnt found MEIPASS!: %s "%os.path.join(base_path, myPath))
+
         return os.path.join(base_path, myPath)
 
 
@@ -251,9 +258,8 @@ class KeyListView(QGraphicsView):
         self.relativeAspect = 1.
         self.isListening = True
 
+        self.setKeyListModel(KeyFrameList())
 
-    def setDataTransformModel(self,dataModel, transformModel):
-        self.dataModel, self.transformModel = dataModel, transformModel
 
     def setKeyListModel(self,keyList):
 
@@ -263,7 +269,7 @@ class KeyListView(QGraphicsView):
         # self.keyList._itemChanged.connect(self.itemChanged)
 
     def setTransformModel(self,transformModel):
-        self.transModel = transformModel
+        self.transformModel = transformModel
         self.resetScene()
         # self.keyList._modelChanged.connect(self.modelChanged)
         # self.keyList._itemChanged.connect(self.itemChanged)
@@ -322,15 +328,14 @@ class KeyListView(QGraphicsView):
 
         posScene = self.mapToScene(event.pos())
 
-        if self.dataModel:
-            actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH,self.dataModel.pos,self.transformModel.toTransformData()))}
-            actions = {}
+        actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH,self.transformModel.toTransformData()))}
+        actions = {}
 
-            object_cntext_Menu = QMenu()
-            for k, meth in actionMethods.iteritems():
-                actions[k] = object_cntext_Menu.addAction(k,meth)
+        object_cntext_Menu = QMenu()
+        for k, meth in actionMethods.iteritems():
+            actions[k] = object_cntext_Menu.addAction(k,meth)
 
-                object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
+            object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
 
 class KeyFramePanel(QWidget):
@@ -345,9 +350,13 @@ class KeyFramePanel(QWidget):
         self.keyView =  KeyListView()
 
 
+        self.playTimer = QTimer(self)
+        self.playTimer.setInterval(100)
+        self.playTimer.timeout.connect(self.onPlayTimer)
 
         self.startButton = QPushButton("",self)
         self.startButton.setStyleSheet("background-color: black")
+        # logger.debug("absPATH: %s"%absPath("images/icon_start.png"))
         self.startButton.setIcon(QIcon(absPath("images/icon_start.png")))
         self.startButton.setIconSize(QSize(24,24))
         self.startButton.clicked.connect(self.startPlay)
@@ -356,13 +365,38 @@ class KeyFramePanel(QWidget):
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.startButton)
-        
+
         hbox.addWidget(self.keyView)
 
         self.setLayout(hbox)
 
+        self.t = 0
+
+
     def startPlay(self,evt):
-        pass
+        if self.playTimer.isActive():
+            self.playTimer.stop()
+            self.startButton.setIcon(QIcon(absPath("images/icon_start.png")))
+
+        else:
+            self.playTimer.start()
+            self.startButton.setIcon(QIcon(absPath("images/icon_pause.png")))
+
+    def onPlayTimer(self):
+        self.t = (self.t+0.01)%1.
+
+        trans = self.keyView.keyList.getTransform(self.t)
+        print self.t,trans
+
+        self.keyView.transformModel.fromTransformData(trans)
+        # if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
+        #     self.playDir = 1-2*self.loopBounce
+        # if self.glWidget.dataModel.pos == 0:
+        #     self.playDir = 1
+
+        # newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
+        # self.glWidget.transform.setPos(newpos)
+        # self.glWidget.dataModel.setPos(newpos)
 
 
 
@@ -372,17 +406,19 @@ class MainWindow(QMainWindow):
         super(MainWindow,self).__init__()
 
         self.resize(500, 100)
-        self.setWindowTitle("Key Frame View")   
+        self.setWindowTitle("Key Frame View")
 
-        
+
 
         self.keyPanel = KeyFramePanel()
 
         dataModel = DataModel(dataContainer = DemoData(50),prefetchSize = 0)
         transModel = TransformModel()
+        transModel.setModel(dataModel)
 
         dataModel.setPos(2)
-        self.keyPanel.keyView.setDataTransformModel(dataModel,transModel)
+
+        self.keyPanel.keyView.setTransformModel(transModel)
 
         k = KeyFrameList()
         k.addItem(KeyFrame(0.4))
@@ -391,7 +427,7 @@ class MainWindow(QMainWindow):
         self.keyPanel.keyView.setKeyListModel(k)
 
         self.keyPanel.keyView.setTransformModel(None)
-        
+
         self.setCentralWidget(self.keyPanel)
 
         self.setStyleSheet("background-color:black;")

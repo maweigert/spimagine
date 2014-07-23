@@ -57,7 +57,7 @@ class TransformModel(QtCore.QObject):
     def setPos(self,pos):
         logger.debug("setPos(%s)",pos)
         self.dataPos = pos
-        self.dataModel.setPos(pos) 
+        self.dataModel.setPos(pos)
         self._transformChanged.emit()
 
     def setGamma(self, gamma):
@@ -126,7 +126,8 @@ class TransformModel(QtCore.QObject):
         return modelView
 
     def fromTransformData(self,transformData):
-        pass
+        self.setQuaternion(transformData.quatRot)
+        self.setZoom(transformData.zoom)
 
     def toTransformData(self):
-        return TransformData(self.quatRot)
+        return TransformData(quatRot = self.quatRot, zoom = self.zoom)
