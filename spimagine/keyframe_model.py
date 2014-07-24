@@ -12,22 +12,24 @@ from PyQt4 import QtCore
 from spimagine.quaternion import *
 
 class TransformData(object):
-    def __init__(self,quatRot = Quaternion(), zoom = 1):
-        self.setData(quatRot,zoom)
+    def __init__(self,quatRot = Quaternion(), zoom = 1, dataPos = 0):
+        self.setData(quatRot,zoom,dataPos)
 
 
     def __repr__(self):
-        return "Quaternion: %s \t %s: "%(str(self.quatRot),self.zoom)
+        return "Quaternion: %s \t %s \t %s: "%(str(self.quatRot),self.zoom,self.dataPos)
 
-    def setData(self,quatRot,zoom):
+    def setData(self,quatRot,zoom, dataPos):
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
+        self.dataPos = dataPos
 
     @classmethod
     def interp(cls,x1,x2,t):
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
-        return TransformData(quatRot = newQuat,zoom = newZoom)
+        newPos = int((1.-t)*x1.dataPos + t*x2.dataPos)
+        return TransformData(quatRot = newQuat,zoom = newZoom, dataPos= newPos)
 
 
 class KeyFrame(object):
@@ -93,6 +95,7 @@ class KeyFrameList(QtCore.QObject):
 
 
     def getTransform(self,tFrame):
+        logger.debug("getTransform")
         ind = bisect.bisect(self.tFrames,[tFrame,-1])
 
         # clamping
@@ -100,18 +103,17 @@ class KeyFrameList(QtCore.QObject):
         right = min(ind,len(self.tFrames)-1)
 
         leftID, rightID = self._NToID(left),self._NToID(right)
-        if leftID == rightID:
-            return self.keyDict[leftID]
 
         # linear interpolating
         frameLeft, frameRight = self.keyDict[leftID], self.keyDict[rightID]
-        lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
+        if abs(frameRight.tFrame-frameLeft.tFrame)<1.e-7:
+            lam = 0.
+        else:
+            lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
 
         #transforms:
+
         newTrans = TransformData.interp(frameLeft.transformData,frameRight.transformData,lam)
-        # newQuat = quaternion_slerp(frameLeft.transformData.quatRot, frameRight.transformData.quatRot, lam)
-        # newPos = (1.-lam)*frameLeft.dataPos + lam*frameRight.dataPos
-        # newPos = int(newPos)
 
         return newTrans
 

@@ -1,3 +1,8 @@
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 import sys
 import os
 from PyQt4 import QtCore
@@ -19,6 +24,9 @@ def absPath(myPath):
 class SettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _playIntervalChanged = QtCore.pyqtSignal(int)
+    _dirNameChanged =  QtCore.pyqtSignal(str)
+    _frameNumberChanged = QtCore.pyqtSignal(int)
+
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
 
@@ -54,6 +62,7 @@ class SettingsPanel(QtGui.QWidget):
         line.setFrameShape(QtGui.QFrame.HLine)
 
         vbox.addWidget(line)
+        vbox.addWidget(QtGui.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
 
         # the perspective/box checkboxes
         checkBoxStyleStr = """
@@ -106,6 +115,45 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox.addWidget(line)
 
+        vbox.addWidget(QtGui.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
+
+        renderFolder = QtGui.QLineEdit("./")
+        hbox = QtGui.QHBoxLayout()
+
+        hbox.addWidget(QtGui.QLabel("output folder: ",alignment = QtCore.Qt.AlignCenter))
+
+        hbox.addWidget(renderFolder)
+        folderButton = QtGui.QPushButton("",self)
+        folderButton.setStyleSheet("background-color: black")
+        folderButton.setIcon(QtGui.QIcon(absPath("images/icon_folder.png")))
+        folderButton.setIconSize(QtCore.QSize(24,24))
+        folderButton.clicked.connect(self.folderSelect)
+        # self.screenshotButton.setMaximumWidth(24)
+        # self.screenshotButton.setMaximumHeight(24)
+
+        hbox.addWidget(folderButton)
+
+        renderFolder.returnPressed.connect(lambda: self.setDirName(renderFolder.text()))
+        self._dirNameChanged.connect(renderFolder.setText)
+
+        self.setDirName("./")
+
+        vbox.addLayout(hbox)
+
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("number frames:\t"))
+        frameEdit = QtGui.QLineEdit("100")
+        frameEdit.setValidator(QtGui.QIntValidator(bottom=10))
+        frameEdit.returnPressed.connect(lambda: self._frameNumberChanged.emit(int(frameEdit.text())))
+        hbox.addWidget(frameEdit)
+
+        vbox.addLayout(hbox)
+
+        line =  QtGui.QFrame()
+        line.setFrameShape(QtGui.QFrame.HLine)
+        vbox.addWidget(line)
+
         self.dimensionLabel = QtGui.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
         vbox.addWidget(self.dimensionLabel)
 
@@ -118,9 +166,21 @@ class SettingsPanel(QtGui.QWidget):
         }
         """)
 
-
-
         self.setLayout(vbox)
+
+
+    def setDirName(self,dirName):
+        logger.debug("setDirName: %s"%dirName)
+        self.dirName = dirName
+        self._dirNameChanged.emit(dirName)
+
+
+    def folderSelect(self,event):
+        dirName= QtGui.QFileDialog.getExistingDirectory(self, 'select output folder',
+                self.dirName)
+        if dirName:
+            self.setDirName(dirName)
+
 
     def setStackUnits(self,px,py,pz):
         for e,p in zip(self.stackEdits,[px,py,pz]):

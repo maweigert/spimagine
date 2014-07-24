@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 import os
 import numpy as np
-
+import sys
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -186,7 +186,7 @@ class MainWidget(QtGui.QWidget):
 
 
         # self.keyframes = KeyFrameList()
-        self.keyPanel = KeyFramePanel()
+        self.keyPanel = KeyFramePanel(self.glWidget)
         self.keyPanel.hide()
 
         self.settingsView = SettingsPanel()
@@ -262,7 +262,9 @@ class MainWidget(QtGui.QWidget):
         self.settingsView._stackUnitsChanged.connect(self.glWidget.transform.setStackUnits)
         self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
+        self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
+        self.settingsView._dirNameChanged.connect(self.keyPanel.setDirName)
         # dataModel._dataSourceChanged.connect(self.dataSourceChanged)
         # dataModel._dataPosChanged.connect(self.sliderTime.setValue)
 
@@ -309,7 +311,7 @@ class MainWidget(QtGui.QWidget):
         self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
 
 
-        self.keyPanel.keyView.setTransformModel(self.glWidget.transform)
+        self.keyPanel.setTransformModel(self.glWidget.transform)
 
         self.dataSourceChanged()
 
@@ -362,7 +364,7 @@ class MainWidget(QtGui.QWidget):
         #if loopBounce = True, then while playing it should loop back and forth
         self.loopBounce = loopBounce
         self.settingsView.checkLoopBounce.setChecked(loopBounce)
-        self.playDir = 1
+        self.playD = 1
 
 
     def playIntervalChanged(self,val):
@@ -408,7 +410,7 @@ class MainWidget(QtGui.QWidget):
     def close(self):
         if self.playTimer.isActive():
             self.playTimer.stop()
-        QWidget.close(self)
+        super(MainWidget,self).close()
 
 
     def mouseDoubleClickEvent(self,event):

@@ -16,7 +16,7 @@ from keyframe_model import KeyFrame, KeyFrameList
 from data_model import DataModel, DemoData
 from transform_model import TransformModel
 
-
+from time import sleep
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -110,13 +110,14 @@ class KeyEdge(QGraphicsItem):
 
 
 class KeyNode(QGraphicsItem):
-    def __init__(self,graphWidget, keyList, ID,fixed = False):
+    def __init__(self,graphWidget, transform,keyList, ID,fixed = False):
         super(KeyNode, self).__init__()
         self.graph = graphWidget
 
-        self.shapeSize = 6*array([-1,-1.,2,2])
+        self.shapeSize = 8*array([-1,-1.,2,2])
         self.edgeList = []
         self.keyList = keyList
+        self.transformModel = transform
         self.ID = ID
         pos = self.keyList[self.ID].tFrame*KeyFrameScene.WIDTH
 
@@ -207,8 +208,11 @@ class KeyNode(QGraphicsItem):
         self.keyList.removeItem(self.ID)
         # self.graph.scene.removeItem(self)
 
+    def updateTransformData(self):
+        self.keyList[self.ID].transformData = self.transformModel.toTransformData()
+
     def contextMenuEvent(self, contextEvent):
-        actionMethods = {"delete" : self.delete}
+        actionMethods = {"delete" : self.delete, "update" : self.updateTransformData}
         actions = {}
 
         object_cntext_Menu = QMenu()
@@ -224,7 +228,7 @@ class KeyNode(QGraphicsItem):
 
 class KeyFrameScene(QGraphicsScene):
     WIDTH = 100
-    HEIGHT = 100
+    HEIGHT = 50
 
     # def mousePressEvent(self, event):
     #     print "Scene"
@@ -252,15 +256,25 @@ class KeyListView(QGraphicsView):
 
         self.setScene(self.scene)
 
-        # self.setMinimumSize(300,KeyFrameScene.HEIGHT)
+        # self.setMinimumSize(300,20)
         self.setWindowTitle("KeyFrameView")
         self.zoom = 1.
         self.relativeAspect = 1.
         self.isListening = True
 
-        self.setKeyListModel(KeyFrameList())
+        # self.setTransformModel(TransformModel())
 
+        # self.setKeyListModel(KeyFrameList())
 
+        self.resetModels(TransformModel(),KeyFrameList())
+
+    def resetModels(self,transformModel,keyList):
+        self.keyList = keyList
+        self.transformModel = transformModel
+        self.resetScene()
+        self.keyList._modelChanged.connect(self.modelChanged)
+
+        
     def setKeyListModel(self,keyList):
 
         self.keyList = keyList
@@ -279,7 +293,7 @@ class KeyListView(QGraphicsView):
         for myID in self.keyList.keyDict.keys():
             n = self.keyList._IDToN(myID)
             fixed = ( n == 0 or n == len(self.keyList.tFrames)-1)
-            self.scene.addItem(KeyNode(self,self.keyList,myID,fixed))
+            self.scene.addItem(KeyNode(self,self.transformModel,self.keyList,myID,fixed))
 
 
     def modelChanged(self):
@@ -326,22 +340,39 @@ class KeyListView(QGraphicsView):
             super(KeyListView,self).contextMenuEvent(event)
             return
 
-        posScene = self.mapToScene(event.pos())
+        else:
+            posScene = self.mapToScene(event.pos())
 
-        actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH,self.transformModel.toTransformData()))}
-        actions = {}
+            actionMethods = {"insert keyframe" : functools.partial(self.keyList.addItem,KeyFrame(1.*posScene.x()/KeyFrameScene.WIDTH,self.transformModel.toTransformData()))}
+            actions = {}
 
-        object_cntext_Menu = QMenu()
-        for k, meth in actionMethods.iteritems():
-            actions[k] = object_cntext_Menu.addAction(k,meth)
+            object_cntext_Menu = QMenu()
+            for k, meth in actionMethods.iteritems():
+                actions[k] = object_cntext_Menu.addAction(k,meth)
 
-            object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
+                object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
+class RecordThread(QThread):
+    notifyProgress = pyqtSignal(int)
+    def __init__(self,glWidget,keyView):
+        super(RecordThread,self).__init__()
+        self.glWidget = glWidget
+        self.keyView = keyView
+
+    def run(self):
+        for i in range(100):
+            logger.debug("thread: %s",i )
+            trans = self.keyView.keyList.getTransform(1.*i/100.)
+            self.keyView.transformModel.fromTransformData(trans)
+            self.notifyProgress.emit(i)
+            print self.glWidget
+            self.glWidget.saveFrame("output.png")
+            sleep(0.1)
 
 class KeyFramePanel(QWidget):
-    def __init__(self):
+    def __init__(self, glWidget):
         super(QWidget,self).__init__()
-
+        self.glWidget = glWidget
         self.resize(500, 50)
         self.initUI()
 
@@ -353,34 +384,96 @@ class KeyFramePanel(QWidget):
         self.playTimer = QTimer(self)
         self.playTimer.setInterval(100)
         self.playTimer.timeout.connect(self.onPlayTimer)
+        self.recordTimer = QTimer(self)
+        self.recordTimer.setInterval(50)
+        self.recordTimer.timeout.connect(self.onRecordTimer)
 
-        self.startButton = QPushButton("",self)
-        self.startButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_start.png"))
-        self.startButton.setIcon(QIcon(absPath("images/icon_start.png")))
-        self.startButton.setIconSize(QSize(24,24))
-        self.startButton.clicked.connect(self.startPlay)
-        self.startButton.setMaximumWidth(24)
-        self.startButton.setMaximumHeight(24)
+
+        self.playButton = QPushButton("",self)
+        self.playButton.setStyleSheet("background-color: black")
+        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
+        self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
+        self.playButton.setIconSize(QSize(24,24))
+        self.playButton.clicked.connect(self.onPlay)
+        self.playButton.setMaximumWidth(24)
+        self.playButton.setMaximumHeight(24)
+
+        self.recordButton = QPushButton("",self)
+        self.recordButton.setStyleSheet("background-color: black")
+        # logger.debug("absPATH: %s"%absPath("images/icon_record.png"))
+        self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
+        self.recordButton.setIconSize(QSize(24,24))
+        self.recordButton.clicked.connect(self.onRecord)
+        self.recordButton.setMaximumWidth(24)
+        self.recordButton.setMaximumHeight(24)
+
+        self.progressBar = QProgressBar(self)
+        self.progressBar.setRange(0,100)
+        # self.recordThread = RecordThread(self.glWidget,self.keyView)
+        # self.recordThread.notifyProgress.connect(self.onRecordProgress)
+
+
 
         hbox = QHBoxLayout()
-        hbox.addWidget(self.startButton)
+        hbox.addWidget(self.playButton)
+        hbox.addWidget(self.recordButton)
 
-        hbox.addWidget(self.keyView)
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.keyView)
+        vbox.addWidget(self.progressBar)
+
+        hbox.addLayout(vbox)
 
         self.setLayout(hbox)
+        self.setFrameNumber(100)
 
+        self.setDirName("./")
         self.t = 0
 
+    def setTransformModel(self,transformModel):
+        self.transformModel = transformModel
+        self.keyView.setTransformModel(transformModel)
 
-    def startPlay(self,evt):
+    def onPlay(self,evt):
         if self.playTimer.isActive():
             self.playTimer.stop()
-            self.startButton.setIcon(QIcon(absPath("images/icon_start.png")))
+            self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
 
         else:
             self.playTimer.start()
-            self.startButton.setIcon(QIcon(absPath("images/icon_pause.png")))
+            self.playButton.setIcon(QIcon(absPath("images/icon_pause.png")))
+
+    def onRecord(self,evt):
+        if self.recordTimer.isActive():
+            self.recordTimer.stop()
+            self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
+        else:
+            self.recordPos = 0
+            self.recordButton.setIcon(QIcon(absPath("images/icon_record_on.png")))
+            self.recordTimer.start()
+
+
+    def setFrameNumber(self,nFrames):
+        print "nFramnes: ", nFrames
+        self.nFrames = nFrames
+
+    def setDirName(self,dirName):
+        logger.debug("setDirName %s"%dirName)
+        self.dirName = str(dirName)
+
+    def onRecordTimer(self):
+        self.recordPos  += 1
+        if self.recordPos > self.nFrames:
+            self.recordTimer.stop()
+            self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
+            return
+
+
+        trans = self.keyView.keyList.getTransform(1.*self.recordPos/self.nFrames)
+        self.keyView.transformModel.fromTransformData(trans)
+        self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
+        self.progressBar.setValue(100*self.recordPos/self.nFrames)
+
 
     def onPlayTimer(self):
         self.t = (self.t+0.01)%1.

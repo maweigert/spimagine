@@ -2,6 +2,7 @@
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -128,6 +129,7 @@ class TransformModel(QtCore.QObject):
     def fromTransformData(self,transformData):
         self.setQuaternion(transformData.quatRot)
         self.setZoom(transformData.zoom)
+        self.setPos(transformData.dataPos)
 
     def toTransformData(self):
-        return TransformData(quatRot = self.quatRot, zoom = self.zoom)
+        return TransformData(quatRot = self.quatRot, zoom = self.zoom, dataPos = self.dataPos)
