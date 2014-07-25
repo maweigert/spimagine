@@ -3,6 +3,8 @@
 OpenCL accelerated rendering of 3D and 4D data
 
 
+![Alt text](spimagine_img.png)
+
 ## Installing
 
 ### Mac
