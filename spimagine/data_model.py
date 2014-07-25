@@ -24,6 +24,19 @@ from collections import defaultdict
 
 import imgutils
 
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
 
 
 ############################################################################
@@ -151,34 +164,44 @@ class NumpyData(GenericData):
 
 
 class DemoData(GenericData):
-    def __init__(self, N = 100):
+    def __init__(self, N = None):
         GenericData.__init__(self,"DemoData")
         self.load(N)
 
-    def load(self,N = 100):
-        self.stackSize = (1,N,N,N/2)
-        self.fName = ""
-        self.nT = N
-        self.stackUnits = (1,1,1)
-        x = np.linspace(-1,1,N)
-        Z,Y,X = np.meshgrid(x,x,x , indexing = "ij")
-        R = np.sqrt(X**2+Y**2+Z**2)
-        R2 = np.sqrt((X-.4)**2+(Y+.2)**2+Z**2)
-        phi = np.arctan2(Z,Y)
-        theta = np.arctan2(X,np.sqrt(Y**2+Z**2))
-        u = np.exp(-500*(R-1.)**2)*np.sum(np.exp(-150*(-theta-t+.1*(t-np.pi/2.)*
-            np.exp(-np.sin(2*(phi+np.pi/2.))))**2)
-            for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
+    def load(self,N = None):
+        if N==None:
+            logger.debug("loading precomputed demodata")
+            self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif"))
+            N = 80
+            self.stackSize = (10,N,N,N)
+            self.fName = ""
+            self.nT = 10
+            self.stackUnits = (1,1,1)
 
-        u2 = np.exp(-7*R2**2)
-        self.data = (10000*(u + 2*u2)).astype(np.int16)
+        else:
+            self.stackSize = (1,N,N,N/2)
+            self.fName = ""
+            self.nT = N
+            self.stackUnits = (1,1,1)
+            x = np.linspace(-1,1,N)
+            Z,Y,X = np.meshgrid(x,x,x , indexing = "ij")
+            R = np.sqrt(X**2+Y**2+Z**2)
+            R2 = np.sqrt((X-.4)**2+(Y+.2)**2+Z**2)
+            phi = np.arctan2(Z,Y)
+            theta = np.arctan2(X,np.sqrt(Y**2+Z**2))
+            u = np.exp(-500*(R-1.)**2)*np.sum(np.exp(-150*(-theta-t+.1*(t-np.pi/2.)*
+                np.exp(-np.sin(2*(phi+np.pi/2.))))**2)
+                for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
+
+            u2 = np.exp(-7*R2**2)
+            self.data = (10000*(u + 2*u2)).astype(np.int16)
 
 
     def sizeT(self):
         return self.nT
 
     def __getitem__(self,pos):
-        return self.data
+        return self.data*np.exp(-.3*pos)
 
 
 class EmptyData(GenericData):

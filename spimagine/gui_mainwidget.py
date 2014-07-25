@@ -253,7 +253,7 @@ class MainWidget(QtGui.QWidget):
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
         if not dataContainer:
-            dataContainer = DemoData(70)
+            dataContainer = DemoData()
 
         dataModel = DataModel(dataContainer,prefetchSize = N_PREFETCH)
 
@@ -319,6 +319,8 @@ class MainWidget(QtGui.QWidget):
         self.sliderTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
+
+        print "HAAAAAAAAA"
         self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
         if self.myparent:
