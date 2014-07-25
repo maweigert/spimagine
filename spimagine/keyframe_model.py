@@ -45,12 +45,13 @@ class KeyFrame(object):
 
 
 class KeyFrameList(QtCore.QObject):
-    _countID = 0
+
     _modelChanged = QtCore.pyqtSignal()
     _itemChanged = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super(KeyFrameList,self).__init__()
+        self._countID = 0
         self.keyDict = dict()
         self.tFrames = list()
         self.addItem(KeyFrame(0),)
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
     k = KeyFrameList()
 
-    k.addItem(KeyFrame(.5,0,TransformData(Quaternion(.71,.71,0,0))))
+    k.addItem(KeyFrame(.5,TransformData(quatRot = Quaternion(.71,.71,0,0))))
 
     print k
 

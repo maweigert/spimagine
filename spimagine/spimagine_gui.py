@@ -22,9 +22,6 @@ from spimagine.gui_mainwindow import MainWindow
 
 
 
-
-
-
 def main():
 
     app = QtGui.QApplication(sys.argv)
