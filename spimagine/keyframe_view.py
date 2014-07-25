@@ -203,6 +203,9 @@ class KeyNode(QGraphicsItem):
         self.update()
         super(KeyNode, self).mouseReleaseEvent(event)
 
+    def mouseDoubleClickEvent(self,event):
+        super(KeyNode,self).mouseDoubleClickEvent(event)
+        self.setTransformData()
 
     def delete(self):
         self.keyList.removeItem(self.ID)
@@ -210,6 +213,9 @@ class KeyNode(QGraphicsItem):
 
     def updateTransformData(self):
         self.keyList[self.ID].transformData = self.transformModel.toTransformData()
+
+    def setTransformData(self):
+        self.transformModel.fromTransformData(self.keyList[self.ID].transformData)
 
     def contextMenuEvent(self, contextEvent):
         actionMethods = {"delete" : self.delete, "update" : self.updateTransformData}
@@ -268,13 +274,14 @@ class KeyListView(QGraphicsView):
 
         self.resetModels(TransformModel(),KeyFrameList())
 
-    def resetModels(self,transformModel,keyList):
+    def resetModels(self,transformModel,keyList= KeyFrameList):
         self.keyList = keyList
+        logger.debug("resetModels, : keyList = %s"%self.keyList)
         self.transformModel = transformModel
         self.resetScene()
         self.keyList._modelChanged.connect(self.modelChanged)
 
-        
+
     def setKeyListModel(self,keyList):
 
         self.keyList = keyList
@@ -289,6 +296,7 @@ class KeyListView(QGraphicsView):
         # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
+        logger.debug("resetScene: %s",self.keyList)
         self.scene.clear()
         for myID in self.keyList.keyDict.keys():
             n = self.keyList._IDToN(myID)
@@ -429,6 +437,12 @@ class KeyFramePanel(QWidget):
 
         self.setDirName("./")
         self.t = 0
+
+
+    def resetModels(self,transformModel,keyList=KeyFrameList()):
+        logger.debug("keyPanel.resetModel: keyList = %s\n"%keyList)
+        self.transformModel = transformModel
+        self.keyView.resetModels(transformModel,keyList)
 
     def setTransformModel(self,transformModel):
         self.transformModel = transformModel

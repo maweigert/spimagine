@@ -55,7 +55,7 @@ class MainWindow(QtGui.QMainWindow):
         # this has to be repeated in MAC OSX for some magic reason
         fileMenu = menuBar.addMenu('&File')
 
-        
+
 
     def mouseDoubleClickEvent(self,event):
         super(MainWindow,self).mouseDoubleClickEvent(event)
@@ -69,6 +69,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.isFullScreen = not self.isFullScreen
 
+
+    def close(self):
+        print "hallao"
+        self.mainWidget.close()
+        super(MainWindow,self).close()
 
 
     def setModel(self,dataModel):
@@ -414,7 +419,7 @@ if __name__ == '__main__':
     win = MainWindow()
 
     win.setModel(DataModel(NumpyData(np.linspace(0,5000.,50**4).reshape((50,)*4))))
-    
+
     win.show()
     win.raise_()
 

@@ -23,6 +23,9 @@ from PyQt4 import QtGui
 
 from quaternion import Quaternion
 from gui_glwidget import GLWidget
+
+from keyframe_model import KeyFrameList
+
 from keyframe_view import KeyFramePanel
 from gui_settings import SettingsPanel
 from data_model import DataModel, DemoData, SpimData
@@ -310,8 +313,10 @@ class MainWidget(QtGui.QWidget):
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
         self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
 
+        self.keyPanel.resetModels(self.glWidget.transform, KeyFrameList())
 
-        self.keyPanel.setTransformModel(self.glWidget.transform)
+        # self.keyPanel.setTransformModel(self.glWidget.transform)
+        # self.keyPanel.setTransformModel(self.glWidget.transform)
 
         self.dataSourceChanged()
 
@@ -320,13 +325,14 @@ class MainWidget(QtGui.QWidget):
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
 
-        print "HAAAAAAAAA"
         self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
         if self.myparent:
             self.myparent.setWindowTitle(self.glWidget.dataModel.name())
         else:
             self.setWindowTitle(self.glWidget.dataModel.name())
+
+        self.keyPanel.resetModels(self.glWidget.transform, KeyFrameList())
 
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
@@ -405,13 +411,17 @@ class MainWidget(QtGui.QWidget):
             c.setVisible(not c.isVisible())
 
 
-    def closeEvent(self,event):
-        self.close()
-        event.accept()
+    # def closeEvent(self,event):
+    #     print "closeevent"
+    #     self.close()
+    #     event.accept()
 
     def close(self):
+        print "HUUUUU"
         if self.playTimer.isActive():
             self.playTimer.stop()
+        self.glWidget.setParent(None)
+        del self.glWidget
         super(MainWidget,self).close()
 
 
