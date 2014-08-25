@@ -21,6 +21,23 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 
+checkBoxStyleStr = """
+    QCheckBox::indicator:checked {
+    background:black;
+    border-image: url(%s);}
+    QCheckBox::indicator:unchecked {
+    background:black;
+    border-image: url(%s);}
+    """
+
+def createImgCheckBox(fName_active,fName_inactive):
+    checkBox = QtGui.QCheckBox()
+    checkBox.setStyleSheet(
+            checkBoxStyleStr%(absPath(fName_active),absPath(fName_inactive)))
+    return checkBox
+
+
+
 class SettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _playIntervalChanged = QtCore.pyqtSignal(int)
@@ -65,26 +82,16 @@ class SettingsPanel(QtGui.QWidget):
         vbox.addWidget(QtGui.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
 
         # the perspective/box checkboxes
-        checkBoxStyleStr = """
-        QCheckBox::indicator:checked {
-        background:black;
-        border-image: url(%s);}
-        QCheckBox::indicator:unchecked {
-        background:black;
-        border-image: url(%s);}
-        """
 
-        self.checkProj  = QtGui.QCheckBox()
-        self.checkProj.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/rays_persp.png"),absPath("images/rays_ortho.png")))
-
-        self.checkBox = QtGui.QCheckBox()
-        self.checkBox.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/wire_cube.png"),absPath("images/wire_cube_inactive.png")))
+        self.checkProj = createImgCheckBox("images/rays_persp.png","images/rays_ortho.png")
+        self.checkBox = createImgCheckBox("images/wire_cube.png","images/wire_cube_inactive.png")
 
 
         self.checkLoopBounce = QtGui.QCheckBox()
 
+        self.checkEgg = createImgCheckBox("images/egg.png","images/egg_inactive.png")
+
+        
 
         gridBox = QtGui.QGridLayout()
 
@@ -106,6 +113,9 @@ class SettingsPanel(QtGui.QWidget):
         self.playInterval.returnPressed.connect(self.playIntervalChanged)
         gridBox.addWidget(self.playInterval)
 
+        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),5,0)
+        gridBox.addWidget(self.checkEgg,5,1)
+        
         vbox.addLayout(gridBox)
 
 

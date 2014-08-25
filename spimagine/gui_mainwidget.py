@@ -29,7 +29,7 @@ from keyframe_model import KeyFrameList
 from keyframe_view import KeyFramePanel
 from gui_settings import SettingsPanel
 from data_model import DataModel, DemoData, SpimData
-
+import egg3d
 
 # the default number of data timeslices to prefetch
 N_PREFETCH = 10
@@ -234,6 +234,9 @@ class MainWidget(QtGui.QWidget):
         hbox.setSpacing(11)
         hbox0.setSpacing(5)
 
+
+        self.egg3d = egg3d.Egg3dController()
+
         # widget = QtGui.QWidget()
         self.setLayout(vbox)
 
@@ -246,6 +249,10 @@ class MainWidget(QtGui.QWidget):
         self.setLoopBounce(True)
 
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+
+
+        self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)
+
         self.glWidget.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
 
 
@@ -281,6 +288,38 @@ class MainWidget(QtGui.QWidget):
 
         # self.keyPanel.keyView.setModel(self.keyframes)
 
+
+    def onCheckEgg(self,state):
+        if state == QtCore.Qt.Checked:
+            self.connectEgg3d()
+        else:
+            self.egg3d.stop()    
+
+    def connectEgg3d(self):
+        try:
+            self.egg3d.connect()
+            self.egg3d.listener._quaternionChanged.connect(self.egg3dQuaternion)
+            self.egg3d.start()
+            N = 10
+            self._quatHist = [Quaternion() for i in range(N)]
+            self._quatWeights = np.exp(-0*np.linspace(0,1,N))
+            self._quatWeights *= 1./sum(self._quatWeights)
+            print self._quatWeights
+
+        except Exception as e:
+            print e
+            self.settingsView.checkEgg.setCheckState(QtCore.Qt.Unchecked)
+
+
+    def egg3dQuaternion(self,a,b,c,d):
+        self._quatHist = np.roll(self._quatHist,1)
+        self._quatHist[0] = Quaternion(a,c,b,d)
+
+        q0 = Quaternion(0,0,0,0)
+        for q,w in zip(self._quatHist,self._quatWeights):
+            q0 = q0+q*w
+
+        self.glWidget.transform.setQuaternion(q0)
 
 
     def initUI(self):
