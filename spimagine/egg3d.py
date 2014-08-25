@@ -58,7 +58,8 @@ class Egg3dListener(QtCore.QThread):
 
     def run(self):
         print "Egg3dlistener started"
-        while True:
+        self.isActive = True
+        while self.isActive:
             time.sleep(0.01)
             self._quaternionChanged.emit(*getEggData(self.socket))
 
@@ -84,6 +85,10 @@ class Egg3dController(QtCore.QObject):
     def start(self):
         self.listener.start()
 
+    def stop(self):
+        print "egg3d stopped"
+        self.listener.isActive = False
+
     def foo(self):
         print "FOOOO"
 
@@ -102,12 +107,22 @@ if __name__ == '__main__':
 
     egg.connect()
 
+
+
+    print "start"
     egg.start()
 
+    time.sleep(2)
 
-    print "s"
+    egg.stop()
 
-    time.sleep(5)
+    print "stop"
+
+    time.sleep(2)
+
+    print "finished"
+
+
 
     # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
