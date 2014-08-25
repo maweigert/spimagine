@@ -417,7 +417,6 @@ class MainWidget(QtGui.QWidget):
     #     event.accept()
 
     def close(self):
-        print "HUUUUU"
         if self.playTimer.isActive():
             self.playTimer.stop()
         self.glWidget.setParent(None)

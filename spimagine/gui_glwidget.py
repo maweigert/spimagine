@@ -44,6 +44,8 @@ from spimagine.transform_model import TransformModel
 from numpy import *
 import numpy as np
 
+import egg3d
+
 
 # from scipy.misc import imsave
 
@@ -117,6 +119,35 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
 
         self.refresh()
+
+        self.egg3d = egg3d.Egg3dController()
+        self.connectEgg3d()
+
+
+    def connectEgg3d(self):
+        try:
+            self.egg3d.connect()
+            self.egg3d.listener._quaternionChanged.connect(self.egg3dQuaternion)
+            self.egg3d.start()
+            N = 10
+            self._quatHist = [Quaternion() for i in range(N)]
+            self._quatWeights = exp(-0*linspace(0,1,N))
+            self._quatWeights *= 1./sum(self._quatWeights)
+            print self._quatWeights
+
+        except Exception as e:
+            print e
+        
+
+    def egg3dQuaternion(self,a,b,c,d):
+        self._quatHist = np.roll(self._quatHist,1)
+        self._quatHist[0] = Quaternion(a,b,d,-c)
+
+        q0 = Quaternion(0,0,0,0)
+        for q,w in zip(self._quatHist,self._quatWeights):
+            q0 = q0+q*w
+
+        self.transform.setQuaternion(q0)
 
 
     def setModel(self,dataModel):
