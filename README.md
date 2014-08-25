@@ -3,7 +3,7 @@
 OpenCL accelerated rendering of 3D and 4D data
 
 
-![Alt text](spimagine_img.png)
+![Alt text](https://bitbucket.org/mweigert/spimagine/raw/master/spimagine_image.png)
 
 ## Installing
 
