@@ -293,19 +293,19 @@ class MainWidget(QtGui.QWidget):
         if state == QtCore.Qt.Checked:
             self.connectEgg3d()
         else:
-            self.egg3d.stop()    
+            self.egg3d.stop()
 
     def connectEgg3d(self):
         try:
-            self.egg3d.connect()
             self.egg3d.listener._quaternionChanged.connect(self.egg3dQuaternion)
-            self.egg3d.start()
-            N = 10
+            self.egg3d.listener._zoomChanged.connect(self.egg3dZoom)
+
+            N = 45
             self._quatHist = [Quaternion() for i in range(N)]
-            self._quatWeights = np.exp(-0*np.linspace(0,1,N))
+            self._quatWeights = np.exp(-2.*np.linspace(0,1,N))
             self._quatWeights *= 1./sum(self._quatWeights)
             print self._quatWeights
-
+            self.egg3d.start()
         except Exception as e:
             print e
             self.settingsView.checkEgg.setCheckState(QtCore.Qt.Unchecked)
@@ -320,6 +320,15 @@ class MainWidget(QtGui.QWidget):
             q0 = q0+q*w
 
         self.glWidget.transform.setQuaternion(q0)
+
+    def egg3dZoom(self,zoom):
+        if zoom>0:
+            newZoom = self.glWidget.transform.zoom * 1.02**zoom
+        else:
+            newZoom = self.glWidget.transform.zoom * 1.2**zoom
+
+        newZoom = np.clip(newZoom,.4,3)
+        self.glWidget.transform.setZoom(newZoom)
 
 
     def initUI(self):
