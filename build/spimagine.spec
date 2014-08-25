@@ -28,7 +28,6 @@ a.datas += addAll("../spimagine/images")
 a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
 # a.datas += [("tiff_h_4_0_3.py","/Library/Python/2.7/site-packages/libtiff/tiff_h_4_0_3.py","Data")]
 
-a.datas += [("foo.png","foo.png","Data")]
 
 print a.datas
 
