@@ -38,30 +38,46 @@ def getEggData(s):
     empty_socket(s)
 
     try:
-        q = eval("np.array(%s)"%tmp)
+        val = eval("np.array(%s)"%tmp)
     except:
-        q = np.array([1,0,0,0,0,0,0,0,0,0])
-    return q[0],q[1],q[2],q[3]
+        val = np.array([1,0,0,0,0,0,0,0,0,0])
+
+    return val
 
 
 
 
 class Egg3dListener(QtCore.QThread):
     _quaternionChanged =  QtCore.pyqtSignal(float,float,float,float)
-    foo = QtCore.pyqtSignal()
+    _zoomChanged = QtCore.pyqtSignal(int)
 
-    def __init__(self, socket):
+    def __init__(self):
         super(Egg3dListener,self).__init__()
-        self.socket = socket
-        self.signal = QtCore.SIGNAL("SIGNAL")
 
+    def set_socket(self,s):
+        self.socket = s
 
     def run(self):
         print "Egg3dlistener started"
         self.isActive = True
+        self.vals = []
         while self.isActive:
-            time.sleep(0.01)
-            self._quaternionChanged.emit(*getEggData(self.socket))
+            try:
+                val = getEggData(self.socket)
+
+                #acceleration
+                if sum(abs(val[4:7]))>.7:
+                    # button pressed?
+                    self._zoomChanged.emit(2.*(val[-1]>125)-1)
+
+                #rotation
+                quat = val[:4]
+                self._quaternionChanged.emit(*val[:4])
+                    
+            except  Exception as e:
+                print "could not read", e
+            time.sleep(0.005)
+
 
 
 
@@ -69,13 +85,14 @@ class Egg3dController(QtCore.QObject):
 
     def __init__(self,):
         super(Egg3dController,self).__init__()
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.listener = Egg3dListener(self.socket)
-        self.listener.foo.connect(self.foo)
+        self.listener = Egg3dListener()
 
-    def connect(self, port=4444):
+    def _reset(self, port=4444):
         try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.listener.set_socket(self.socket)
             self.socket.connect(("localhost",port))
+            # self.listener._zoomChanged.connect(self.foo)
             print "connection with Egg3d established!"
         except Exception as e:
             print "Couldnt connect with port %i:  %s"%(port,e)
@@ -83,19 +100,20 @@ class Egg3dController(QtCore.QObject):
 
 
     def start(self):
+        print "starting Egg3dController..."
+
+        self._reset()
         self.listener.start()
 
     def stop(self):
-        print "egg3d stopped"
+        print "stopping Egg3dController..."
         self.listener.isActive = False
+        # self.socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
 
-    def foo(self):
-        print "FOOOO"
 
-    # def onChanged(self,a,b,c,d):
-
-    #     print "changed!", a,b,c,d
-
+    def foo(self,zoom):
+        print zoom
 
 
 
@@ -105,22 +123,19 @@ if __name__ == '__main__':
 
     egg = Egg3dController()
 
-    egg.connect()
 
 
 
-    print "start"
     egg.start()
 
-    time.sleep(2)
+    time.sleep(20)
+
 
     egg.stop()
 
-    print "stop"
+    # time.sleep(1)
 
-    time.sleep(2)
-
-    print "finished"
+    # egg.start()
 
 
 
