@@ -137,11 +137,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         except Exception as e:
             print e
-        
+
 
     def egg3dQuaternion(self,a,b,c,d):
         self._quatHist = np.roll(self._quatHist,1)
-        self._quatHist[0] = Quaternion(a,b,d,-c)
+        self._quatHist[0] = Quaternion(a,c,b,d)
 
         q0 = Quaternion(0,0,0,0)
         for q,w in zip(self._quatHist,self._quatWeights):
