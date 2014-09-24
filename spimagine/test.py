@@ -44,10 +44,6 @@ from spimagine.transform_model import TransformModel
 from numpy import *
 import numpy as np
 
-import egg3d
-
-
-# from scipy.misc import imsave
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
@@ -59,30 +55,82 @@ from spimagine.quaternion import Quaternion
 
 
 
+vertShaderTex ="""
+attribute vec2 position;
+attribute vec2 texcoord;
+varying vec2 mytexcoord;
+
+void main()
+{
+    gl_Position = vec4(position, 0., 1.0);
+    mytexcoord = texcoord;
+}
+"""
+
+fragShaderTex = """
+uniform sampler2D texture;
+uniform sampler2D texture_LUT;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+
+  vec4 lut = texture2D(texture_LUT,col.xy);
+
+  //gl_FragColor = col.x*vec4(1.,1.,1.,1.);
+  //gl_FragColor.w = 1.*length(gl_FragColor.xyz);
+
+  gl_FragColor = vec4(lut.xyz,col.x);
+
+}
+"""
+
+vertShaderCube ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+
+void main()
+{
+  vec3 pos = position;
+  gl_Position = mvpMatrix *vec4(pos, 1.0);
+
+}
+"""
+
+fragShaderCube = """
+void main()
+{
+  gl_FragColor = vec4(1.,1.,1.,1.);
+}
+"""
+
+
 vertShaderStrBasic ="""#version 120
 void main() {
-gl_FrontColor = gl_Color;
-gl_TexCoord[0] = gl_MultiTexCoord0;
-gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+  gl_FrontColor = gl_Color;
+  gl_TexCoord[0] = gl_MultiTexCoord0;
+  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }
 """
 
 fragShaderStrBasic = """#version 120
 void main() {
-gl_FragColor = gl_Color;
+  gl_FragColor = gl_Color;
 }
 """
 
 fragShaderStrTex = """#version 120
 uniform sampler2D tex;
 uniform sampler1D LUT_tex;
+
 void main() {
 
-vec4 col = texture2D(tex, gl_TexCoord[0].st);
-//gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
+  vec4 col = texture2D(tex, gl_TexCoord[0].st);
+  gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
 
 gl_FragColor = col;
-gl_FragColor.w = 1.*length(gl_FragColor.xyz);g
+gl_FragColor.w = 1.*length(gl_FragColor.xyz);
 
 
 //texture1D(LUT_tex, col.x);
@@ -90,7 +138,51 @@ gl_FragColor.w = 1.*length(gl_FragColor.xyz);g
 }
 """
 
+def fillTexture2d(data,tex = None):
+    """ data.shape == (Ny,Nx)
+          file texture with GL_RED
+        data.shape == (Ny,Nx,3)
+          file texture with GL_RGB
 
+        if tex == None, returns a new created texture
+    """
+
+    if tex is None:
+        tex = glGenTextures(1)
+
+    glBindTexture(GL_TEXTURE_2D, tex)
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+    glTexParameterf (GL_TEXTURE_2D,
+                     GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameterf (GL_TEXTURE_2D,
+                     GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+
+    if data.ndim == 2:
+        Ny,Nx = data.shape
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
+                     0, GL_RED, GL_FLOAT, data.astype(float32))
+
+    elif data.ndim == 3 and data.shape[2]==3:
+        Ny,Nx = data.shape[:2]
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
+                         0, GL_RGB, GL_FLOAT, data.astype(float32))
+
+    else:
+        raise Exception("data format not supported! \ndata.shape shoul be either (Ny,Nx) or (Ny,Nx,3)")
+
+    return tex
+
+def arrayFromImage(fName):
+    """converts png image to float32 array"""
+    img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
+    Nx, Ny = img.width(),img.height()
+    tmp = img.bits().asstring(img.numBytes())
+    arr = frombuffer(tmp, uint8).reshape((Ny,Nx,4))
+    arr = arr.astype(float32)/amax(arr)
+    return arr[:,:,:-1][:,:,::-1]
 
 
 class GLWidget(QtOpenGL.QGLWidget):
@@ -128,34 +220,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.refresh()
 
-    #     self.egg3d = egg3d.Egg3dController()
-    #     self.connectEgg3d()
-
-
-    # def connectEgg3d(self):
-    #     try:
-    #         self.egg3d.connect()
-    #         self.egg3d.listener._quaternionChanged.connect(self.egg3dQuaternion)
-    #         self.egg3d.start()
-    #         N = 10
-    #         self._quatHist = [Quaternion() for i in range(N)]
-    #         self._quatWeights = exp(-0*linspace(0,1,N))
-    #         self._quatWeights *= 1./sum(self._quatWeights)
-    #         print self._quatWeights
-
-    #     except Exception as e:
-    #         print e
-
-
-    # def egg3dQuaternion(self,a,b,c,d):
-    #     self._quatHist = np.roll(self._quatHist,1)
-    #     self._quatHist[0] = Quaternion(a,c,b,d)
-
-    #     q0 = Quaternion(0,0,0,0)
-    #     for q,w in zip(self._quatHist,self._quatWeights):
-    #         q0 = q0+q*w
-
-    #     self.transform.setQuaternion(q0)
 
 
     def setModel(self,dataModel):
@@ -184,63 +248,66 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
 
 
+    def load_colormap(self):
+        self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/grays.png"))
+
     def initializeGL(self):
+
+
+        self.programTex = QtOpenGL.QGLShaderProgram()
+        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
+        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
+        self.programTex.link()
+        self.programTex.bind()
+        logger.debug("GLSL programTex log:%s",self.programTex.log())
+
+        self.programCube = QtOpenGL.QGLShaderProgram()
+        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
+        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderCube)
+        self.programCube.link()
+        self.programCube.bind()
+        logger.debug("GLSL programCube log:%s",self.programCube.log())
+
+
         glClearColor(0,0,0,1.)
-        glEnable(GL_TEXTURE_2D)
-        glEnable(GL_BLEND)
-        # glEnable(GL_DEPTH_TEST)
-        glEnable( GL_LINE_SMOOTH )
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-
-        self.texture = glGenTextures(1)
-
-        # the texture for display
-        glBindTexture(GL_TEXTURE_2D, self.texture)
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-        glTexParameterf (GL_TEXTURE_2D,
-                            GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameterf (GL_TEXTURE_2D,
-                            GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-
-
-        # the etxture for the color look up table
-        self.LUT_texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_1D, self.LUT_texture)
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-        glTexParameterf (GL_TEXTURE_1D,
-                            GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameterf (GL_TEXTURE_1D,
-                            GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        glTexParameterf (GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-        glTexParameterf (GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-
-
+        self.texture = None
 
         self.width , self.height = 200, 200
 
-        # set up shaders...
-        self.shaderBasic = QtOpenGL.QGLShaderProgram()
-        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
-        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrBasic)
+        self.quadCoord = np.array([[-1.,-1.,0.],
+                           [1.,-1.,0.],
+                           [1.,1.,0.],
+                           [1.,1.,0.],
+                           [-1.,1.,0.],
+                           [-1.,-1.,0.]])
 
-        logger.debug("shader log:%s",self.shaderBasic.log())
+        self.quadCoordTex = np.array([[0,0],
+                           [1.,0.],
+                           [1.,1.],
+                           [1.,1.],
+                           [0,1.],
+                           [0,0]])
 
-        self.shaderBasic.link()
+        self.cubeCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0],
+                                   [-1.0,  1.0,  1.0], [-1.0, -1.0,  1.0],
+                                   [-1.0, -1.0,  1.0], [ 1.0, -1.0,  1.0],
+                                   [1.0,  -1.0,  1.0], [ 1.0,  1.0,  1.0],
 
-        self.shaderTex = QtOpenGL.QGLShaderProgram()
-        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
-        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrTex)
+                                   [1.0,   1.0,  -1.0], [-1.0,  1.0,  -1.0],
+                                   [-1.0,  1.0,  -1.0], [-1.0, -1.0,  -1.0],
+                                   [-1.0, -1.0,  -1.0], [ 1.0, -1.0,  -1.0],
+                                   [1.0,  -1.0,  -1.0], [ 1.0,  1.0,  -1.0],
 
-        logger.debug("shader log:%s",self.shaderTex.log())
+                                   [1.0,   1.0,  1.0], [1.0,  1.0,  -1.0],
+                                   [-1.0,  1.0,  1.0], [-1.0, 1.0,  -1.0],
+                                   [-1.0, -1.0,  1.0], [-1.0,-1.0,  -1.0],
+                                   [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
+                  ])
 
-        self.shaderTex.link()
+        self.cubeCoord *= .5
+
+        self.load_colormap()
 
 
     def dataModelChanged(self):
@@ -285,23 +352,13 @@ class GLWidget(QtOpenGL.QGLWidget):
             Ny, Nx = self.output.shape
             w = 1.*max(self.width,self.height)/self.width
             h = 1.*max(self.width,self.height)/self.height
-            self.shaderBasic.bind()
 
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
             glMultMatrixf(self.renderer.projection.T)
 
-            # glOrtho(-1.*self.width/self.height,1.*self.width/self.height,-1,1,-10,10)
-            # print glGetFloatv(GL_PROJECTION_MATRIX)
-
-
             glMatrixMode(GL_MODELVIEW)
             glLoadIdentity()
-
-            # glTranslatef(0,0,-7*(1-log(self.transform.zoom)/log(2.)))
-            # glMultMatrixf(linalg.inv(self.transform.quatRot.toRotation4()))
-
-            # print modelView
 
             mScale =  self.renderer._stack_scale_mat()
             modelView = self.transform.getModelView()
@@ -310,51 +367,97 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             glMultMatrixf(scaledModelView.T)
 
-            glLineWidth(1)
-            glColor(1.,1.,1.,.3)
+            # print glGetFloatv(GL_PROJECTION_MATRIX)
 
-            # windows complains about glut, so we dont even bother to draw the cube :(
-            if not os.name == "nt" and self.transform.isBox:
-                GLUT.glutWireCube(2)
+            # projMat = self.renderer.projection.T
 
-            self.shaderTex.bind()
+            # mvpMat = dot(projMat,scaledModelView)
 
-            # glEnable(GL_TEXTURE_1D)
-            # glBindTexture(GL_TEXTURE_1D,self.LUT_texture)
-            # glTexImage1D(GL_TEXTURE_1D, 0, 1, 256,
-            #              0, GL_RED, GL_BYTE, arange(256).astype(uint8))
+            mvpMat = np.identity(4)
 
-            glEnable(GL_TEXTURE_2D)
-            glDisable(GL_DEPTH_TEST)
+            modelMat =  glGetFloatv(GL_MODELVIEW_MATRIX)
+            projMat =  glGetFloatv(GL_PROJECTION_MATRIX)
+
+            print "kkk"
+            # print modelView
+            # print dot([0,0,1,1.],modelMat)
+            # print dot([0,0,1,1.],modelView.T)
+
+            # print dot([0,0,1,1.],projMat)
+            # print dot([0,0,1,1.],dot(projMat,modelMat))
 
             glMatrixMode(GL_MODELVIEW)
             glLoadIdentity()
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
+            glTranslatef(0,0,-3)
+            # print glGetFloatv(GL_MODELVIEW_MATRIX)
+            # print transMat(0,0,-3)
 
-            glBindTexture(GL_TEXTURE_2D,self.texture)
-            # glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
-            #              0, GL_LUMINANCE, GL_UNSIGNED_BYTE, self.output.astype(uint8))
+            finalMat = transMat(0.4,0,0)
 
-            glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
-                         0, GL_RED, GL_FLOAT, self.output.astype(float32))
+            finalMat = modelView.T
 
+            finalMat = dot(projMat,modelMat).T
 
-            glBegin (GL_QUADS);
-            glTexCoord2f (0, 0);
-            glVertex2f (-w, -h);
-            glTexCoord2f (1, 0);
-            glVertex2f (w, -h);
-            glTexCoord2f (1, 1);
-            glVertex2f (w,h);
-            glTexCoord2f (0, 1);
-            glVertex2f (-w, h);
-            glEnd();
+            finalMat = dot(projMatPerspective(),transMat(0,0,-4))
+
+            finalMat = dot(transMat(0,0,-1),projMatOrtho())
+            # finalMat = dot(transMat(0,0,-1),projMatOrtho())
+
+            finalMat = dot(transMat(0,0,-5),projMatPerspective())
 
 
-            glDisable(GL_TEXTURE_2D)
+            modelM = self.transform.getModelView()
+            viewM = transMat(0,0,-1)
+            projM = projMatOrtho()
 
-            self.shaderBasic.bind()
+            finalMat = dot(projM,dot(viewM,modelM))
+
+            print dot([.5,.5,.5,1.],finalMat)
+
+
+            # mvpmat = scaledModelView
+
+            # mvpMat = dot(scaledModelView,projMatg)
+
+            # Draw the cube
+
+
+            self.programCube.bind()
+
+            self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+            self.programCube.enableAttributeArray("position")
+            self.programCube.setAttributeArray("position", self.cubeCoord)
+
+
+            glDrawArrays(GL_LINES,0,len(self.cubeCoord))
+
+            # glDrawArrays(GL_TRIANGLES,0,len(self.cubeCoord))
+
+            # # Draw the render texture
+            # self.programTex.bind()
+
+            # self.texture = fillTexture2d(self.output,self.texture)
+
+            # glEnable(GL_TEXTURE_2D)
+            # glDisable(GL_DEPTH_TEST)
+
+            # self.programTex.enableAttributeArray("position")
+            # self.programTex.enableAttributeArray("texcoord")
+            # self.programTex.setAttributeArray("position", self.quadCoord)
+            # self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+
+
+            # glActiveTexture(GL_TEXTURE0)
+            # glBindTexture(GL_TEXTURE_2D, self.texture)
+            # self.programTex.setUniformValue("texture",0)
+
+            # glActiveTexture(GL_TEXTURE1)
+            # glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+            # self.programTex.setUniformValue("texture_LUT",1)
+
+
+            # glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
+
 
 
 
