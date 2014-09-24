@@ -47,7 +47,7 @@ class TransformModel(QtCore.QObject):
         self.dataPos = 0
         self.isPerspective = True
         self.setPerspective()
-        self.setScale(0,maxVal)
+        self.setValueScale(0,maxVal)
         self.setGamma(1.)
         self.setBox(True)
         if not stackUnits:
@@ -68,7 +68,7 @@ class TransformModel(QtCore.QObject):
         self._gammaChanged.emit(self.gamma)
         self._transformChanged.emit()
 
-    def setScale(self,minVal,maxVal):
+    def setValueScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
         # print "maxVal: ", maxVal
         self._maxChanged.emit(self.maxVal)
@@ -118,13 +118,36 @@ class TransformModel(QtCore.QObject):
         self._perspectiveChanged.emit(isPerspective)
         self._transformChanged.emit()
 
+    def getProjection(self):
+        return self.projection
+
+    def getScaledModelView(self):
+        model = self.getModelView()
+
+
+        if self.dataModel:
+            Nz,Ny,Nx = self.dataModel.size()[1:]
+            dx,dy,dz = self.stackUnits
+            maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
+            mScale =  scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
+            model = np.dot(model,mScale)
+            print self.stackUnits
+            
+        return model
+
+
+
 
     def getModelView(self):
-        modelView = np.dot(transMatReal(0,0,-self.cameraZ),
-                        np.dot(scaleMat(*[self.scaleAll]*3),
-        np.dot(transMatReal(*self.translate),self.quatRot.toRotation4())))
+        view  = transMatReal(0,0,-self.cameraZ)
 
-        return modelView
+
+        model = scaleMat(*[self.scaleAll]*3)
+        model = np.dot(model,self.quatRot.toRotation4())
+        model = np.dot(model,transMatReal(*self.translate))
+
+        # return model
+        return np.dot(view,model)
 
     def fromTransformData(self,transformData):
         self.setQuaternion(transformData.quatRot)
