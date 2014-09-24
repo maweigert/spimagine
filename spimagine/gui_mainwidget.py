@@ -178,7 +178,7 @@ class MainWidget(QtGui.QWidget):
         # self.gammaSlider.setValue(50)
 
         self.scaleSlider.valueChanged.connect(
-            lambda x: self.glWidget.transform.setScale(0,x**2))
+            lambda x: self.glWidget.transform.setValueScale(0,x**2))
         self.glWidget.transform._maxChanged.connect(
             lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
 
