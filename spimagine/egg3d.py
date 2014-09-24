@@ -66,7 +66,7 @@ class Egg3dListener(QtCore.QThread):
                 val = getEggData(self.socket)
 
                 #acceleration
-                if sum(abs(val[4:7]))>.7:
+                if sum(abs(val[4:7]))>.5:
                     # button pressed?
                     self._zoomChanged.emit(2.*(val[-1]>125)-1)
 

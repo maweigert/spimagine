@@ -248,6 +248,8 @@ class MainWidget(QtGui.QWidget):
         self.settingsView._playIntervalChanged.connect(self.playIntervalChanged)
         self.setLoopBounce(True)
 
+        self.playDir = 1
+
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
 
 
@@ -323,11 +325,11 @@ class MainWidget(QtGui.QWidget):
 
     def egg3dZoom(self,zoom):
         if zoom>0:
-            newZoom = self.glWidget.transform.zoom * 1.02**zoom
+            newZoom = self.glWidget.transform.zoom * 1.01**zoom
         else:
-            newZoom = self.glWidget.transform.zoom * 1.2**zoom
+            newZoom = self.glWidget.transform.zoom * 1.1**zoom
 
-        newZoom = np.clip(newZoom,.4,3)
+        newZoom = np.clip(newZoom,.7,3)
         self.glWidget.transform.setZoom(newZoom)
 
 
@@ -420,7 +422,6 @@ class MainWidget(QtGui.QWidget):
         #if loopBounce = True, then while playing it should loop back and forth
         self.loopBounce = loopBounce
         self.settingsView.checkLoopBounce.setChecked(loopBounce)
-        self.playD = 1
 
 
     def playIntervalChanged(self,val):

@@ -75,9 +75,17 @@ gl_FragColor = gl_Color;
 
 fragShaderStrTex = """#version 120
 uniform sampler2D tex;
+uniform sampler1D LUT_tex;
 void main() {
-gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
+
+vec4 col = texture2D(tex, gl_TexCoord[0].st);
+//gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
+
+gl_FragColor = col;
 gl_FragColor.w = 1.*length(gl_FragColor.xyz);
+
+
+//texture1D(LUT_tex, col.x);
 
 }
 """
@@ -188,6 +196,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glLoadIdentity()
 
         self.texture = glGenTextures(1)
+
+        # the texture for display
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glPixelStorei(GL_UNPACK_ALIGNMENT,1)
         glTexParameterf (GL_TEXTURE_2D,
@@ -197,6 +207,21 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
         glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+
+
+        # the etxture for the color look up table
+        self.LUT_texture = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_1D, self.LUT_texture)
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+        glTexParameterf (GL_TEXTURE_1D,
+                            GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameterf (GL_TEXTURE_1D,
+                            GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        glTexParameterf (GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+        glTexParameterf (GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+
+
 
         self.width , self.height = 200, 200
 
@@ -294,6 +319,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.shaderTex.bind()
 
+            # glEnable(GL_TEXTURE_1D)
+            # glBindTexture(GL_TEXTURE_1D,self.LUT_texture)
+            # glTexImage1D(GL_TEXTURE_1D, 0, 1, 256,
+            #              0, GL_RED, GL_BYTE, arange(256).astype(uint8))
 
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)

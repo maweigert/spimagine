@@ -6,7 +6,7 @@ from PyQt4 import QtCore,QtGui
 from collections import OrderedDict
 from spimagine.gui_mainwindow import MainWindow
 
-from spimagine.data_model import DataModel, EmptyData, DemoData, NumpyData
+from spimagine.data_model import DataModel, GenericData, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
@@ -54,7 +54,43 @@ def volfig(num=None):
 
 
 def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
-    """return window.glWidget if not in blocking mode """
+    """
+    class to visualize 3d/4d data
+
+    data can be
+
+    - a 3d/4d numpy array of dimensions (z,y,x) or (t,z,y,x)
+
+      e.g.
+
+         volshow( randint(0,10,(10, 20,30,40) )
+
+
+
+    - an instance of a class derived from the abstract bass class GenericData
+
+      e.g.
+
+        from spimagine.data_model import GenericData
+
+        class myData(GenericData):
+            def __getitem__(self,i):
+                return (100*i+3)*ones((100,100,100)
+            def size(self):
+                return (4,100,100,100)
+
+        volshow(myData())
+
+        or
+        from spimagine.data_model import DataModel
+
+        volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
+
+
+
+    returns window.glWidget if not in blocking mode """
+
+
     app = getCurrentApp()
 
     # check whether there are already open windows, if not create one
@@ -65,14 +101,21 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 
     window = volfig(num)
 
-    if scale:
-        ma,mi = np.amax(data), np.amin(data)
-        if ma==mi:
-            ma +=1.
-            
-        data = 16000.*(data-mi)/(ma-mi)
 
-    m = DataModel(NumpyData(data.astype(np.float32)))
+
+    if isinstance(data,GenericData):
+        m = DataModel(data)
+    elif isinstance(data,DataModel):
+        m = data
+    else:
+        if scale:
+            ma,mi = np.amax(data), np.amin(data)
+            if ma==mi:
+                ma +=1.
+            data = 16000.*(data-mi)/(ma-mi)
+
+        m = DataModel(NumpyData(data.astype(np.float32)))
+
     # m = NumpyData(data.astype(np.float32))
     # window = MainWindow(dataContainer = m)
 
@@ -92,4 +135,14 @@ if __name__ == '__main__':
     d[50,:,:] = 1.
 
 
-    volshow(d, blocking = True)
+    class myData(GenericData):
+        def __getitem__(self,i):
+            return (100*i+3)*d
+        def size(self):
+            return (4,)+d.shape
+
+
+
+    volshow(myData(), blocking = True)
+
+    # volshow(d, blocking = True)

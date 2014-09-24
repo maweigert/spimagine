@@ -54,12 +54,12 @@ class GenericData():
         self.name = name
 
     def sizeT(self):
-        return self.stackSize[0]
+        return self.size()[0]
 
     def size(self):
         return self.stackSize
 
-    def __getitem__(self,int):
+    def __getitem__(self,i):
         return None
 
 
@@ -420,6 +420,25 @@ def test_frompath():
     m = DataModel.fromPath("/Users/mweigert/Data/droso_test.tif")
 
 
+def test_speed():
+    import time
+        
+    fName  = "/Users/mweigert/Data/Drosophila_full"
+
+    t = []
+    d = DataModel.fromPath(fName,1)
+
+    for i in range(100):
+        print i
+
+        if i%10==0:
+            a = d[i/10]
+
+
+        time.sleep(.1)
+        t.append(time.time())
+
+
 if __name__ == '__main__':
 
     test_spimdata()
@@ -427,8 +446,11 @@ if __name__ == '__main__':
     test_tiffdata()
     test_numpydata()
 
+    test_speed()
     # test_frompath()
 
-    N = 256
+    # N = 256
 
-    d = NumpyData(np.ones((N,N,N)))
+    # d = NumpyData(np.ones((N,N,N)))
+
+

@@ -154,7 +154,7 @@ class SettingsPanel(QtGui.QWidget):
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("number frames:\t"))
         frameEdit = QtGui.QLineEdit("100")
-        frameEdit.setValidator(QtGui.QIntValidator(bottom=10))
+        frameEdit.setValidator(QtGui.QIntValidator(bottom=1))
         frameEdit.returnPressed.connect(lambda: self._frameNumberChanged.emit(int(frameEdit.text())))
         hbox.addWidget(frameEdit)
 
