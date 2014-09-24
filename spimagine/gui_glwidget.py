@@ -96,20 +96,7 @@ void main()
   vec4 lut = texture2D(texture_LUT,col.xy);
 
   gl_FragColor = vec4(lut.xyz,1.);
-  gl_FragColor.w = 1.5*length(gl_FragColor.xyz);
-
-//  gl_FragColor = lut.x*vec4(1.,1.,1.,1.);
-
-
-//  gl_FragColor.x = 1.;
-
-//  gl_FragColor = vec4(0.,0.,1.,.4);
-
-//  gl_FragColor = col.x*vec4(1.,1.,1.,1.);
-
-//  gl_FragColor = col.x*texture2D(texture_LUT,vec2(1.,1.));
-
-
+  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
 
 }
 """
@@ -152,8 +139,8 @@ def fillTexture2d(data,tex = None):
     glTexParameterf (GL_TEXTURE_2D,
                      GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
     if data.ndim == 2:
         Ny,Nx = data.shape
@@ -165,14 +152,8 @@ def fillTexture2d(data,tex = None):
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
                          0, GL_RGB, GL_FLOAT, data.astype(float32))
 
-        print "fillTex 3d"
-        print data.ndim
-
     else:
         raise Exception("data format not supported! \ndata.shape should be either (Ny,Nx) or (Ny,Nx,3)")
-
-    print "datamax: ", amax(data)
-
     return tex
 
 def arrayFromImage(fName):
@@ -182,7 +163,7 @@ def arrayFromImage(fName):
     tmp = img.bits().asstring(img.numBytes())
     arr = frombuffer(tmp, uint8).reshape((Ny,Nx,4))
     arr = arr.astype(float32)/amax(arr)
-    return 2.*arr[:,:,:-1][:,:,::-1]
+    return arr[:,:,:-1][:,:,::-1]
 
 
 class GLWidget(QtOpenGL.QGLWidget):
@@ -253,14 +234,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         # self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/grays.png"))
 
 
-        # tmp = zeros((1,256,3))
-        # tmp[:,:,0] = linspace(0,5.,256)
-        # tmp[:,:,1] = linspace(0,1,256)
-        # tmp[:,:,2] = linspace(0,1,256)
-
-        # self.texture_LUT = fillTexture2d(tmp[:,:,0])
-
-
 
     def initializeGL(self):
 
@@ -283,8 +256,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClearColor(0,0,0,1.)
 
         self.texture = None
-
-        self.width , self.height = 200, 200
 
         self.quadCoord = np.array([[-1.,-1.,0.],
                            [1.,-1.,0.],
@@ -327,6 +298,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDisable(GL_DEPTH_TEST)
 
 
+
     def dataModelChanged(self):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0])
@@ -357,13 +329,18 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderUpdate = True
 
     def resizeGL(self, width, height):
+
+
         height = max(10,height)
 
         self.width , self.height = width, height
 
         #make the viewport squarelike
         w = max(width,height)
-        print w, width, height
+
+        print "RESIZING", width, height
+        print (width-w)/2,(height-w)/2,w,w
+        
         glViewport((width-w)/2,(height-w)/2,w,w)
 
 
@@ -395,7 +372,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.texture = fillTexture2d(self.output,self.texture)
 
 
-            print "amax:", amax(self.output)
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
@@ -424,10 +400,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_projection(self.transform.projection)
         out = self.renderer.render()
 
-        # self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
-
         self.output = 1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma
-        self.output = clip(self.output,0,0.99)
+        # self.output = clip(self.output,0,0.99)
         self.count += 1
 
 
@@ -446,7 +420,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.render()
             self.renderUpdate = False
             self.updateGL()
-            # print self.transform.maxVal,  amax(self.renderer._data), amax(self.output), self.renderer._data.dtype
 
 
 
