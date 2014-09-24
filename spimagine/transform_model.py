@@ -70,7 +70,6 @@ class TransformModel(QtCore.QObject):
 
     def setValueScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
-        # print "maxVal: ", maxVal
         self._maxChanged.emit(self.maxVal)
         self._transformChanged.emit()
 
@@ -131,7 +130,6 @@ class TransformModel(QtCore.QObject):
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
             mScale =  scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
             model = np.dot(model,mScale)
-            print self.stackUnits
             
         return model
 
