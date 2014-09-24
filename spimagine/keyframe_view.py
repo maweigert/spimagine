@@ -468,7 +468,7 @@ class KeyFramePanel(QWidget):
 
 
     def setFrameNumber(self,nFrames):
-        print "nFramnes: ", nFrames
+        print "nFrames: ", nFrames
         self.nFrames = nFrames
 
     def setDirName(self,dirName):
@@ -517,7 +517,7 @@ class MainWindow(QMainWindow):
 
 
 
-        self.keyPanel = KeyFramePanel()
+        self.keyPanel = KeyFramePanel(None)
 
         dataModel = DataModel(dataContainer = DemoData(50),prefetchSize = 0)
         transModel = TransformModel()
