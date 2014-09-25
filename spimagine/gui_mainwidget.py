@@ -58,7 +58,6 @@ class MainWidget(QtGui.QWidget):
 
         self.myparent = parent
 
-        self.resize(800, 700)
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
@@ -94,6 +93,7 @@ class MainWidget(QtGui.QWidget):
         self.startButton.setMaximumHeight(24)
 
 
+        self.resize(800, 700)
 
 
         buttonStyleStr = """
@@ -276,6 +276,9 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
+        self.settingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
+
+
         self.settingsView._dirNameChanged.connect(self.keyPanel.setDirName)
         # dataModel._dataSourceChanged.connect(self.dataSourceChanged)
         # dataModel._dataPosChanged.connect(self.sliderTime.setValue)
@@ -289,6 +292,11 @@ class MainWidget(QtGui.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
+
+    def onColormapChanged(self,index):
+        self.glWidget.set_colormap(self.settingsView.colorMaps[index])
+        self.glWidget.refresh()                           
+
 
 
     def onCheckEgg(self,state):

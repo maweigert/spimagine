@@ -71,7 +71,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def close(self):
-        print "hallao"
         self.mainWidget.close()
         super(MainWindow,self).close()
 
