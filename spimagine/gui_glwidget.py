@@ -35,7 +35,9 @@ c = s*s.w + d*(1-s.w)
 """
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 
 
@@ -69,6 +71,20 @@ if os.name == "nt":
 
 import time
 from spimagine.quaternion import Quaternion
+
+
+logger.setLevel(logging.DEBUG)
+
+
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
 
 
 
@@ -170,6 +186,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, N_PREFETCH = 1,**kwargs):
+        logger.debug("init")
 
         super(GLWidget,self).__init__(parent,**kwargs)
 
@@ -199,11 +216,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform._transformChanged.connect(self.refresh)
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
 
+
         self.refresh()
 
 
 
     def setModel(self,dataModel):
+        logger.debug("setModel")
+
         self.dataModel = dataModel
         self.transform.setModel(dataModel)
         if self.dataModel:
@@ -229,14 +249,24 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
 
 
+    def set_colormap(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape))
+
+
     def load_colormap(self):
-        self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/hot.png"))
+        self.set_colormap(arrayFromImage(absPath("colormaps/hot.png"))[0,:,:])
+        # self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/hot.png"))
         # self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/grays.png"))
 
 
 
     def initializeGL(self):
 
+        self.firstTime = True
+
+        logger.debug("initializeGL")
 
         self.programTex = QtOpenGL.QGLShaderProgram()
         self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
@@ -314,8 +344,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def setStackUnits(self,px,py,pz):
+        logger.debug("setStackUnits")
         self.renderer.set_units([px,py,pz])
-        self.transform.setStackUnits(px,py,pz)
 
 
     def dataPosChanged(self,pos):
@@ -330,39 +360,42 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def resizeGL(self, width, height):
 
-
         height = max(10,height)
 
         self.width , self.height = width, height
 
         #make the viewport squarelike
         w = max(width,height)
-
-        print "RESIZING", width, height
-        print (width-w)/2,(height-w)/2,w,w
-        
         glViewport((width-w)/2,(height-w)/2,w,w)
 
 
     def paintGL(self):
 
+        #hack
+        if self.firstTime:
+            w = max(self.width,self.height)
+            glViewport((self.width-w)/2,(self.height-w)/2,w,w)
+            self.firstTime = False
+
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         if self.dataModel:
-            modelView = self.transform.getScaledModelView()
+            modelView = self.transform.getModelView()
 
             proj = self.transform.getProjection()
 
             finalMat = dot(proj,modelView)
 
-            # Draw the cube
-            self.programCube.bind()
+            if self.transform.isBox:
+                # Draw the cube
+                self.programCube.bind()
 
-            self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
-            self.programCube.enableAttributeArray("position")
-            self.programCube.setAttributeArray("position", self.cubeCoord)
+                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+                self.programCube.enableAttributeArray("position")
+                self.programCube.setAttributeArray("position", self.cubeCoord)
 
-            glDrawArrays(GL_LINES,0,len(self.cubeCoord))
+                glDrawArrays(GL_LINES,0,len(self.cubeCoord))
 
 
             # Draw the render texture
@@ -396,8 +429,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def render(self):
-        self.renderer.set_modelView(self.transform.getModelView())
-        self.renderer.set_projection(self.transform.projection)
+        self.renderer.set_modelView(self.transform.getUnscaledModelView())
+        self.renderer.set_projection(self.transform.getProjection())
         out = self.renderer.render()
 
         self.output = 1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma
@@ -489,7 +522,7 @@ if __name__ == '__main__':
     win = GLWidget(size=QtCore.QSize(500,500))
     win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
 
-    win.setStackUnits(1.,1.,5.)
+    win.transform.setStackUnits(1.,1.,5.)
     # win.transform.setBox()
     # win.transform.setPerspective(True)
 

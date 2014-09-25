@@ -120,23 +120,27 @@ class TransformModel(QtCore.QObject):
     def getProjection(self):
         return self.projection
 
-    def getScaledModelView(self):
-        model = self.getModelView()
+    def getModelView(self):
+        """ returns the modelview with the added internal scale from the rendered volume
+        this should be used when drawing standard opengl primitives with the same trasnformation as
+        the rendered model"""
 
+        model = self.getUnscaledModelView()
 
+        #scale the interns
         if self.dataModel:
             Nz,Ny,Nx = self.dataModel.size()[1:]
             dx,dy,dz = self.stackUnits
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
             mScale =  scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
             model = np.dot(model,mScale)
-            
+
         return model
 
 
 
 
-    def getModelView(self):
+    def getUnscaledModelView(self):
         view  = transMatReal(0,0,-self.cameraZ)
 
 

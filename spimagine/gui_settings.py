@@ -10,6 +10,8 @@ from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 import numpy as np
 
+from gui_glwidget import arrayFromImage
+
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -91,7 +93,7 @@ class SettingsPanel(QtGui.QWidget):
 
         self.checkEgg = createImgCheckBox("images/egg.png","images/egg_inactive.png")
 
-        
+
 
         gridBox = QtGui.QGridLayout()
 
@@ -101,9 +103,25 @@ class SettingsPanel(QtGui.QWidget):
         gridBox.addWidget(QtGui.QLabel("bounding box:\t"),2,0)
         gridBox.addWidget(self.checkBox,2,1)
 
+        gridBox.addWidget(QtGui.QLabel("colormap:\t"),3,0)
 
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),3,0)
-        gridBox.addWidget(self.checkLoopBounce,3,1)
+        self.colorCombo = QtGui.QComboBox()
+
+        colormapNames = ["colormaps/hot.png","colormaps/grays.png"]
+        self.colorMaps = [arrayFromImage(absPath(s))[0,:,:] for s in colormapNames ]
+
+
+        self.colorCombo.setIconSize(QtCore.QSize(140,40))
+        for s in colormapNames:
+            self.colorCombo.addItem(QtGui.QIcon(absPath(s)),"")
+
+
+
+        gridBox.addWidget(self.colorCombo,3,1)
+
+
+        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),4,0)
+        gridBox.addWidget(self.checkLoopBounce,4,1)
 
 
         gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
@@ -113,9 +131,9 @@ class SettingsPanel(QtGui.QWidget):
         self.playInterval.returnPressed.connect(self.playIntervalChanged)
         gridBox.addWidget(self.playInterval)
 
-        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),5,0)
+        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),6,0)
         gridBox.addWidget(self.checkEgg,5,1)
-        
+
         vbox.addLayout(gridBox)
 
 
@@ -175,6 +193,7 @@ class SettingsPanel(QtGui.QWidget):
         color: white;
         }
         """)
+        self.colorCombo.setStyleSheet("background-color:none;")
 
         self.setLayout(vbox)
 
