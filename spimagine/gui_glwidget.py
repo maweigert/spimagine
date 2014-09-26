@@ -15,6 +15,8 @@ email: mweigert@mpi-cbg.de
 """
 
 
+
+
 """
 understanding glBlendFunc:
 
@@ -72,6 +74,7 @@ if os.name == "nt":
 import time
 from spimagine.quaternion import Quaternion
 
+from spimagine.shaders import vertShaderTex, fragShaderTex, vertShaderCube, fragShaderCube
 
 logger.setLevel(logging.DEBUG)
 
@@ -88,53 +91,6 @@ def absPath(myPath):
 
 
 
-vertShaderTex ="""
-attribute vec2 position;
-attribute vec2 texcoord;
-varying vec2 mytexcoord;
-
-void main()
-{
-    gl_Position = vec4(position, 0., 1.0);
-    mytexcoord = texcoord;
-}
-"""
-
-fragShaderTex = """
-uniform sampler2D texture;
-uniform sampler2D texture_LUT;
-varying vec2 mytexcoord;
-
-void main()
-{
-  vec4 col = texture2D(texture,mytexcoord);
-
-  vec4 lut = texture2D(texture_LUT,col.xy);
-
-  gl_FragColor = vec4(lut.xyz,1.);
-  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
-
-}
-"""
-
-vertShaderCube ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-
-void main()
-{
-  vec3 pos = position;
-  gl_Position = mvpMatrix *vec4(pos, 1.0);
-
-}
-"""
-
-fragShaderCube = """
-void main()
-{
-  gl_FragColor = vec4(1.,1.,1.,.6);
-}
-"""
 
 def fillTexture2d(data,tex = None):
     """ data.shape == (Ny,Nx)
@@ -198,12 +154,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
-        self.count = 0
-
-
         self.transform = TransformModel()
-
-        self.t = time.time()
 
         self.renderTimer = QtCore.QTimer(self)
         self.renderTimer.setInterval(50)
@@ -212,7 +163,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.N_PREFETCH = N_PREFETCH
 
-        self.setModel(None)
+        self.dataModel = None
+
+
         self.transform._transformChanged.connect(self.refresh)
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
 
@@ -225,8 +178,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         logger.debug("setModel")
 
         self.dataModel = dataModel
-        self.transform.setModel(dataModel)
+
         if self.dataModel:
+            self.transform.setModel(dataModel)
+
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.connect(self.dataModelChanged)
@@ -256,15 +211,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def load_colormap(self):
-        self.set_colormap(arrayFromImage(absPath("colormaps/hot.png"))[0,:,:])
-        # self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/hot.png"))
-        # self.texture_LUT = fillTexture2d(arrayFromImage("colormaps/grays.png"))
+        self.set_colormap(arrayFromImage(absPath("colormaps/jet.png"))[0,:,:])
 
 
 
     def initializeGL(self):
 
-        self.firstTime = True
+        self.resized = True
 
         logger.debug("initializeGL")
 
@@ -344,7 +297,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def setStackUnits(self,px,py,pz):
-        logger.debug("setStackUnits")
+        logger.debug("setStackUnits to %s"%[px,py,pz])
         self.renderer.set_units([px,py,pz])
 
 
@@ -368,14 +321,15 @@ class GLWidget(QtOpenGL.QGLWidget):
         w = max(width,height)
         glViewport((width-w)/2,(height-w)/2,w,w)
 
+        self.resized = True
 
     def paintGL(self):
 
         #hack
-        if self.firstTime:
+        if self.resized:
             w = max(self.width,self.height)
             glViewport((self.width-w)/2,(self.height-w)/2,w,w)
-            self.firstTime = False
+            self.resized = False
 
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -401,7 +355,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             # Draw the render texture
             self.programTex.bind()
 
-            # self.output = 1.*ones_like(self.output)
             self.texture = fillTexture2d(self.output,self.texture)
 
 
@@ -429,13 +382,17 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def render(self):
-        self.renderer.set_modelView(self.transform.getUnscaledModelView())
-        self.renderer.set_projection(self.transform.getProjection())
-        out = self.renderer.render()
+        logger.debug("render")
+        if self.dataModel:
+            self.renderer.set_modelView(self.transform.getUnscaledModelView())
+            self.renderer.set_projection(self.transform.getProjection())
+            out = self.renderer.render()
 
-        self.output = 1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma
-        # self.output = clip(self.output,0,0.99)
-        self.count += 1
+
+            self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
+            # self.output = clip(self.output,0,0.99)
+
+            logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
 
 
     def saveFrame(self,fName):
@@ -494,6 +451,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def mouseMoveEvent(self, event):
+        # Rotation
         if event.buttons() == QtCore.Qt.LeftButton:
 
             x1,y1,z1 = self.posToVec3(event.x(),event.y())
@@ -506,6 +464,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
             self.transform.setQuaternion(self.transform.quatRot*q)
 
+        #Translation
         if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(),event.y())
             self.transform.translate[0] += (x-self._x0)
@@ -523,6 +482,8 @@ if __name__ == '__main__':
     win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
 
     win.transform.setStackUnits(1.,1.,5.)
+
+
     # win.transform.setBox()
     # win.transform.setPerspective(True)
 

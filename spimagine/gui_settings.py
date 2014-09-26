@@ -12,6 +12,11 @@ import numpy as np
 
 from gui_glwidget import arrayFromImage
 
+
+
+colormapNames = ["colormaps/jet.png","colormaps/hot.png","colormaps/grays.png"]
+
+
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -107,11 +112,10 @@ class SettingsPanel(QtGui.QWidget):
 
         self.colorCombo = QtGui.QComboBox()
 
-        colormapNames = ["colormaps/hot.png","colormaps/grays.png"]
         self.colorMaps = [arrayFromImage(absPath(s))[0,:,:] for s in colormapNames ]
 
 
-        self.colorCombo.setIconSize(QtCore.QSize(140,40))
+        self.colorCombo.setIconSize(QtCore.QSize(100,20))
         for s in colormapNames:
             self.colorCombo.addItem(QtGui.QIcon(absPath(s)),"")
 

@@ -4,7 +4,7 @@ import numpy as np
 from PyQt4 import QtCore,QtGui
 
 from collections import OrderedDict
-from spimagine.gui_mainwindow import MainWindow
+from spimagine.gui_mainwidget import MainWidget
 
 from spimagine.data_model import DataModel, GenericData, EmptyData, DemoData, NumpyData
 
@@ -44,7 +44,7 @@ def volfig(num=None):
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
-        window = MainWindow(dataContainer=EmptyData())
+        window = MainWidget()
         window.show()
 
     #make num the last window
@@ -93,6 +93,10 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 
     app = getCurrentApp()
 
+    from time import time
+
+    t = time()
+
     # check whether there are already open windows, if not create one
     try:
         num,window = [(n,w) for n,w in app.volfigs.iteritems()][-1]
@@ -102,6 +106,8 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     window = volfig(num)
 
 
+    print "volfig: ", time()-t
+    t = time()
 
     if isinstance(data,GenericData):
         m = DataModel(data)
@@ -116,33 +122,43 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 
         m = DataModel(NumpyData(data.astype(np.float32)))
 
+    print "create model: ", time()-t
+    t = time()
+
     # m = NumpyData(data.astype(np.float32))
     # window = MainWindow(dataContainer = m)
 
     window.setModel(m)
 
+    print "set model: ", time()-t
+    t = time()
+
+
     if blocking:
         getCurrentApp().exec_()
     else:
-        return window.mainWidget.glWidget
+        return window.glWidget
 
 
 if __name__ == '__main__':
 
-    N = 256
+
+    volshow(DemoData(),blocking = True)
+
+
+    # N = 128
     # d = np.linspace(0,100,N**3).reshape((N,)*3)
-    d = np.zeros((100,)*3,dtype=np.float32)
-    d[50,:,:] = 1.
 
+    # d[50,:,:] = 1.
 
-    class myData(GenericData):
-        def __getitem__(self,i):
-            return (100*i+3)*d
-        def size(self):
-            return (4,)+d.shape
+    # import time
 
+    # # class myData(GenericData):
+    # #     def __getitem__(self,i):
+    # #         return (100*i+3)*d
+    # #     def size(self):
+    # #         return (4,)+d.shape
 
-
-    volshow(myData(), blocking = True)
+    # # volshow(myData(), blocking = True)
 
     # volshow(d, blocking = True)

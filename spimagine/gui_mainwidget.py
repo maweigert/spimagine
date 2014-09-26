@@ -53,7 +53,7 @@ def absPath(myPath):
 
 class MainWidget(QtGui.QWidget):
 
-    def __init__(self, parent = None,dataContainer = None, N_PREFTECH = 0):
+    def __init__(self, parent = None):
         super(QtGui.QWidget,self).__init__(parent)
 
         self.myparent = parent
@@ -64,7 +64,7 @@ class MainWidget(QtGui.QWidget):
         self.initActions()
         # self.initMenus()
 
-        self.glWidget = GLWidget(self,N_PREFETCH = N_PREFETCH)
+        self.glWidget = GLWidget(self)
 
         self.fwdButton = QtGui.QPushButton("",self)
         self.fwdButton.setStyleSheet("background-color: black")
@@ -182,10 +182,11 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.transform._maxChanged.connect(
             lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
 
+        gammaMin, gammaMax = .25, 2.
         self.gammaSlider.valueChanged.connect(
-            lambda x: self.glWidget.transform.setGamma(1+(x-100.)/200.))
+            lambda x: self.glWidget.transform.setGamma(gammaMin+x/200.*(gammaMax-gammaMin)))
         self.glWidget.transform._gammaChanged.connect(
-            lambda x: self.gammaSlider.setValue(200*(x-1.)+100))
+            lambda gam: self.gammaSlider.setValue(200*(gam-gammaMin)/(gammaMax-gammaMin)))
 
 
         # self.keyframes = KeyFrameList()
@@ -264,10 +265,6 @@ class MainWidget(QtGui.QWidget):
         self.checkKey.stateChanged.connect(self.keyPanel.setVisible)
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
-        if not dataContainer:
-            dataContainer = DemoData()
-
-        dataModel = DataModel(dataContainer,prefetchSize = N_PREFETCH)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
@@ -285,7 +282,7 @@ class MainWidget(QtGui.QWidget):
 
         self.glWidget._dataModelChanged.connect(self.dataModelChanged)
 
-        self.setModel(dataModel)
+        self.onColormapChanged(0)
 
         self.hiddableControls = [self.checkSettings,
                                  self.startButton,self.sliderTime,self.spinTime,
@@ -295,7 +292,7 @@ class MainWidget(QtGui.QWidget):
 
     def onColormapChanged(self,index):
         self.glWidget.set_colormap(self.settingsView.colorMaps[index])
-        self.glWidget.refresh()                           
+        self.glWidget.refresh()
 
 
 
@@ -361,6 +358,7 @@ class MainWidget(QtGui.QWidget):
     def setModel(self,dataModel):
         self.glWidget.setModel(dataModel)
 
+
     def dataModelChanged(self):
         logger.info("data Model changed")
         dataModel = self.glWidget.dataModel
@@ -400,12 +398,14 @@ class MainWidget(QtGui.QWidget):
 
 
     def forward(self,event):
-        newpos = (self.glWidget.dataModel.pos+1)%self.glWidget.dataModel.sizeT()
-        self.glWidget.transform.setPos(newpos)
+        if self.glWidget.dataModel:
+            newpos = (self.glWidget.dataModel.pos+1)%self.glWidget.dataModel.sizeT()
+            self.glWidget.transform.setPos(newpos)
 
     def backward(self,event):
-        newpos = (self.glWidget.dataModel.pos-1)%self.glWidget.dataModel.sizeT()
-        self.glWidget.transform.setPos(newpos)
+        if self.glWidget.dataModel:
+            newpos = (self.glWidget.dataModel.pos-1)%self.glWidget.dataModel.sizeT()
+            self.glWidget.transform.setPos(newpos)
 
 
     def startPlay(self,event):
@@ -443,14 +443,16 @@ class MainWidget(QtGui.QWidget):
 
     def onPlayTimer(self):
 
-        if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
-            self.playDir = 1-2*self.loopBounce
-        if self.glWidget.dataModel.pos == 0:
-            self.playDir = 1
+        if self.glWidget.dataModel:
+    
 
-        newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
-        self.glWidget.transform.setPos(newpos)
-        # self.glWidget.dataModel.setPos(newpos)
+            if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
+                self.playDir = 1-2*self.loopBounce
+            if self.glWidget.dataModel.pos == 0:
+                self.playDir = 1
+
+            newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
+            self.glWidget.transform.setPos(newpos)
 
 
     def contextMenuEvent(self,event):
@@ -488,10 +490,13 @@ class MainWidget(QtGui.QWidget):
         else:
             self.showFullScreen()
 
+        self.glWidget.resized = True
+
         # there's a bug in Qt that disables drop after fullscreen, so reset it...
         self.setAcceptDrops(True)
 
         self.isFullScreen = not self.isFullScreen
+
 
 
 

@@ -179,7 +179,7 @@ class DemoData(GenericData):
             self.stackUnits = (1,1,1)
 
         else:
-            self.stackSize = (1,N,N,N/2)
+            self.stackSize = (1,N,N,N)
             self.fName = ""
             self.nT = N
             self.stackUnits = (1,1,1)
