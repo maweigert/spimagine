@@ -86,6 +86,7 @@ class VolumeRenderer:
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
+        # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
         self.invMBuf = self.dev.createBuffer(16,dtype=float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
@@ -114,7 +115,7 @@ class VolumeRenderer:
         """
         Nstep = int(ceil(sqrt(1.*data.nbytes/self.memMax)))
         slices = [slice(0,d,Nstep) for d in data.shape]
-        if Nstep>1: 
+        if Nstep>1:
             logger.info("downsample image by factor of  %s"%Nstep)
 
         return slices
@@ -294,7 +295,26 @@ def _getDirec(P,M,u=1,v=0):
 #     pylab.imshow(out)
 #     pylab.show()
 
+def test_simple2():
+    import time
+    # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
+    N = 256
+
+    d = linspace(0,100.,N**3).reshape((N,)*3).astype(float32)
+
+    rend = VolumeRenderer((600,600))
+
+
+    rend.set_data(d)
+
+    t = time.time()
+    
+    out = rend.render()
+
+    print "time to render %s^3: %.2f ms"%(N,1000*(time.time()-t)) 
+
+
 
 if __name__ == "__main__":
-    pass
     # test_simple()
+    test_simple2()

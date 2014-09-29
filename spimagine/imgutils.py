@@ -133,6 +133,12 @@ def fromSpimFile(fName,stackSize):
 
 
 
+def openImageFile( fName):
+    with  open(fName) as f:
+        data = np.asarray(Image.open(f).convert('L'))
+        return data
+
+
 
 if __name__ == '__main__':
     from time import time

@@ -39,12 +39,8 @@ class TransformModel(QtCore.QObject):
     def reset(self,maxVal = 256.,stackUnits=None):
         logger.debug("reset")
 
-        self.quatRot = Quaternion()
-        self.translate = [0,0,0]
-        self.cameraZ = 5
-        self.scaleAll = 1.
-        self.zoom = 1.
         self.dataPos = 0
+        self.zoom = 1.
         self.isPerspective = True
         self.setPerspective()
         self.setValueScale(0,maxVal)
@@ -53,7 +49,20 @@ class TransformModel(QtCore.QObject):
         if not stackUnits:
             stackUnits = [.1,.1,.1]
         self.setStackUnits(*stackUnits)
+        self.center()
+
+
+    def center(self):
+        self.quatRot = Quaternion()
+        self.translate = [0,0,0]
+        self.cameraZ = 5.
+        self.zoom  = 1.
+        self.scaleAll = 1.
         self.update()
+        self._transformChanged.emit()
+
+
+
 
     def setPos(self,pos):
         logger.debug("setPos(%s)",pos)
@@ -136,7 +145,7 @@ class TransformModel(QtCore.QObject):
         model = self.getUnscaledModelView()
 
         #scale the interns
-        if self.dataModel:
+        if hasattr(self,"dataModel"):
             Nz,Ny,Nx = self.dataModel.size()[1:]
             dx,dy,dz = self.stackUnits
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))

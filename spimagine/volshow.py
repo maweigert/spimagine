@@ -53,7 +53,7 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
+def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap = "jet"):
     """
     class to visualize 3d/4d data
 
@@ -88,7 +88,12 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
 
 
 
-    returns window.glWidget if not in blocking mode """
+    returns window.glWidget if not in blocking mode
+
+
+    availbale colormaps: cmap = ["jet","hot","grays"]
+
+    """
 
 
     app = getCurrentApp()
@@ -129,6 +134,11 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False ):
     # window = MainWindow(dataContainer = m)
 
     window.setModel(m)
+
+    colNames = {"jet":"colormaps/jet.png","hot":"colormaps/hot.png","grays":"colormaps/grays.png"}
+    
+    window.glWidget.load_colormap(colNames[cmap])
+
 
     print "set model: ", time()-t
     t = time()

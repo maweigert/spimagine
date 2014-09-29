@@ -74,9 +74,62 @@ if os.name == "nt":
 import time
 from spimagine.quaternion import Quaternion
 
-from spimagine.shaders import vertShaderTex, fragShaderTex, vertShaderCube, fragShaderCube
+# from spimagine.shaders import vertShaderTex, fragShaderTex, vertShaderCube, fragShaderCube
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
+
+
+vertShaderTex ="""
+attribute vec2 position;
+attribute vec2 texcoord;
+varying vec2 mytexcoord;
+
+void main()
+{
+    gl_Position = vec4(position, 0., 1.0);
+    mytexcoord = texcoord;
+}
+"""
+
+fragShaderTex = """
+uniform sampler2D texture;
+uniform sampler2D texture_LUT;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+
+  vec4 lut = texture2D(texture_LUT,col.xy);
+
+  gl_FragColor = vec4(lut.xyz,col.x);
+//  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+
+}
+"""
+
+vertShaderCube ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+
+void main()
+{
+  vec3 pos = position;
+  gl_Position = mvpMatrix *vec4(pos, 1.0);
+
+}
+"""
+
+fragShaderCube = """
+
+uniform vec4 color;
+
+void main()
+{
+  gl_FragColor = vec4(1.,1.,1.,.6);
+  gl_FragColor = color;
+}
+"""
 
 
 def absPath(myPath):
@@ -147,7 +200,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         super(GLWidget,self).__init__(parent,**kwargs)
 
         self.parent= parent
-        
+
         self.setAcceptDrops(True)
 
         self.renderer = VolumeRenderer((800,800))
@@ -212,8 +265,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape))
 
 
-    def load_colormap(self):
-        self.set_colormap(arrayFromImage(absPath("colormaps/jet.png"))[0,:,:])
+    def load_colormap(self, fName = "colormaps/jet.png"):
+        self.set_colormap(arrayFromImage(absPath(fName))[0,:,:])
 
 
 
@@ -272,6 +325,10 @@ class GLWidget(QtOpenGL.QGLWidget):
                                    [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
                   ])
 
+        self.cubeFaceCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0], [-1.0,  -1.0,  1.0],
+                                       [-1.0,  -1.0,  1.0], [1.0,  -1.0,  1.0], [1.0,  1.0,  1.0],
+                                       ])
+
         self.load_colormap()
 
         glEnable( GL_BLEND )
@@ -288,6 +345,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0])
             self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+
             self.refresh()
 
 
@@ -346,12 +404,18 @@ class GLWidget(QtOpenGL.QGLWidget):
             if self.transform.isBox:
                 # Draw the cube
                 self.programCube.bind()
-
                 self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
+
+                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
                 self.programCube.setAttributeArray("position", self.cubeCoord)
 
                 glDrawArrays(GL_LINES,0,len(self.cubeCoord))
+
+                # self.programCube.setAttributeArray("position", .99*self.cubeFaceCoord)
+                # self.programCube.setUniformValue("color",QtGui.QVector4D(0,0,0,.6))
+
+                # glDrawArrays(GL_TRIANGLES,0,len(self.cubeFaceCoord))
 
 
             # Draw the render texture
@@ -449,7 +513,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self._x0, self._y0, self._z0 = self.posToVec3(event.x(),event.y())
 
         if event.buttons() == QtCore.Qt.RightButton:
-            self._x0, self._y0, self._z0 = self.posToVec3(event.x(),event.y())
+            (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
 
 
     def mouseMoveEvent(self, event):
@@ -469,8 +533,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         #Translation
         if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(),event.y())
-            self.transform.translate[0] += (x-self._x0)
-            self.transform.translate[1] += (y-self._y0)
+
+            dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
+            self.transform.translate[0] += dx
+            self.transform.translate[1] += dy
+
             self._x0,self._y0 = x,y
 
         self.refresh()
@@ -481,6 +548,8 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(500,500))
+
+
     win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
 
     win.transform.setStackUnits(1.,1.,5.)
