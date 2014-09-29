@@ -45,7 +45,7 @@ border-image: url(%s);}
 """
 
 
-def createStandardButton(parent,fName = None,method = None, width = 24):
+def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
     but = QtGui.QPushButton("",parent)
     but.setStyleSheet("background-color: black")
     if fName:
@@ -54,7 +54,15 @@ def createStandardButton(parent,fName = None,method = None, width = 24):
     but.clicked.connect(method)
     but.setMaximumWidth(width)
     but.setMaximumHeight(width)
+    but.setToolTip(tooltip)
     return but
+
+
+def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
+    check = QtGui.QCheckBox("",parent)
+    check.setStyleSheet(checkBoxStyleStr%(absPath(img1),absPath(img2)))
+    check.setToolTip(tooltip)
+    return check
 
 
 def absPath(myPath):
@@ -89,25 +97,29 @@ class MainWidget(QtGui.QWidget):
 
         self.glWidget = GLWidget(self)
 
-        self.fwdButton = createStandardButton(self, fName = "images/icon_forward.png", method = self.forward, width = 18)
-        self.bwdButton = createStandardButton(self, fName = "images/icon_backward.png", method = self.backward, width = 18)
-        self.startButton = createStandardButton(self, fName = "images/icon_start.png", method = self.startPlay)
+        self.fwdButton = createStandardButton(self, fName = "images/icon_forward.png",
+                                              method = self.forward, width = 18, tooltip="forward")
+        self.bwdButton = createStandardButton(self, fName = "images/icon_backward.png",
+                                              method = self.backward, width = 18, tooltip="backward")
+
+        self.startButton = createStandardButton(self, fName = "images/icon_start.png",
+                                                method = self.startPlay, tooltip="play")
 
 
 
-        self.rotateButton = createStandardButton(self, fName = "images/icon_rotate.png", method = self.rotate)
+        self.centerButton = createStandardButton(self, fName = "images/icon_center.png",
+                                                 method = self.center, tooltip = "center view")
 
-        self.screenshotButton = createStandardButton(self, fName = "images/icon_camera.png", method = self.screenShot)
+        self.rotateButton = createStandardButton(self, fName = "images/icon_rotate.png",
+                                                 method = self.rotate, tooltip = "spin current view")
+
+        self.screenshotButton = createStandardButton(self, fName = "images/icon_camera.png",
+                                                method = self.screenShot, tooltip = "save as png")
 
 
-        self.checkSettings = QtGui.QCheckBox()
-        self.checkSettings.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/settings.png"),absPath("images/settings_inactive.png")))
+        self.checkSettings = createStandardCheckbox(self,"images/settings.png","images/settings_inactive.png", tooltip="settings")
+        self.checkKey = createStandardCheckbox(self,"images/video.png","images/video_inactive.png", tooltip="keyframe editor")
 
-
-        self.checkKey = QtGui.QCheckBox()
-        self.checkKey.setStyleSheet(
-            checkBoxStyleStr%(absPath("images/video.png"),absPath("images/video_inactive.png")))
 
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -132,9 +144,12 @@ class MainWidget(QtGui.QWidget):
         self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.scaleSlider.setRange(1, 250)
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.scaleSlider.setToolTip("value scale")
 
         self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(0, 200)
+        self.gammaSlider.setToolTip("value gamma")
+
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         # self.gammaSlider.setValue(50)
@@ -158,7 +173,10 @@ class MainWidget(QtGui.QWidget):
         self.settingsView = SettingsPanel()
         self.settingsView.hide()
 
-        self.setStyleSheet("background-color:black;")
+        self.setStyleSheet("""
+        background-color:black;
+        color:white;
+        """)
 
         hbox0 = QtGui.QHBoxLayout()
         hbox0.addWidget(self.scaleSlider)
@@ -177,6 +195,9 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.spinTime)
         # hbox.addWidget(self.checkProj)
         # hbox.addWidget(self.checkBox)
+
+        hbox.addWidget(self.centerButton)
+
         hbox.addWidget(self.rotateButton)
 
         hbox.addWidget(self.checkKey)
@@ -332,15 +353,10 @@ class MainWidget(QtGui.QWidget):
         dataModel = self.glWidget.dataModel
         dataModel._dataSourceChanged.connect(self.dataSourceChanged)
 
-        # self.sliderTime.valueChanged.connect(dataModel.setPos)
-
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
         self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
 
         self.keyPanel.resetModels(self.glWidget.transform, KeyFrameList())
-
-        # self.keyPanel.setTransformModel(self.glWidget.transform)
-        # self.keyPanel.setTransformModel(self.glWidget.transform)
 
         self.dataSourceChanged()
 
@@ -454,6 +470,8 @@ class MainWidget(QtGui.QWidget):
         del self.glWidget
         super(MainWidget,self).close()
 
+    def center(self):
+        self.glWidget.transform.center()
 
     def rotate(self):
         if self.rotateTimer.isActive():
@@ -466,7 +484,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def onRotateTimer(self):
-        self.glWidget.transform.addRotation(.02,0,1.,0)
+        self.glWidget.transform.addRotation(-.02,0,1.,0)
 
     def mouseDoubleClickEvent(self,event):
         super(MainWidget,self).mouseDoubleClickEvent(event)

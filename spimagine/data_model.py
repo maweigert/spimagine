@@ -115,6 +115,36 @@ class SpimData(GenericData):
             return None
 
 
+
+
+class Img2dData(GenericData):
+    """2d image data"""
+    def __init__(self,fName = ""):
+        GenericData.__init__(self, fName)
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            try:
+                self.img  = np.array([imgutils.openImageFile(fName)])
+                self.stackSize = (1,) + self.img.shape
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as Img2dData"%fName)
+                return
+
+            self.stackUnits = stackUnits
+            self.fName = fName
+
+
+    def __getitem__(self,pos):
+        if self.stackSize and self.fName:
+            return self.img
+        else:
+            return None
+
+
 class TiffData(GenericData):
     """3d tiff data"""
     def __init__(self,fName = ""):
@@ -378,7 +408,9 @@ class DataModel(QtCore.QObject):
 
     def loadFromPath(self,fName, prefetchSize = 0):
         if re.match(".*\.tif",fName):
-            self.setContainer(TiffData(fName),prefetchSize)
+            self.setContainer(TiffData(fName),prefetchSize = 0)
+        elif re.match(".*\.(png|jpg|bmp)",fName):
+            self.setContainer(Img2dData(fName),prefetchSize = 0)
         else:
             self.setContainer(SpimData(fName),prefetchSize)
 
@@ -423,7 +455,7 @@ def test_frompath():
 
 def test_speed():
     import time
-        
+
     fName  = "/Users/mweigert/Data/Drosophila_full"
 
     t = []
@@ -442,16 +474,23 @@ def test_speed():
 
 if __name__ == '__main__':
 
-    test_spimdata()
+    # test_spimdata()
 
-    test_tiffdata()
-    test_numpydata()
+    # test_tiffdata()
+    # test_numpydata()
 
-    test_speed()
+    # test_speed()
+
     # test_frompath()
 
-    # N = 256
 
-    # d = NumpyData(np.ones((N,N,N)))
+    # d = Img2dData("/Users/mweigert/Data/test_images/actin.jpg")
 
+    m = DataModel.fromPath("/Users/mweigert/Data/test_images/actin.jpg")
+
+    
+    print m.size()
+
+
+    print m[0].shape
 
