@@ -346,9 +346,10 @@ class DataModel(QtCore.QObject):
             raise IndexError("setPos(pos): %i outside of [0,%i]!"%(pos,self.sizeT()-1))
             return
 
-        self.pos = pos
-        self._dataPosChanged.emit(pos)
-        self.prefetch(self.pos)
+        if not hasattr(self,"pos") or self.pos != pos:
+            self.pos = pos
+            self._dataPosChanged.emit(pos)
+            self.prefetch(self.pos)
 
 
     def __getitem__(self,pos):

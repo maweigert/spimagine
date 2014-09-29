@@ -16,7 +16,7 @@ from keyframe_model import KeyFrame, KeyFrameList
 from data_model import DataModel, DemoData
 from transform_model import TransformModel
 
-from time import sleep
+from time import sleep, time
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -390,10 +390,10 @@ class KeyFramePanel(QWidget):
 
 
         self.playTimer = QTimer(self)
-        self.playTimer.setInterval(100)
+        self.playTimer.setInterval(30)
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.recordTimer = QTimer(self)
-        self.recordTimer.setInterval(50)
+        self.recordTimer.setInterval(30)
         self.recordTimer.timeout.connect(self.onRecordTimer)
 
 
@@ -492,10 +492,18 @@ class KeyFramePanel(QWidget):
     def onPlayTimer(self):
         self.t = (self.t+0.01)%1.
 
+
+
         trans = self.keyView.keyList.getTransform(self.t)
         print self.t,trans
 
         self.keyView.transformModel.fromTransformData(trans)
+
+
+        print "TIME to set ", time()-self.a
+
+        # self.a = time()
+
         # if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
         #     self.playDir = 1-2*self.loopBounce
         # if self.glWidget.dataModel.pos == 0:

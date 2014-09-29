@@ -23,6 +23,7 @@ pyz = PYZ(a.pure)
 
 a.datas += addAll("../spimagine/kernels")
 a.datas += addAll("../spimagine/images")
+a.datas += addAll("../spimagine/colormaps")
 
 # include the libtiff dylib and all the py files (work around)
 a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")

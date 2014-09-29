@@ -87,6 +87,14 @@ class TransformModel(QtCore.QObject):
     def setZoom(self,zoom = 1.):
         self.zoom = np.clip(zoom,.5,2)
         self.update()
+        self._transformChanged.emit()
+
+
+    def addRotation(self, angle, x, y, z):
+        q = Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z)
+        self.setQuaternion(self.quatRot * q)
+
+
 
     def setRotation(self,angle,x,y,z):
         self.setQuaternion(Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z))
