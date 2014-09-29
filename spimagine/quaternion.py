@@ -39,7 +39,6 @@ class Quaternion():
                           a1*c2 - b1*d2 + c1*a2 + d1*b2,
                           a1*d2 + b1*c2 - c1*b2 + d1*a2)
         else:
-            # print "scalar multiplication!"
             return Quaternion(*(q*self.data))
 
     def __repr__(self):

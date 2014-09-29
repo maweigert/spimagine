@@ -34,6 +34,27 @@ import egg3d
 # the default number of data timeslices to prefetch
 N_PREFETCH = 10
 
+checkBoxStyleStr = """
+QCheckBox::indicator:checked {
+background:black;
+border-image: url(%s);
+}
+QCheckBox::indicator:unchecked {
+background:black;
+border-image: url(%s);}
+"""
+
+
+def createStandardButton(parent,fName = None,method = None, width = 24):
+    but = QtGui.QPushButton("",parent)
+    but.setStyleSheet("background-color: black")
+    if fName:
+        but.setIcon(QtGui.QIcon(absPath(fName)))
+    but.setIconSize(QtCore.QSize(width,width))
+    but.clicked.connect(method)
+    but.setMaximumWidth(width)
+    but.setMaximumHeight(width)
+    return but
 
 
 def absPath(myPath):
@@ -61,82 +82,23 @@ class MainWidget(QtGui.QWidget):
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
+        self.resize(800, 700)
+
         self.initActions()
         # self.initMenus()
 
         self.glWidget = GLWidget(self)
 
-        self.fwdButton = QtGui.QPushButton("",self)
-        self.fwdButton.setStyleSheet("background-color: black")
+        self.fwdButton = createStandardButton(self, fName = "images/icon_forward.png", method = self.forward, width = 18)
+        self.bwdButton = createStandardButton(self, fName = "images/icon_backward.png", method = self.backward, width = 18)
+        self.startButton = createStandardButton(self, fName = "images/icon_start.png", method = self.startPlay)
 
 
-        self.fwdButton.setIcon(QtGui.QIcon(absPath("images/icon_forward.png")))
-        self.fwdButton.setIconSize(QtCore.QSize(18,18))
-        self.fwdButton.clicked.connect(self.forward)
-        self.fwdButton.setMaximumWidth(18)
-        self.fwdButton.setMaximumHeight(18)
 
-        self.bwdButton = QtGui.QPushButton("",self)
-        self.bwdButton.setStyleSheet("background-color: black")
-        self.bwdButton.setIcon(QtGui.QIcon(absPath("images/icon_backward.png")))
-        self.bwdButton.setIconSize(QtCore.QSize(18,18))
-        self.bwdButton.clicked.connect(self.backward)
-        self.bwdButton.setMaximumWidth(18)
-        self.bwdButton.setMaximumHeight(18)
+        self.rotateButton = createStandardButton(self, fName = "images/icon_rotate.png", method = self.rotate)
 
-        self.startButton = QtGui.QPushButton("",self)
-        self.startButton.setStyleSheet("background-color: black")
-        self.startButton.setIcon(QtGui.QIcon(absPath("images/icon_start.png")))
-        self.startButton.setIconSize(QtCore.QSize(24,24))
-        self.startButton.clicked.connect(self.startPlay)
-        self.startButton.setMaximumWidth(24)
-        self.startButton.setMaximumHeight(24)
+        self.screenshotButton = createStandardButton(self, fName = "images/icon_camera.png", method = self.screenShot)
 
-
-        self.resize(800, 700)
-
-
-        buttonStyleStr = """
-        QPushButton {
-        background: black;
-        : none;
-        background-position: top center;
-        background-origin: content;
-        padding: 3px;
-        border-style: solid;
-        border-width: 3px;
-        border-color: red (120,0,0);
-        border-radius: 40px;
-        }
-
-        QPushButton:pressed {
-        background-color: rgb(255,0,0);
-        background-image: url(:/Images/alarmButtonReflection.png) ;
-        background-repeat: none;
-        background-position: top center;
-        background-origin: content;
-        }       """
-
-
-        self.screenshotButton = QtGui.QPushButton("",self)
-        self.screenshotButton.setStyleSheet("background-color: black")
-        self.screenshotButton.setIcon(QtGui.QIcon(absPath("images/icon_camera.png")))
-        self.screenshotButton.setIconSize(QtCore.QSize(24,24))
-        self.screenshotButton.clicked.connect(self.screenShot)
-        self.screenshotButton.setMaximumWidth(24)
-        self.screenshotButton.setMaximumHeight(24)
-
-        checkBoxStyleStr = """
-        QCheckBox::indicator:checked {
-        background:black;
-        border-image: url(%s);
-
-
-        }
-        QCheckBox::indicator:unchecked {
-        background:black;
-        border-image: url(%s);}
-        """
 
         self.checkSettings = QtGui.QCheckBox()
         self.checkSettings.setStyleSheet(
@@ -215,6 +177,8 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.spinTime)
         # hbox.addWidget(self.checkProj)
         # hbox.addWidget(self.checkBox)
+        hbox.addWidget(self.rotateButton)
+
         hbox.addWidget(self.checkKey)
         hbox.addWidget(self.screenshotButton)
 
@@ -242,6 +206,10 @@ class MainWidget(QtGui.QWidget):
         self.setLayout(vbox)
 
 
+
+        self.rotateTimer = QtCore.QTimer(self)
+        self.rotateTimer.setInterval(50)
+        self.rotateTimer.timeout.connect(self.onRotateTimer)
 
         self.playTimer = QtCore.QTimer(self)
         self.playTimer.setInterval(100)
@@ -444,7 +412,7 @@ class MainWidget(QtGui.QWidget):
     def onPlayTimer(self):
 
         if self.glWidget.dataModel:
-    
+
 
             if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
                 self.playDir = 1-2*self.loopBounce
@@ -478,10 +446,27 @@ class MainWidget(QtGui.QWidget):
     def close(self):
         if self.playTimer.isActive():
             self.playTimer.stop()
+
+        if self.rotateTimer.isActive():
+            self.rotateTimer.stop()
+
         self.glWidget.setParent(None)
         del self.glWidget
         super(MainWidget,self).close()
 
+
+    def rotate(self):
+        if self.rotateTimer.isActive():
+            self.rotateTimer.stop()
+            self.rotateButton.setIcon(QtGui.QIcon(absPath("images/icon_rotate.png")))
+
+        else:
+            self.rotateTimer.start()
+            self.rotateButton.setIcon(QtGui.QIcon(absPath("images/icon_rotate_active.png")))
+
+
+    def onRotateTimer(self):
+        self.glWidget.transform.addRotation(.02,0,1.,0)
 
     def mouseDoubleClickEvent(self,event):
         super(MainWidget,self).mouseDoubleClickEvent(event)
@@ -506,6 +491,8 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     win = MainWidget()
+
+    win.setModel(DataModel(DemoData()))
     win.show()
     win.raise_()
 

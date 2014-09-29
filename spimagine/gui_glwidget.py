@@ -146,6 +146,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         super(GLWidget,self).__init__(parent,**kwargs)
 
+        self.parent= parent
+        
         self.setAcceptDrops(True)
 
         self.renderer = VolumeRenderer((800,800))
@@ -420,7 +422,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform.setZoom(newZoom)
 
         logger.debug("newZoom: %s",newZoom)
-        self.refresh()
+        # self.refresh()
 
 
     def posToVec3(self,x,y, r0 = .8, isRot = True ):

@@ -20,15 +20,16 @@ from PyQt4 import QtGui
 
 from spimagine.gui_mainwindow import MainWindow
 
-
+from spimagine.data_model import DemoData, DataModel
 
 def main():
 
     app = QtGui.QApplication(sys.argv)
 
     win = MainWindow()
+    win.setModel(DataModel(DemoData()))
     win.show()
-        
+
     win.raise_()
 
     sys.exit(app.exec_())
