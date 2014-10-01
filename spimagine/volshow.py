@@ -12,6 +12,13 @@ _MAIN_APP = None
 
 #FIXME app issue
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+
 def getCurrentApp():
     app = QtGui.QApplication.instance()
 
@@ -29,6 +36,8 @@ def getCurrentApp():
 
 def volfig(num=None):
     """return window"""
+
+    logger.debug("volfig")
 
     app = getCurrentApp()
     #filter the dict
@@ -53,7 +62,7 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap = "jet"):
+def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap = "jet"):
     """
     class to visualize 3d/4d data
 
@@ -95,8 +104,13 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap 
 
     """
 
+    logger.debug("volshow")
+
+    logger.debug("volshow: getCurrentApp")
 
     app = getCurrentApp()
+
+
 
     from time import time
 
@@ -111,8 +125,8 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap 
     window = volfig(num)
 
 
-    print "volfig: ", time()-t
-    t = time()
+    # print "volfig: ", time()-t
+    # t = time()
 
     if isinstance(data,GenericData):
         m = DataModel(data)
@@ -127,8 +141,8 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap 
 
         m = DataModel(NumpyData(data.astype(np.float32)))
 
-    print "create model: ", time()-t
-    t = time()
+    # print "create model: ", time()-t
+    # t = time()
 
     # m = NumpyData(data.astype(np.float32))
     # window = MainWindow(dataContainer = m)
@@ -136,12 +150,15 @@ def volshow(data, scale = True, stackUnits = [.1,.1,.1], blocking = False, cmap 
     window.setModel(m)
 
     colNames = {"jet":"colormaps/jet.png","hot":"colormaps/hot.png","grays":"colormaps/grays.png"}
-    
+
     window.glWidget.load_colormap(colNames[cmap])
 
 
-    print "set model: ", time()-t
-    t = time()
+    window.glWidget.transform.setStackUnits(*stackUnits)
+
+
+    # print "set model: ", time()-t
+    # t = time()
 
 
     if blocking:

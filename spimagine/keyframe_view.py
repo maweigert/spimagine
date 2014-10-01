@@ -187,7 +187,7 @@ class KeyNode(QGraphicsItem):
             self.setToolTip("KeyNode: t= %.2f"%self.pos().x())
 
             self.graph.itemMoved()
-            print self.graph.keyList
+            # print self.graph.keyList
 
 
         elif change == QGraphicsItem.ItemSelectedChange:
@@ -373,7 +373,6 @@ class RecordThread(QThread):
             trans = self.keyView.keyList.getTransform(1.*i/100.)
             self.keyView.transformModel.fromTransformData(trans)
             self.notifyProgress.emit(i)
-            print self.glWidget
             self.glWidget.saveFrame("output.png")
             sleep(0.1)
 
@@ -468,7 +467,6 @@ class KeyFramePanel(QWidget):
 
 
     def setFrameNumber(self,nFrames):
-        print "nFrames: ", nFrames
         self.nFrames = nFrames
 
     def setDirName(self,dirName):
@@ -495,12 +493,12 @@ class KeyFramePanel(QWidget):
 
 
         trans = self.keyView.keyList.getTransform(self.t)
-        print self.t,trans
+        # print self.t,trans
 
         self.keyView.transformModel.fromTransformData(trans)
 
 
-        print "TIME to set ", time()-self.a
+        # print "TIME to set ", time()-self.a
 
         # self.a = time()
 

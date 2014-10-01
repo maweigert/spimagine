@@ -41,17 +41,24 @@ def absPath(myPath):
 
 ############################################################################
 """
-Te next classes define simple 4d Data Structures that implement the interface
+The next classes define simple 4d Data Structures that implement the interface
 given by GenericData
 """
 
 class GenericData():
-    """abstract base class for 4d data"""
+    """abstract base class for 4d data
+
+    if you wanna sublass it, just overwrite self.size() and self.__getitem__()
+    
+    """
     dataFileError = Exception("not a valid file")
     def __init__(self, name = ""):
         self.stackSize = None
         self.stackUnits = None
         self.name = name
+
+    # def setStackSize(self, stackSize):
+    #     self.stackSize  = list(stackSize)
 
     def sizeT(self):
         return self.size()[0]
@@ -488,9 +495,8 @@ if __name__ == '__main__':
 
     m = DataModel.fromPath("/Users/mweigert/Data/test_images/actin.jpg")
 
-    
+
     print m.size()
 
 
     print m[0].shape
-
