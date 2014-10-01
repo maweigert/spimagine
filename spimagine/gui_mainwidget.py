@@ -10,9 +10,6 @@ email: mweigert@mpi-cbg.de
 """
 
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 import os
 import numpy as np
@@ -21,15 +18,24 @@ import sys
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from quaternion import Quaternion
-from gui_glwidget import GLWidget
+from spimagine.quaternion import Quaternion
+from spimagine.gui_glwidget import GLWidget
 
-from keyframe_model import KeyFrameList
+from spimagine.keyframe_model import KeyFrameList
 
-from keyframe_view import KeyFramePanel
-from gui_settings import SettingsPanel
-from data_model import DataModel, DemoData, SpimData
-import egg3d
+from spimagine.keyframe_view import KeyFramePanel
+from spimagine.gui_settings import SettingsPanel
+from spimagine.data_model import DataModel, DemoData, SpimData
+from spimagine import egg3d
+
+
+
+import logging
+logger = logging.getLogger(__name__)
+
+# logger.setLevel(logging.DEBUG)
+
+
 
 # the default number of data timeslices to prefetch
 N_PREFETCH = 10
@@ -86,6 +92,9 @@ class MainWidget(QtGui.QWidget):
         super(QtGui.QWidget,self).__init__(parent)
 
         self.myparent = parent
+
+        self.isCloseFlag = False
+
 
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
@@ -300,7 +309,6 @@ class MainWidget(QtGui.QWidget):
             self._quatHist = [Quaternion() for i in range(N)]
             self._quatWeights = np.exp(-2.*np.linspace(0,1,N))
             self._quatWeights *= 1./sum(self._quatWeights)
-            print self._quatWeights
             self.egg3d.start()
         except Exception as e:
             print e
@@ -330,19 +338,22 @@ class MainWidget(QtGui.QWidget):
     def initUI(self):
         pass
 
+
+    def keyPressEvent(self, event):
+        print event.key()
+        if type(event) == QtGui.QKeyEvent:
+            if event.modifiers()== QtCore.Qt.ControlModifier and  event.key() == QtCore.Qt.Key_Q:
+                print "HOOOOO"
+                return
+        # super(MainWidget,self).keyPressEvent(event)
+
     def initActions(self):
-        self.exitAction = QtGui.QAction('Quit', self)
-        self.exitAction.setShortcut('Ctrl+Q')
-        self.exitAction.setStatusTip('Exit application')
-        self.exitAction.triggered.connect(self.close)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.closeMe)
 
-
-    # def initMenus(self):
-    #     menuBar = self.menuBar()
-    #     fileMenu = menuBar.addMenu('&File')
-    #     fileMenu.addAction(self.exitAction)
-    #     # this has to be repeated in MAC OSX for some magic reason
-    #     fileMenu = menuBar.addMenu('&File')
+        # self.exitAction = QtGui.QAction('Quit', self)
+        # self.exitAction.setShortcut('Ctrl+Q')
+        # self.exitAction.setStatusTip('Exit application')
+        # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
         self.glWidget.setModel(dataModel)
@@ -421,7 +432,6 @@ class MainWidget(QtGui.QWidget):
             self.playTimer.stop()
         self.playTimer.setInterval(val)
 
-        print val
 
 
 
@@ -453,22 +463,27 @@ class MainWidget(QtGui.QWidget):
         for c in self.hiddableControls:
             c.setVisible(not c.isVisible())
 
+    def closeMe(self):
+        #little workaround as on MAC ctrl-q cannot be overwritten
+        
+        self.isCloseFlag = True
+        self.close()
 
-    # def closeEvent(self,event):
-    #     print "closeevent"
-    #     self.close()
-    #     event.accept()
+    def closeEvent(self,event):
+        logger.debug("closeevent")
+        if not event.spontaneous() and not self.isCloseFlag:
+            event.ignore()
+        else:
+            if self.playTimer.isActive():
+                self.playTimer.stop()
 
-    def close(self):
-        if self.playTimer.isActive():
-            self.playTimer.stop()
+            if self.rotateTimer.isActive():
+                self.rotateTimer.stop()
 
-        if self.rotateTimer.isActive():
-            self.rotateTimer.stop()
+            # self.glWidget.setParent(None)
+            # del self.glWidget
+            event.accept()
 
-        self.glWidget.setParent(None)
-        del self.glWidget
-        super(MainWidget,self).close()
 
     def center(self):
         self.glWidget.transform.center()
