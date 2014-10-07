@@ -10,7 +10,7 @@ from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 import numpy as np
 
-from gui_utils import arrayFromImage
+from gui_utils import *
 
 
 
@@ -90,15 +90,21 @@ class SettingsPanel(QtGui.QWidget):
 
         # the perspective/box checkboxes
 
-        self.checkProj = createImgCheckBox("images/rays_persp.png","images/rays_ortho.png")
-        self.checkBox = createImgCheckBox("images/wire_cube.png","images/wire_cube_inactive.png")
+    
+        self.checkProj = createStandardCheckbox(self,absPath("images/rays_persp.png"),
+                                                    absPath("images/rays_ortho.png"), tooltip="projection")
 
+        self.checkBox = createStandardCheckbox(self,absPath("images/wire_cube.png"),
+                                                    absPath("images/wire_cube_incative.png"), 
+                                                    tooltip="toggle box")
 
         self.checkLoopBounce = QtGui.QCheckBox()
 
-        self.checkEgg = createImgCheckBox("images/egg.png","images/egg_inactive.png")
+        
 
-
+        self.checkEgg = createStandardCheckbox(self,absPath("images/egg.png"),
+                                                    absPath("images/egg_inactive.png"), 
+                                                    tooltip="toggle egg control")
 
         gridBox = QtGui.QGridLayout()
 
@@ -135,7 +141,7 @@ class SettingsPanel(QtGui.QWidget):
         gridBox.addWidget(self.playInterval)
 
         gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),6,0)
-        gridBox.addWidget(self.checkEgg,5,1)
+        gridBox.addWidget(self.checkEgg,6,1)
 
         vbox.addLayout(gridBox)
 
