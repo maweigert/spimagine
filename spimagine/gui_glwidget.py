@@ -48,8 +48,6 @@ import os
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
-from OpenGL import GLU
-from OpenGL import GLUT
 
 from OpenGL.GL import *
 from OpenGL.GL import shaders
@@ -64,6 +62,8 @@ from spimagine.transform_model import TransformModel
 
 from numpy import *
 import numpy as np
+
+from spimagine.gui_utils import *
 
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
@@ -103,7 +103,10 @@ void main()
   vec4 lut = texture2D(texture_LUT,col.xy);
 
   gl_FragColor = vec4(lut.xyz,col.x);
+
 //  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+
+// gl_FragColor = vec4(1.,lut.yz,1);
 
 }
 """
@@ -132,6 +135,7 @@ void main()
 """
 
 
+
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -145,52 +149,6 @@ def absPath(myPath):
 
 
 
-def fillTexture2d(data,tex = None):
-    """ data.shape == (Ny,Nx)
-          file texture with GL_RED
-        data.shape == (Ny,Nx,3)
-          file texture with GL_RGB
-
-        if tex == None, returns a new created texture
-    """
-
-    if tex is None:
-        tex = glGenTextures(1)
-
-    glBindTexture(GL_TEXTURE_2D, tex)
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-    glTexParameterf (GL_TEXTURE_2D,
-                     GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameterf (GL_TEXTURE_2D,
-                     GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-
-    if data.ndim == 2:
-        Ny,Nx = data.shape
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
-                     0, GL_RED, GL_FLOAT, data.astype(float32))
-
-    elif data.ndim == 3 and data.shape[2]==3:
-        Ny,Nx = data.shape[:2]
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
-                         0, GL_RGB, GL_FLOAT, data.astype(float32))
-
-    else:
-        raise Exception("data format not supported! \ndata.shape should be either (Ny,Nx) or (Ny,Nx,3)")
-    return tex
-
-def arrayFromImage(fName):
-    """converts png image to float32 array"""
-    img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
-    Nx, Ny = img.width(),img.height()
-    tmp = img.bits().asstring(img.numBytes())
-    arr = frombuffer(tmp, uint8).reshape((Ny,Nx,4))
-    arr = arr.astype(float32)/amax(arr)
-    return arr[:,:,:-1][:,:,::-1]
-
-
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
 
@@ -200,6 +158,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         super(GLWidget,self).__init__(parent,**kwargs)
 
         self.parent= parent
+        self.texture_LUT = None
 
         self.setAcceptDrops(True)
 
@@ -209,7 +168,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
-        self.transform = TransformModel()
+        self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
         self.renderTimer.setInterval(50)
@@ -221,8 +180,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.dataModel = None
 
 
-        self.transform._transformChanged.connect(self.refresh)
-        self.transform._stackUnitsChanged.connect(self.setStackUnits)
 
 
         self.refresh()
@@ -261,8 +218,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def set_colormap(self,arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+        self.makeCurrent()
 
-        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape))
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
 
 
     def load_colormap(self, fName = "colormaps/jet.png"):
@@ -340,6 +298,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDisable(GL_DEPTH_TEST)
 
 
+    def setTransform(self, transform):
+        self.transform = transform
+        self.transform._transformChanged.connect(self.refresh)
+        self.transform._stackUnitsChanged.connect(self.setStackUnits)
+
 
     def dataModelChanged(self):
         if self.dataModel:
@@ -385,6 +348,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def paintGL(self):
 
+        self.makeCurrent()
+
+        if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
+            return
+
         #hack
         if self.resized:
             w = max(self.width,self.height)
@@ -416,6 +384,20 @@ class GLWidget(QtOpenGL.QGLWidget):
                 # self.programCube.setUniformValue("color",QtGui.QVector4D(0,0,0,.6))
 
                 # glDrawArrays(GL_TRIANGLES,0,len(self.cubeFaceCoord))
+
+            if self.transform.isSlice:
+                # draw the slice
+                self.programCube.bind()
+                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+                self.programCube.enableAttributeArray("position")
+
+                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+
+                pos, dim = self.transform.slicePos,self.transform.sliceDim
+
+                coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+                self.programCube.setAttributeArray("position", coords)
+                glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
             # Draw the render texture

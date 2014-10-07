@@ -28,6 +28,11 @@ from spimagine.gui_settings import SettingsPanel
 from spimagine.data_model import DataModel, DemoData, SpimData
 from spimagine import egg3d
 
+from spimagine.gui_slice_view import SliceWidget
+
+from spimagine.transform_model import TransformModel
+
+from spimagine.gui_utils import *
 
 
 import logging
@@ -39,36 +44,6 @@ logger = logging.getLogger(__name__)
 
 # the default number of data timeslices to prefetch
 N_PREFETCH = 10
-
-checkBoxStyleStr = """
-QCheckBox::indicator:checked {
-background:black;
-border-image: url(%s);
-}
-QCheckBox::indicator:unchecked {
-background:black;
-border-image: url(%s);}
-"""
-
-
-def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
-    but = QtGui.QPushButton("",parent)
-    but.setStyleSheet("background-color: black")
-    if fName:
-        but.setIcon(QtGui.QIcon(absPath(fName)))
-    but.setIconSize(QtCore.QSize(width,width))
-    but.clicked.connect(method)
-    but.setMaximumWidth(width)
-    but.setMaximumHeight(width)
-    but.setToolTip(tooltip)
-    return but
-
-
-def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
-    check = QtGui.QCheckBox("",parent)
-    check.setStyleSheet(checkBoxStyleStr%(absPath(img1),absPath(img2)))
-    check.setToolTip(tooltip)
-    return check
 
 
 def absPath(myPath):
@@ -86,6 +61,7 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 
+
 class MainWidget(QtGui.QWidget):
 
     def __init__(self, parent = None):
@@ -99,36 +75,49 @@ class MainWidget(QtGui.QWidget):
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
-        self.resize(800, 700)
+        self.resize(900, 700)
+
+
+        self.transform = TransformModel()
 
         self.initActions()
         # self.initMenus()
 
         self.glWidget = GLWidget(self)
+        self.glWidget.setTransform(self.transform)
 
-        self.fwdButton = createStandardButton(self, fName = "images/icon_forward.png",
+        self.sliceWidget = SliceWidget(self)
+        self.sliceWidget.hide()
+
+
+        self.sliceWidget.setTransform(self.transform)
+
+        self.fwdButton = createStandardButton(self, fName = absPath("images/icon_forward.png"),
                                               method = self.forward, width = 18, tooltip="forward")
-        self.bwdButton = createStandardButton(self, fName = "images/icon_backward.png",
+        self.bwdButton = createStandardButton(self, fName = absPath("images/icon_backward.png"),
                                               method = self.backward, width = 18, tooltip="backward")
 
-        self.startButton = createStandardButton(self, fName = "images/icon_start.png",
+        self.startButton = createStandardButton(self, fName = absPath("images/icon_start.png"),
                                                 method = self.startPlay, tooltip="play")
 
 
 
-        self.centerButton = createStandardButton(self, fName = "images/icon_center.png",
+        self.centerButton = createStandardButton(self, fName = absPath("images/icon_center.png"),
                                                  method = self.center, tooltip = "center view")
 
-        self.rotateButton = createStandardButton(self, fName = "images/icon_rotate.png",
+        self.rotateButton = createStandardButton(self, fName = absPath("images/icon_rotate.png"),
                                                  method = self.rotate, tooltip = "spin current view")
 
-        self.screenshotButton = createStandardButton(self, fName = "images/icon_camera.png",
+        self.screenshotButton = createStandardButton(self, fName = absPath("images/icon_camera.png"),
                                                 method = self.screenShot, tooltip = "save as png")
 
 
-        self.checkSettings = createStandardCheckbox(self,"images/settings.png","images/settings_inactive.png", tooltip="settings")
-        self.checkKey = createStandardCheckbox(self,"images/video.png","images/video_inactive.png", tooltip="keyframe editor")
+        self.checkSettings = createStandardCheckbox(self,absPath("images/settings.png"),
+                                                    absPath("images/settings_inactive.png"), tooltip="settings")
+        self.checkKey = createStandardCheckbox(self,absPath("images/video.png"),absPath("images/video_inactive.png"), tooltip="keyframe editor")
 
+        self.checkSliceView = createStandardCheckbox(self,absPath("images/icon_slice.png"),
+                                                     absPath("images/icon_slice_inactive.png"), tooltip="slice view")
 
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -164,14 +153,14 @@ class MainWidget(QtGui.QWidget):
         # self.gammaSlider.setValue(50)
 
         self.scaleSlider.valueChanged.connect(
-            lambda x: self.glWidget.transform.setValueScale(0,x**2))
-        self.glWidget.transform._maxChanged.connect(
+            lambda x: self.transform.setValueScale(0,x**2))
+        self.transform._maxChanged.connect(
             lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
 
         gammaMin, gammaMax = .25, 2.
         self.gammaSlider.valueChanged.connect(
-            lambda x: self.glWidget.transform.setGamma(gammaMin+x/200.*(gammaMax-gammaMin)))
-        self.glWidget.transform._gammaChanged.connect(
+            lambda x: self.transform.setGamma(gammaMin+x/200.*(gammaMax-gammaMin)))
+        self.transform._gammaChanged.connect(
             lambda gam: self.gammaSlider.setValue(200*(gam-gammaMin)/(gammaMax-gammaMin)))
 
 
@@ -193,6 +182,7 @@ class MainWidget(QtGui.QWidget):
 
         hbox0.addWidget(self.glWidget,stretch =1)
 
+        hbox0.addWidget(self.sliceWidget,stretch =1)
 
         hbox0.addWidget(self.settingsView)
 
@@ -212,6 +202,8 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.checkKey)
         hbox.addWidget(self.screenshotButton)
 
+        hbox.addSpacing(50)
+        hbox.addWidget(self.checkSliceView)
 
         hbox.addWidget(self.checkSettings)
 
@@ -254,20 +246,23 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)
 
-        self.glWidget.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
+
+        self.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
 
 
-        self.settingsView.checkProj.stateChanged.connect(self.glWidget.transform.setPerspective)
-        self.glWidget.transform._perspectiveChanged.connect(self.settingsView.checkProj.setChecked)
+        self.settingsView.checkProj.stateChanged.connect(self.transform.setPerspective)
+        self.transform._perspectiveChanged.connect(self.settingsView.checkProj.setChecked)
 
         self.checkKey.stateChanged.connect(self.keyPanel.setVisible)
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
+        self.checkSliceView.stateChanged.connect(self.sliceWidget.setVisible)
+        self.checkSliceView.stateChanged.connect(self.transform.setShowSlice)
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
-        self.settingsView._stackUnitsChanged.connect(self.glWidget.transform.setStackUnits)
-        self.glWidget.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
+        self.settingsView._stackUnitsChanged.connect(self.transform.setStackUnits)
+        self.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
 
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
@@ -282,6 +277,8 @@ class MainWidget(QtGui.QWidget):
 
         self.onColormapChanged(0)
 
+        self.checkSliceView.setChecked(False)
+
         self.hiddableControls = [self.checkSettings,
                                  self.startButton,self.sliderTime,self.spinTime,
                                  self.checkKey,self.screenshotButton ]
@@ -291,6 +288,9 @@ class MainWidget(QtGui.QWidget):
     def onColormapChanged(self,index):
         self.glWidget.set_colormap(self.settingsView.colorMaps[index])
         self.glWidget.refresh()
+
+        self.sliceWidget.glSliceWidget.set_colormap(self.settingsView.colorMaps[index])
+        self.sliceWidget.glSliceWidget.refresh()
 
 
 
@@ -323,16 +323,16 @@ class MainWidget(QtGui.QWidget):
         for q,w in zip(self._quatHist,self._quatWeights):
             q0 = q0+q*w
 
-        self.glWidget.transform.setQuaternion(q0)
+        self.transform.setQuaternion(q0)
 
     def egg3dZoom(self,zoom):
         if zoom>0:
-            newZoom = self.glWidget.transform.zoom * 1.01**zoom
+            newZoom = self.transform.zoom * 1.01**zoom
         else:
-            newZoom = self.glWidget.transform.zoom * 1.1**zoom
+            newZoom = self.transform.zoom * 1.1**zoom
 
         newZoom = np.clip(newZoom,.7,3)
-        self.glWidget.transform.setZoom(newZoom)
+        self.transform.setZoom(newZoom)
 
 
     def initUI(self):
@@ -340,10 +340,8 @@ class MainWidget(QtGui.QWidget):
 
 
     def keyPressEvent(self, event):
-        print event.key()
         if type(event) == QtGui.QKeyEvent:
             if event.modifiers()== QtCore.Qt.ControlModifier and  event.key() == QtCore.Qt.Key_Q:
-                print "HOOOOO"
                 return
         # super(MainWidget,self).keyPressEvent(event)
 
@@ -357,6 +355,7 @@ class MainWidget(QtGui.QWidget):
 
     def setModel(self,dataModel):
         self.glWidget.setModel(dataModel)
+        self.sliceWidget.setModel(dataModel)
 
 
     def dataModelChanged(self):
@@ -365,9 +364,9 @@ class MainWidget(QtGui.QWidget):
         dataModel._dataSourceChanged.connect(self.dataSourceChanged)
 
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
-        self.sliderTime.valueChanged.connect(self.glWidget.transform.setPos)
+        self.sliderTime.valueChanged.connect(self.transform.setPos)
 
-        self.keyPanel.resetModels(self.glWidget.transform, KeyFrameList())
+        self.keyPanel.resetModels(self.transform, KeyFrameList())
 
         self.dataSourceChanged()
 
@@ -383,7 +382,7 @@ class MainWidget(QtGui.QWidget):
         else:
             self.setWindowTitle(self.glWidget.dataModel.name())
 
-        self.keyPanel.resetModels(self.glWidget.transform, KeyFrameList())
+        self.keyPanel.resetModels(self.transform, KeyFrameList())
 
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
@@ -395,12 +394,12 @@ class MainWidget(QtGui.QWidget):
     def forward(self,event):
         if self.glWidget.dataModel:
             newpos = (self.glWidget.dataModel.pos+1)%self.glWidget.dataModel.sizeT()
-            self.glWidget.transform.setPos(newpos)
+            self.transform.setPos(newpos)
 
     def backward(self,event):
         if self.glWidget.dataModel:
             newpos = (self.glWidget.dataModel.pos-1)%self.glWidget.dataModel.sizeT()
-            self.glWidget.transform.setPos(newpos)
+            self.transform.setPos(newpos)
 
 
     def startPlay(self,event):
@@ -446,7 +445,7 @@ class MainWidget(QtGui.QWidget):
                 self.playDir = 1
 
             newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
-            self.glWidget.transform.setPos(newpos)
+            self.transform.setPos(newpos)
 
 
     def contextMenuEvent(self,event):
@@ -465,7 +464,7 @@ class MainWidget(QtGui.QWidget):
 
     def closeMe(self):
         #little workaround as on MAC ctrl-q cannot be overwritten
-        
+
         self.isCloseFlag = True
         self.close()
 
@@ -486,7 +485,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def center(self):
-        self.glWidget.transform.center()
+        self.transform.center()
 
     def rotate(self):
         if self.rotateTimer.isActive():
@@ -499,7 +498,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def onRotateTimer(self):
-        self.glWidget.transform.addRotation(-.02,0,1.,0)
+        self.transform.addRotation(-.02,0,1.,0)
 
     def mouseDoubleClickEvent(self,event):
         super(MainWidget,self).mouseDoubleClickEvent(event)

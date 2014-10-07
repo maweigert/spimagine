@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
 """
+
+The 2d slice widget
+
+
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 
 
@@ -16,17 +22,15 @@ import os
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
-from OpenGL import GLU
-from OpenGL import GLUT
 
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
+from spimagine.volume_render import VolumeRenderer
+
 from spimagine.transform_matrices import *
 from spimagine.data_model import DataModel
 
-
-from spimagine.keyframe_model import TransformData
 
 from spimagine.transform_model import TransformModel
 
@@ -34,218 +38,325 @@ from numpy import *
 import numpy as np
 
 
-# from scipy.misc import imsave
-
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
     from scipy import linalg
 
 
 import time
-from quaternion import Quaternion
+from spimagine.quaternion import Quaternion
 
 
+from spimagine.gui_utils import *
 
-vertShaderStrBasic ="""#version 120
-void main() {
-gl_FrontColor = gl_Color;
-gl_TexCoord[0] = gl_MultiTexCoord0;
-gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+vertShaderTex ="""
+attribute vec2 position;
+attribute vec2 texcoord;
+varying vec2 mytexcoord;
+
+void main()
+{
+    gl_Position = vec4(position, 0., 1.0);
+    mytexcoord = texcoord;
 }
 """
 
-fragShaderStrBasic = """#version 120
-void main() {
-gl_FragColor = gl_Color;
+fragShaderTex = """
+uniform sampler2D texture;
+uniform sampler2D texture_LUT;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+
+  vec4 lut = texture2D(texture_LUT,col.xy);
+
+  gl_FragColor = vec4(lut.xyz,1.);
+
+//  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+
 }
 """
 
-fragShaderStrTex = """#version 120
-uniform sampler2D tex;
-void main() {
-gl_FragColor  = texture2D(tex, gl_TexCoord[0].st);
-gl_FragColor.w = 1.*length(gl_FragColor.xyz);
-
-}
-"""
 
 
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
 
 
-class GLSliceView(QtOpenGL.QGLWidget):
+
+
+class GLSliceWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, orient = 0, **kwargs):
+    def __init__(self, parent=None,**kwargs):
+        logger.debug("init")
 
+        super(GLSliceWidget,self).__init__(parent,**kwargs)
 
-        self.orient = orient
-        self.pos = 10
-        self.output = zeros([100,100],dtype = np.float32)
+        self.renderUpdate = True
+        self.parent= parent
 
-        self.transform = TransformModel()
+        self.setAcceptDrops(True)
 
-        super(GLSliceView,self).__init__(parent,**kwargs)
+        self.texture_LUT = None
+        self.setTransform(TransformModel())
+
+        self.renderTimer = QtCore.QTimer(self)
+        self.renderTimer.setInterval(50)
+        self.renderTimer.timeout.connect(self.onRenderTimer)
+        self.renderTimer.start()
+
+        self.dataModel = None
+
+        self.dataPos = 0
+        self.slicePos = 0
+
 
         # self.refresh()
 
 
+
     def setModel(self,dataModel):
+        logger.debug("setModel")
+
         self.dataModel = dataModel
+
         if self.dataModel:
+            self.transform.setModel(dataModel)
+
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
-            self.updateGL()
+            self._dataModelChanged.connect(self.dataModelChanged)
+            self._dataModelChanged.emit()
+
+
+    def setTransform(self, transform):
+        self.transform = transform
+        self.transform._transformChanged.connect(self.refresh)
+
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile().toLocal8Bit().data()
+            if self.dataModel:
+                self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
+            else:
+                self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
+
+
+    def set_colormap(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+        self.makeCurrent()
+
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+
+
+    def load_colormap(self, fName = "colormaps/jet.png"):
+        self.set_colormap(arrayFromImage(absPath(fName))[0,:,:])
 
 
 
     def initializeGL(self):
+
+        self.resized = True
+
+        self.output = zeros((100,100))
+
+        logger.debug("initializeGL")
+
+        self.programTex = QtOpenGL.QGLShaderProgram()
+        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
+        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
+        self.programTex.link()
+        self.programTex.bind()
+        logger.debug("GLSL programTex log:%s",self.programTex.log())
+
         glClearColor(0,0,0,1.)
-        glEnable(GL_TEXTURE_2D)
-        glEnable(GL_BLEND)
-        # glEnable(GL_DEPTH_TEST)
-        glEnable( GL_LINE_SMOOTH )
+
+        self.texture = None
+
+
+        self.quadCoord = np.array([[-1.,-1.,0.],
+                           [1.,-1.,0.],
+                           [1.,1.,0.],
+                           [1.,1.,0.],
+                           [-1.,1.,0.],
+                           [-1.,-1.,0.]])
+
+        self.quadCoordTex = np.array([[0,0],
+                           [1.,0.],
+                           [1.,1.],
+                           [1.,1.],
+                           [0,1.],
+                           [0,0]])
+
+        self.load_colormap()
+
+        glDisable(GL_DEPTH_TEST)
+        glEnable( GL_BLEND )
+
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-
-        self.texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.texture)
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-        glTexParameterf (GL_TEXTURE_2D,
-                            GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameterf (GL_TEXTURE_2D,
-                            GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-        glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-
-        # set up shaders...
-        self.shaderBasic = QtOpenGL.QGLShaderProgram()
-        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
-        self.shaderBasic.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrBasic)
-
-        logger.debug("shader log:%s",self.shaderBasic.log())
-
-        self.shaderBasic.link()
-
-        self.shaderTex = QtOpenGL.QGLShaderProgram()
-        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderStrBasic)
-        self.shaderTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStrTex)
-
-        logger.debug("shader log:%s",self.shaderTex.log())
-
-        self.shaderTex.link()
 
 
-    # def dataModelChanged(self):
-    #     if self.dataModel:
-    #         self.renderer.set_data(self.dataModel[0])
-    #         self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
-    #         self.refresh()
+    def dataModelChanged(self):
+        if self.dataModel:
+            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+
+            self.refresh()
 
 
     def dataSourceChanged(self):
-        # self.updateGL()
-        pass
+        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+        self.refresh()
+
+
 
     def dataPosChanged(self,pos):
-        # self.updateGL()
-        pass
+        self.dataPos = pos
+        self.refresh()
 
+
+    def refresh(self):
+        # if self.parentWidget() and self.dataModel:
+        #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
+        self.renderUpdate = True
 
     def resizeGL(self, width, height):
-        if height == 0: height = 1
+
+        height = max(10,height)
 
         self.width , self.height = width, height
-        glViewport(0, 0, width, height)
+
+        self.resized = True
+
+        self.resetViewPort()
+
+
+    def resetViewPort(self):
+        if not self.dataModel:
+            return
+
+        dim = array(self.dataModel.size()[1:])[::-1]
+
+        dim *= array(self.transform.stackUnits)
+
+
+        if self.transform.sliceDim==0:
+            dim = dim[[2,1]]
+        elif self.transform.sliceDim==1:
+            dim = dim[[0,2]]
+        elif self.transform.sliceDim==2:
+            dim = dim[[0,1]]
+
+        w,h = dim[0],dim[1]
+
+        fac = 1.*min(self.width,self.height)/max(w,h)
+        w, h = int(fac*w),int(fac*h)
+
+        glViewport((self.width-w)/2,(self.height-h)/2,w,h)
+
 
 
     def paintGL(self):
+
+        self.makeCurrent()
+
+        if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
+            return
+
+        #hack
+        if self.resized:
+            self.resetViewPort()
+
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-
         if self.dataModel:
-            out = self.dataModel[0][10,:,:].astype(float32)
-            self.output = 1.*out/amax(out)
+            # Draw the render texture
+            self.programTex.bind()
 
-            # self.output = linspace(0,1.,10000).reshape((100,100))
-            Ny, Nx = self.output.shape
-
-            print np.amax(self.output)
-            w = .6*max(Nx,Ny)/Nx
-            h = .6*max(Nx,Ny)/Ny
-            self.shaderBasic.bind()
-
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-
-            self.shaderTex.bind()
+            self.texture = fillTexture2d(self.output,self.texture)
 
 
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-
-            glBindTexture(GL_TEXTURE_2D,self.texture)
-
-            glTexImage2D(GL_TEXTURE_2D, 0, 1, Ny, Nx,
-                         0, GL_RED, GL_FLOAT, self.output.T.astype(float32))
+            self.programTex.enableAttributeArray("position")
+            self.programTex.enableAttributeArray("texcoord")
+            self.programTex.setAttributeArray("position", self.quadCoord)
+            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
 
 
-            glBegin (GL_QUADS);
-            glTexCoord2f (0, 0);
-            glVertex2f (-w, -h);
-            glTexCoord2f (1, 0);
-            glVertex2f (w, -h);
-            glTexCoord2f (1, 1);
-            glVertex2f (w,h);
-            glTexCoord2f (0, 1);
-            glVertex2f (-w, h);
-            glEnd();
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self.texture)
+            self.programTex.setUniformValue("texture",0)
+
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+            self.programTex.setUniformValue("texture_LUT",1)
 
 
-            glDisable(GL_TEXTURE_2D)
-
-            self.shaderBasic.bind()
+            glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
 
-    # def render(self):
-    #     self.renderer.set_modelView(self.transform.getModelView())
-    #     self.renderer.set_projection(self.transform.projection)
-    #     out = self.renderer.render()
+    def render(self):
+        logger.debug("render")
+        if self.dataModel:
+            if self.transform.sliceDim==0:
+                out = fliplr(self.dataModel[self.dataPos][:,:,self.transform.slicePos].T)
+            elif self.transform.sliceDim==1:
+                out = self.dataModel[self.dataPos][:,self.transform.slicePos,:]
+            elif self.transform.sliceDim==2:
+                out = self.dataModel[self.dataPos][self.transform.slicePos,:,:]
 
-    #     # self.output = clip(255.*(1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma),0,255)
+            self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
 
-    #     self.output = 1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal)**self.transform.gamma
-
-    #     self.count += 1
+            logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
 
 
-    # def onRenderTimer(self):
-    #     if self.renderUpdate:
-    #         self.render()
-    #         self.renderUpdate = False
-    #         self.updateGL()
-    #         # print self.transform.maxVal,  amax(self.renderer._data), amax(self.output), self.renderer._data.dtype
+    def saveFrame(self,fName):
+        """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
+        logger.info("saving frame as %s", fName)
+
+        self.render()
+        self.paintGL()
+        glFlush()
+        self.grabFrameBuffer().save(fName)
+
+
+    def onRenderTimer(self):
+        if self.renderUpdate:
+            self.render()
+            self.renderUpdate = False
+            self.updateGL()
 
 
 
     # def wheelEvent(self, event):
     #     """ self.transform.zoom should be within [1,2]"""
-    #     newZoom = self.transform.zoom * 1.2**(event.delta()/1400.)
-    #     newZoom = clip(newZoom,.4,3)
-    #     self.transform.setZoom(newZoom)
+    #     self.slicePos = (self.slicePos + 1)%20
+    #     print self.slicePos
+    #     # newZoom = clip(newZoom,.4,3)
+    #     self.transform.setSlicePos(self.slicePos)
 
-    #     logger.debug("newZoom: %s",newZoom)
+    #     # logger.debug("newZoom: %s",newZoom)
     #     self.refresh()
 
 
@@ -273,10 +384,11 @@ class GLSliceView(QtOpenGL.QGLWidget):
     #         self._x0, self._y0, self._z0 = self.posToVec3(event.x(),event.y())
 
     #     if event.buttons() == QtCore.Qt.RightButton:
-    #         self._x0, self._y0, self._z0 = self.posToVec3(event.x(),event.y())
+    #         (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
 
 
     # def mouseMoveEvent(self, event):
+    #     # Rotation
     #     if event.buttons() == QtCore.Qt.LeftButton:
 
     #         x1,y1,z1 = self.posToVec3(event.x(),event.y())
@@ -289,24 +401,133 @@ class GLSliceView(QtOpenGL.QGLWidget):
     #         q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
     #         self.transform.setQuaternion(self.transform.quatRot*q)
 
+    #     #Translation
     #     if event.buttons() == QtCore.Qt.RightButton:
     #         x, y = self.posToVec2(event.x(),event.y())
-    #         self.transform.translate[0] += (x-self._x0)
-    #         self.transform.translate[1] += (y-self._y0)
+
+    #         dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
+    #         self.transform.translate[0] += dx
+    #         self.transform.translate[1] += dy
+
     #         self._x0,self._y0 = x,y
 
     #     self.refresh()
 
 
 
+class SliceWidget(QtGui.QWidget):
+
+    def __init__(self, parent = None,**kwargs):
+        super(SliceWidget,self).__init__(parent,**kwargs)
+
+        self.myparent = parent
+
+        self.glSliceWidget = GLSliceWidget(self)
+
+
+
+        self.checkSlice = createTristateCheckbox(self,absPath("images/icon_x.png"),
+                                                 absPath("images/icon_y.png"),
+                                                 absPath("images/icon_z.png"))
+
+        self.sliderSlice = QtGui.QSlider(QtCore.Qt.Horizontal,self)
+        self.sliderSlice.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderSlice.setTickInterval(1)
+        self.sliderSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderSlice.setFocusPolicy(QtCore.Qt.WheelFocus)
+
+        self.sliderSlice.setTracking(False)
+
+
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.spinSlice = QtGui.QSpinBox(self)
+        self.spinSlice.setStyleSheet("color:white;")
+        self.spinSlice.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.spinSlice.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
+
+
+        self.sliderSlice.valueChanged.connect(self.spinSlice.setValue)
+        self.spinSlice.valueChanged.connect(self.sliderSlice.setValue)
+
+
+        self.setStyleSheet("""
+        background-color:black;
+        color:white;
+        """)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.checkSlice)
+
+        hbox.addWidget(self.sliderSlice)
+        hbox.addWidget(self.spinSlice)
+
+        vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(self.glSliceWidget)
+        vbox.addLayout(hbox)
+
+
+        vbox.setSpacing(1)
+        hbox.setSpacing(11)
+
+        self.setLayout(vbox)
+
+        self.glSliceWidget._dataModelChanged.connect(self.dataModelChanged)
+
+        self.setTransform(TransformModel())
+        self.sliderSlice.setFocus()
+
+
+        # self.refresh()
+
+
+    def setTransform(self, transform):
+        self.transform = transform
+        self.glSliceWidget.setTransform(transform)
+        self.checkSlice.stateChanged.connect(self.transform.setSliceDim)
+        self.transform._sliceDimChanged.connect(self.update)
+
+
+    def update(self):
+        if self.glSliceWidget.dataModel:
+            dim = self.glSliceWidget.dataModel.size()[1:][::-1][self.transform.sliceDim]
+
+            self.sliderSlice.setRange(0,dim-1)
+            self.sliderSlice.setValue(self.transform.slicePos)
+            self.spinSlice.setRange(0,dim-1)
+
+
+    def dataModelChanged(self):
+        dataModel = self.glSliceWidget.dataModel
+        dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+        self.glSliceWidget.transform._slicePosChanged.connect(self.sliderSlice.setValue)
+        self.dataSourceChanged()
+
+    def dataSourceChanged(self):
+        self.sliderSlice.valueChanged.connect(self.glSliceWidget.transform.setSlicePos)
+        self.update()
+
+    def setModel(self,dataModel):
+        self.glSliceWidget.setModel(dataModel)
+
+    def wheelEvent(self, event):
+        self.sliderSlice.wheelEvent(event)
+        
+
 if __name__ == '__main__':
     from data_model import DataModel, DemoData, SpimData
 
     app = QtGui.QApplication(sys.argv)
 
-    win = GLSliceView(size=QtCore.QSize(600,500))
+    # win = GLSliceWidget(size=QtCore.QSize(500,500))
+
+    win = SliceWidget(size=QtCore.QSize(500,500))
 
     win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
+
+    win.glSliceWidget.transform.setStackUnits(1.,1.,5.)
+
 
     # win.transform.setBox()
     # win.transform.setPerspective(True)
