@@ -64,7 +64,11 @@ def createStandardButton(parent,fName = None,method = None, width = 24, tooltip 
 
 def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
     check = QtGui.QCheckBox("",parent)
-    check.setStyleSheet(checkBoxStyleStr%(img1,img2))
+    checkStr = checkBoxStyleStr%(absPath(img1),absPath(img2))
+    if os.name =="nt":
+        checkStr = checkStr.replace("\\","/")
+       
+    check.setStyleSheet(checkStr)
     check.setToolTip(tooltip)
     return check
 
@@ -72,7 +76,12 @@ def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
 def createTristateCheckbox(parent, img1=None , img2 = None,img3 = None, tooltip = ""):
     check = QtGui.QCheckBox("",parent)
     check.setTristate()
-    check.setStyleSheet(checkBoxTristateStyleStr%(img1,img2,img3))
+
+    checkStr = checkBoxTristateStyleStr%(absPath(img1),absPath(img2),absPath(img3))
+    if os.name =="nt":
+        checkStr = checkStr.replace("\\","/")
+
+    check.setStyleSheet(checkStr)
     check.setToolTip(tooltip)
     return check
 
