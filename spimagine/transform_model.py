@@ -25,7 +25,9 @@ class TransformModel(QtCore.QObject):
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
     _rotationChanged = QtCore.pyqtSignal()
-    _dataPosChanged =  QtCore.pyqtSignal(int)
+    _slicePosChanged =  QtCore.pyqtSignal(int)
+    _sliceDimChanged =  QtCore.pyqtSignal(int)
+
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
 
@@ -40,12 +42,18 @@ class TransformModel(QtCore.QObject):
         logger.debug("reset")
 
         self.dataPos = 0
+        self.slicePos = 0
+        self.sliceDim = 0
         self.zoom = 1.
         self.isPerspective = True
         self.setPerspective()
         self.setValueScale(0,maxVal)
         self.setGamma(1.)
         self.setBox(True)
+
+        if not hasattr(self,"isSlice"):
+            self.setShowSlice(False)
+
         if not stackUnits:
             stackUnits = [.1,.1,.1]
         self.setStackUnits(*stackUnits)
@@ -62,7 +70,24 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
 
+    def setShowSlice(self,isSlice=True):
+        self.isSlice = isSlice
+        self._transformChanged.emit()
 
+    def setSliceDim(self,dim):
+        logger.debug("setSliceDim(%s)",dim)
+        if dim>= 0 and dim<3:
+            self.sliceDim = dim
+            self._sliceDimChanged.emit(dim)
+            self._transformChanged.emit()
+        else:
+            raise ValueError("dim should be in [0,1,2]!")
+
+    def setSlicePos(self,pos):
+        logger.debug("setSlicePos(%s)",pos)
+        self.slicePos = pos
+        self._slicePosChanged.emit(pos)
+        self._transformChanged.emit()
 
     def setPos(self,pos):
         logger.debug("setPos(%s)",pos)

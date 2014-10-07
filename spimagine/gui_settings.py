@@ -10,7 +10,7 @@ from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 import numpy as np
 
-from gui_glwidget import arrayFromImage
+from gui_utils import arrayFromImage
 
 
 
@@ -113,7 +113,6 @@ class SettingsPanel(QtGui.QWidget):
         self.colorCombo = QtGui.QComboBox()
 
         self.colorMaps = [arrayFromImage(absPath(s))[0,:,:] for s in colormapNames ]
-
 
         self.colorCombo.setIconSize(QtCore.QSize(100,20))
         for s in colormapNames:

@@ -7,7 +7,6 @@ logger.setLevel(logging.INFO)
 logger.setLevel(logging.DEBUG)
 
 
-
 from volume_render import *
 
 # import gui_mainwindow 
