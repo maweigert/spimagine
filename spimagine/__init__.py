@@ -1,15 +1,21 @@
+global __OPENCLDEVICE__
+
+def setOpenCLDevice(num):
+    global __OPENCLDEVICE__
+    __OPENCLDEVICE__ = num
 
 
+setOpenCLDevice(0)
+
+    
 import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
-from volume_render import *
 
-# import gui_mainwindow 
-# import gui_glwidget 
+from spimagine.volume_render import *
 
-from volshow import volshow, volfig
+from spimagine.volshow import volshow, volfig
