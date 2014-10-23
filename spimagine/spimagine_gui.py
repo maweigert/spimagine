@@ -105,7 +105,9 @@ from spimagine.data_model import DemoData, DataModel
 #             event.accept()
 
 
-if __name__ == '__main__':
+def main():
+    
+
     app = QtGui.QApplication(sys.argv)
 
     win = MainWidget()
@@ -116,3 +118,7 @@ if __name__ == '__main__':
     win.raise_()
 
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()    
