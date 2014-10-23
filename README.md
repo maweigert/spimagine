@@ -81,7 +81,7 @@ the package provides interactive visualisation to be used e.g. within IPython
 
 ### setting the GPU to be used:
 
-interactivly:
+interactively:
 
     :::python 
 	import spimagine 
