@@ -33,10 +33,15 @@ logger = logging.getLogger(__name__)
 import os
 from PyOCL import cl, OCLDevice, OCLProcessor
 from scipy.misc import imsave
-from transform_matrices import *
 from numpy import *
 from scipy.linalg import inv
+
+
+from spimagine.transform_matrices import *
+import spimagine
+
 import sys
+
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -65,7 +70,7 @@ class VolumeRenderer:
             # simulate GPU fail...
             # raise Exception()
 
-            self.dev = OCLDevice(useGPU = True)
+            self.dev = OCLDevice(useGPU = True, useDevice = spimagine.__OPENCLDEVICE__)
 
             self.isGPU = True
             self.dtype = uint16
@@ -308,10 +313,10 @@ def test_simple2():
     rend.set_data(d)
 
     t = time.time()
-    
+
     out = rend.render()
 
-    print "time to render %s^3: %.2f ms"%(N,1000*(time.time()-t)) 
+    print "time to render %s^3: %.2f ms"%(N,1000*(time.time()-t))
 
 
 
