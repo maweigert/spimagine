@@ -1,6 +1,6 @@
 # SpImagine
 
-OpenCL accelerated rendering of 3D and 4D data
+OpenCL accelerated rendering of 3D and 4D data with python
 
 
 ![Alt text](https://bitbucket.org/mweigert/spimagine/raw/master/spimagine_image.png)
