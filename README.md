@@ -87,6 +87,6 @@ setting the GPU to be used:
 	spimagine.setOpenCLDevice(1)  #optional: set the GPU to use
 
 
-or pout a  config file ".spimagine" in your home folder
+or put a  config file ".spimagine" in your home folder
 
     OPENCLDEVICE = 1
