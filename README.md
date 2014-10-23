@@ -77,6 +77,6 @@ the package provides interactive visualisation to be used e.g. within IPython
 	
 	data = ...                    #3d or 4d numpy array
 	
-	spimagine.volfig()            #optional: similar behaviour like matplotlib.figure, e.g. can be omitted
+	spimagine.volfig(0)           #optional: similar behaviour like matplotlib.figure, e.g. can be omitted
 	
 	spimagine.volshow(data)       #render the data
