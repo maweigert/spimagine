@@ -75,8 +75,8 @@ the package provides interactive visualisation to be used e.g. within IPython
 
 	spimagine.setOpenCLDevice(1)  #optional: set the GPU to use
 	
-	data = ...      #3d or 4d numpy array
+	data = ...                    #3d or 4d numpy array
 	
 	spimagine.volfig()            #optional: similar behaviour like matplotlib.figure, e.g. can be omitted
 	
-	spimagine.volshow(data)
+	spimagine.volshow(data)       #render the data
