@@ -89,6 +89,6 @@ setting the GPU to be used:
 
 or pout a  config file ".spimagine" in your home folder
 
-    #$HOME/.spimagine
+    #.spimagine
 	
     OPENCLDEVICE = 1
