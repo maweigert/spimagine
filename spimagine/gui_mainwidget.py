@@ -140,7 +140,9 @@ class MainWidget(QtGui.QWidget):
 
 
         self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.scaleSlider.setRange(1, 250)
+
+        Nslider = 250
+        self.scaleSlider.setRange(1, Nslider)
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.scaleSlider.setToolTip("value scale")
 
@@ -150,12 +152,26 @@ class MainWidget(QtGui.QWidget):
 
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
 
-        # self.gammaSlider.setValue(50)
+        self.gammaSlider.setValue(50)
 
         self.scaleSlider.valueChanged.connect(
             lambda x: self.transform.setValueScale(0,x**2))
         self.transform._maxChanged.connect(
             lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
+
+        # A = Nslider/40
+        # self.scaleSlider.valueChanged.connect(
+        #     lambda x: self.transform.setValueScale(0,2**((x-Nslider/2)/A)))
+        # self.transform._maxChanged.connect(
+        #     lambda x: self.scaleSlider.setValue(Nslider/2+int(A*np.log2(x))))
+
+        # def foo(x):
+        #     print x
+        #     print np.clip(Nslider/2+int(A*np.log2(x)),1,Nslider)
+        #     self.scaleSlider.setValue(np.clip(Nslider/2+int(A*np.log2(x)),1,Nslider))
+
+        # self.transform._maxChanged.connect(
+        #     foo)
 
         gammaMin, gammaMax = .25, 2.
         self.gammaSlider.valueChanged.connect(
