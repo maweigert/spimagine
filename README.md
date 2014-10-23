@@ -80,8 +80,15 @@ the package provides interactive visualisation to be used e.g. within IPython
 	volshow(data)       #render the data
 
 
-The GPU that is going to be used can be set like that (set that before any rendering)
+setting the GPU to be used:
 
     :::python 
 	import spimagine 
 	spimagine.setOpenCLDevice(1)  #optional: set the GPU to use
+
+
+or pout a  config file ".spimagine" in your home folder
+
+    #$HOME/.spimagine
+	
+    OPENCLDEVICE = 1
