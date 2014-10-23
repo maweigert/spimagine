@@ -152,7 +152,7 @@ def absPath(myPath):
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, N_PREFETCH = 1,**kwargs):
+    def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
         super(GLWidget,self).__init__(parent,**kwargs)
@@ -163,6 +163,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setAcceptDrops(True)
 
         self.renderer = VolumeRenderer((800,800))
+        self.renderer.dev.printInfo()
         self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
@@ -208,8 +209,11 @@ class GLWidget(QtOpenGL.QGLWidget):
             event.ignore()
 
     def dropEvent(self, event):
+        
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
+
+            
             if self.dataModel:
                 self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
             else:
@@ -532,7 +536,7 @@ if __name__ == '__main__':
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
+    win.setModel(DataModel.fromPath("C:\Users\myerslab\Desktop\HisGFP_Demo",prefetchSize = 0))
 
     win.transform.setStackUnits(1.,1.,5.)
 
