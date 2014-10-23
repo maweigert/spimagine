@@ -5,6 +5,8 @@ def setOpenCLDevice(num):
     __OPENCLDEVICE__ = num
 
 
+
+
 setOpenCLDevice(0)
 
     

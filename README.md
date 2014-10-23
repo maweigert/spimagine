@@ -34,11 +34,9 @@ install libtiff (optional)
 
 then with pip
 
-> pip install git+http://mweigert@bitbucket.org/mweigert/spimutils
+> pip install --user git+http://mweigert@bitbucket.org/mweigert/pyocl
 
-> pip install git+http://mweigert@bitbucket.org/mweigert/pyocl
-
-> pip install git+http://mweigert@bitbucket.org/mweigert/spimagine
+> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine
 
 
 ## Usage
