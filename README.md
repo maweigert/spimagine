@@ -71,10 +71,12 @@ list the options for the command line tool
 the package provides interactive visualisation to be used e.g. within IPython
 
     :::python 
-	from spimagine import volshow, volfig
+	import spimagine 
+
+	spimagine.setOpenCLDevice(1)  #optional: set the GPU to use
 	
 	data = ...      #3d or 4d numpy array
 	
-	volfig()        #similar behaviour like matplotlib.figure, e.g. can be omitted
+	spimagine.volfig()            #optional: similar behaviour like matplotlib.figure, e.g. can be omitted
 	
-	volshow(data)
+	spimagine.volshow(data)
