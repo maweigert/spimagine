@@ -302,10 +302,10 @@ class MainWidget(QtGui.QWidget):
         # self.keyPanel.keyView.setModel(self.keyframes)
 
     def onColormapChanged(self,index):
-        self.glWidget.set_colormap(self.settingsView.colorMaps[index])
+        self.glWidget.set_colormap(self.settingsView.colormaps[index])
         self.glWidget.refresh()
 
-        self.sliceWidget.glSliceWidget.set_colormap(self.settingsView.colorMaps[index])
+        self.sliceWidget.glSliceWidget.set_colormap(self.settingsView.colormaps[index])
         self.sliceWidget.glSliceWidget.refresh()
 
 

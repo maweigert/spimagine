@@ -170,7 +170,9 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 if __name__ == '__main__':
 
 
-    volshow(DemoData(),blocking = True)
+    # volshow(DemoData(),blocking = True)
+
+    volshow(DemoData(),blocking = False)
 
 
     # N = 128

@@ -52,6 +52,8 @@ from PyQt4 import QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
+import spimagine
+
 from spimagine.volume_render import VolumeRenderer
 
 from spimagine.transform_matrices import *
@@ -209,26 +211,26 @@ class GLWidget(QtOpenGL.QGLWidget):
             event.ignore()
 
     def dropEvent(self, event):
-        
+
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
 
-            
+
             if self.dataModel:
                 self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
             else:
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
 
 
-    def set_colormap(self,arr):
+    def set_colormap(self,name):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
-        self.makeCurrent()
 
-        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
-
-
-    def load_colormap(self, fName = "colormaps/jet.png"):
-        self.set_colormap(arrayFromImage(absPath(fName))[0,:,:])
+        try:
+            arr = spimagine.__COLORMAPDICT__[name]
+            self.makeCurrent()
+            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        except:
+            print "could not load colormap %s"%name
 
 
 
@@ -291,7 +293,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                                        [-1.0,  -1.0,  1.0], [1.0,  -1.0,  1.0], [1.0,  1.0,  1.0],
                                        ])
 
-        self.load_colormap()
+        self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
 
         glEnable( GL_BLEND )
 
@@ -536,9 +538,9 @@ if __name__ == '__main__':
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    win.setModel(DataModel.fromPath("C:\Users\myerslab\Desktop\HisGFP_Demo",prefetchSize = 0))
+    win.setModel(DataModel(DemoData()))
 
-    win.transform.setStackUnits(1.,1.,5.)
+    # win.transform.setStackUnits(1.,1.,5.)
 
 
     # win.transform.setBox()

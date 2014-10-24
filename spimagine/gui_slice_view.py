@@ -26,6 +26,9 @@ from PyQt4 import QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
+import spimagine
+
+
 from spimagine.volume_render import VolumeRenderer
 
 from spimagine.transform_matrices import *
@@ -159,15 +162,15 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
 
 
-    def set_colormap(self,arr):
+    def set_colormap(self,name):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
-        self.makeCurrent()
 
-        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
-
-
-    def load_colormap(self, fName = "colormaps/jet.png"):
-        self.set_colormap(arrayFromImage(absPath(fName))[0,:,:])
+        try:
+            arr = spimagine.__COLORMAPDICT__[name]
+            self.makeCurrent()
+            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        except:
+            print "could not load colormap %s"%name
 
 
 
@@ -205,7 +208,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
                            [0,1.],
                            [0,0]])
 
-        self.load_colormap()
+        self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
 
         glDisable(GL_DEPTH_TEST)
         glEnable( GL_BLEND )
@@ -513,7 +516,7 @@ class SliceWidget(QtGui.QWidget):
 
     def wheelEvent(self, event):
         self.sliderSlice.wheelEvent(event)
-        
+
 
 if __name__ == '__main__':
     from data_model import DataModel, DemoData, SpimData
