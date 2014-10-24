@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def getCurrentApp():
@@ -174,8 +174,13 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
 if __name__ == '__main__':
 
+    d = np.ones((512,)*3)
 
-    volshow(DemoData(),blocking = True, cmap = "coolwarm")
+
+    volshow(d,blocking = False)
+
+    
+    # volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 
     # N = 128
