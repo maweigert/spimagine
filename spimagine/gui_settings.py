@@ -12,9 +12,7 @@ import numpy as np
 
 from gui_utils import *
 
-
-
-colormapNames = ["colormaps/jet.png","colormaps/hot.png","colormaps/grays.png"]
+import spimagine
 
 
 def absPath(myPath):
@@ -90,20 +88,20 @@ class SettingsPanel(QtGui.QWidget):
 
         # the perspective/box checkboxes
 
-    
+
         self.checkProj = createStandardCheckbox(self,absPath("images/rays_persp.png"),
                                                     absPath("images/rays_ortho.png"), tooltip="projection")
 
         self.checkBox = createStandardCheckbox(self,absPath("images/wire_cube.png"),
-                                                    absPath("images/wire_cube_incative.png"), 
+                                                    absPath("images/wire_cube_incative.png"),
                                                     tooltip="toggle box")
 
         self.checkLoopBounce = QtGui.QCheckBox()
 
-        
+
 
         self.checkEgg = createStandardCheckbox(self,absPath("images/egg.png"),
-                                                    absPath("images/egg_inactive.png"), 
+                                                    absPath("images/egg_inactive.png"),
                                                     tooltip="toggle egg control")
 
         gridBox = QtGui.QGridLayout()
@@ -118,11 +116,12 @@ class SettingsPanel(QtGui.QWidget):
 
         self.colorCombo = QtGui.QComboBox()
 
-        self.colorMaps = [arrayFromImage(absPath(s))[0,:,:] for s in colormapNames ]
+        self.colormaps = list(spimagine.__COLORMAPDICT__.keys())
 
         self.colorCombo.setIconSize(QtCore.QSize(100,20))
-        for s in colormapNames:
-            self.colorCombo.addItem(QtGui.QIcon(absPath(s)),"")
+        
+        for s in self.colormaps:
+            self.colorCombo.addItem(QtGui.QIcon(absPath("colormaps/cmap_%s.png"%s)),"")
 
 
 

@@ -32,7 +32,7 @@ def rotMat(w=0,x=1,y=0,z=0):
     return np.cos(w)*np.identity(3)+np.sin(w)*u_cross + (1-np.cos(w))*u_tens
 
 def rotMat4(w=0,x=1,y=0,z=0):
-    n = np.array([x,y,z])
+    n = 1.*np.array([x,y,z])
     n *= 1./np.sqrt(np.sum(n**2))
     q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
     return q.toRotation4()

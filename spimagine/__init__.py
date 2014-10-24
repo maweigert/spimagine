@@ -3,14 +3,18 @@ __CONFIGFILE__ = os.path.expanduser("~/.spimagine")
 
 
 global __OPENCLDEVICE__
-__OPENCLDEVICE__ = None
+global __DEFAULTCOLORMAP__
 
+global __COLORMAPDICT__
 
 import ConfigParser, StringIO
 
-class MyConfigParser(ConfigParser.ConfigParser):
-    def __init__(self,fName = None):
-        ConfigParser.ConfigParser.__init__(self)
+import sys
+
+
+class MyConfigParser(ConfigParser.SafeConfigParser):
+    def __init__(self,fName = None, defaults = {}):
+        ConfigParser.SafeConfigParser.__init__(self,defaults)
         self.dummySection = "DUMMY"
         if fName:
             self.read(fName)
@@ -29,13 +33,34 @@ class MyConfigParser(ConfigParser.ConfigParser):
         return ConfigParser.ConfigParser.get(self,self.dummySection,varStr)
 
 
-if not __OPENCLDEVICE__:
-    try:
-        c = MyConfigParser(__CONFIGFILE__)
-        __OPENCLDEVICE__ = int(c.get("OPENCLDEVICE"))
-    except:
-        __OPENCLDEVICE__ = 0
+try:
+    c = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+    __OPENCLDEVICE__ = int(c.get("opencldevice"))
+    __DEFAULTCOLORMAP__ = c.get("colormap")
+except:
+    __OPENCLDEVICE__ = 0
+    __DEFAULTCOLORMAP__ = "coolwarm"
 
+
+from gui_utils import absPath, arrayFromImage
+
+import re
+
+def _load_colormaps():
+    global __COLORMAPDICT__
+    __COLORMAPDICT__ = {}
+    basePath = absPath("colormaps")
+    reg = re.compile("cmap_(.*)\.png")
+    for fName in os.listdir(basePath):
+        match = reg.match(fName)
+        if match:
+            try:
+                __COLORMAPDICT__[match.group(1)] = arrayFromImage(os.path.join(basePath,fName))[0,:,:]
+            except:
+                print "could not load %s"%fName
+
+
+_load_colormaps()
 
 def setOpenCLDevice(num):
     global __OPENCLDEVICE__
@@ -52,4 +77,4 @@ logger.setLevel(logging.INFO)
 
 # from spimagine.volume_render import VolumeRenderer
 
-from spimagine.volshow import volshow, volfig
+from volshow import volshow, volfig
