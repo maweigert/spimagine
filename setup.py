@@ -16,7 +16,7 @@ setup(name='spimagine',
         ,"PyOCL"
     ],
 
-    package_data={"spimagine":['kernels/*','images/*']},
+    package_data={"spimagine":['kernels/*','images/*','colormaps/*']},
     entry_points = {
     'console_scripts': [
     'spimagine = spimagine.spimagine_gui:main',
