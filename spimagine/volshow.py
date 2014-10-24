@@ -4,6 +4,8 @@ import numpy as np
 from PyQt4 import QtCore,QtGui
 
 from collections import OrderedDict
+
+import spimagine
 from spimagine.gui_mainwidget import MainWidget
 
 from spimagine.data_model import DataModel, GenericData, EmptyData, DemoData, NumpyData
@@ -62,7 +64,7 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap = "jet"):
+def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
     """
     class to visualize 3d/4d data
 
@@ -100,7 +102,8 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
     returns window.glWidget if not in blocking mode
 
 
-    availbale colormaps: cmap = ["jet","hot","grays"]
+    available colormaps: cmap = ["coolwarm","jet","hot","grays"]
+    if cmap = None, then the default one is used
 
     """
 
@@ -149,9 +152,11 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
     window.setModel(m)
 
-    colNames = {"jet":"colormaps/jet.png","hot":"colormaps/hot.png","grays":"colormaps/grays.png"}
+    if cmap is None or not spimagine.__COLORMAPDICT__.has_key(cmap):
+        cmap = spimagine.__DEFAULTCOLORMAP__
 
-    window.glWidget.load_colormap(colNames[cmap])
+
+    window.glWidget.set_colormap(cmap)
 
 
     window.glWidget.transform.setStackUnits(*stackUnits)
@@ -170,9 +175,7 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 if __name__ == '__main__':
 
 
-    # volshow(DemoData(),blocking = True)
-
-    volshow(DemoData(),blocking = False)
+    volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 
     # N = 128
