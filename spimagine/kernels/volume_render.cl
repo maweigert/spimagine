@@ -40,13 +40,28 @@ void printf4(const float4 v)
   printf("kernel: %.2f  %.2f  %.2f  %.2f\n",v.x,v.y,v.z,v.w); 
 }
 
+float4 mult(__constant float* M, float4 v){
+  float4 res;
+  res.x = dot(v, (float4)(M[0],M[1],M[2],M[3]));
+  res.y = dot(v, (float4)(M[4],M[5],M[6],M[7]));
+  res.z = dot(v, (float4)(M[8],M[9],M[10],M[11]));
+  res.w = dot(v, (float4)(M[12],M[13],M[14],M[15]));
+  return res;
+}
+
 
 __kernel void
 max_project_Short(__global short *d_output, 
-			uint Nx, uint Ny,
-			__constant float* invP,
-			__constant float* invM,
-			__read_only image3d_t volume)
+				  uint Nx, uint Ny,
+				  float boxMin_x,
+				  float boxMax_x,
+				  float boxMin_y,
+				  float boxMax_y,
+				  float boxMin_z,
+				  float boxMax_z,
+				  __constant float* invP,
+				  __constant float* invM,
+				  __read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
@@ -59,8 +74,9 @@ max_project_Short(__global short *d_output,
   float u = (x / (float) Nx)*2.0f-1.0f;
   float v = (y / (float) Ny)*2.0f-1.0f;
 
-  float4 boxMin = (float4)(-1.0f, -1.0f, -1.0f,-1.0f);
-  float4 boxMax = (float4)(1.0f, 1.0f, 1.0f,1.0f);
+  float4 boxMin = (float4)(boxMin_x,boxMin_y,boxMin_z,1.f);
+  float4 boxMax = (float4)(boxMax_x,boxMax_y,boxMax_z,1.f);
+
 
   // calculate eye ray in world space
   float4 orig0, orig;
@@ -72,34 +88,21 @@ max_project_Short(__global short *d_output,
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
   
-  orig0.x = dot(front, ((float4)(invP[0],invP[1],invP[2],invP[3])));
-  orig0.y = dot(front, ((float4)(invP[4],invP[5],invP[6],invP[7])));
-  orig0.z = dot(front, ((float4)(invP[8],invP[9],invP[10],invP[11])));
-  orig0.w = dot(front, ((float4)(invP[12],invP[13],invP[14],invP[15])));
 
+  orig0 = mult(invP,front);  
   orig0 *= 1.f/orig0.w;
 
-  orig.x = dot(orig0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
-  orig.y = dot(orig0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
-  orig.z = dot(orig0, ((float4)(invM[8],invM[9],invM[10],invM[11])));
-  orig.w = dot(orig0, ((float4)(invM[12],invM[13],invM[14],invM[15])));
 
+  orig = mult(invM,orig0);
   orig *= 1.f/orig.w;
   
-  direc0.x = dot(back, ((float4)(invP[0],invP[1],invP[2],invP[3])));
-  direc0.y = dot(back, ((float4)(invP[4],invP[5],invP[6],invP[7])));
-  direc0.z = dot(back, ((float4)(invP[8],invP[9],invP[10],invP[11])));
-  direc0.w = dot(back, ((float4)(invP[12],invP[13],invP[14],invP[15])));
+  temp = mult(invP,back);
 
-  direc0 *= 1.f/direc0.w;
+  temp *= 1.f/temp.w;
 
-  direc0 = normalize(direc0-orig0);
-
-  direc.x = dot(direc0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
-  direc.y = dot(direc0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
-  direc.z = dot(direc0, ((float4)(invM[8],invM[9],invM[10],invM[11])));
+  direc = mult(invM,normalize(temp-orig0));
   direc.w = 0.0f;
-
+  
 
   // find intersection with box
   float tnear, tfar;
@@ -112,20 +115,14 @@ max_project_Short(__global short *d_output,
   }
   if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
 
-
-  // if ((x==400) &&(y==400))
-  // 	printf("XXXXXX\ntnear: %.2f \ntfar: %.2f \n",tnear,tfar);
-
   uint colVal = 0;
   
-  float t = tfar;
+  float t = tnear;
 
   float4 pos;
   uint i;
   for(i=0; i<maxSteps; i++) {		
   	pos = orig + t*direc;
-
-
 	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
 
   	// read from 3D texture        
@@ -133,16 +130,13 @@ max_project_Short(__global short *d_output,
 
   	colVal = max(colVal, newVal);
 
-  	t -= tstep;
-  	if (t < tnear) break;
+  	t += tstep;
+  	if (t > tfar) break;
   }
 
 
   if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
-
-  // if (i==maxSteps)
-  // 	d_output[x+Nx*y] = 8000;
 
 
 }
@@ -151,129 +145,90 @@ max_project_Short(__global short *d_output,
 
 __kernel void
 max_project_Float(__global float *d_output, 
-			uint Nx, uint Ny,
-			__constant float* invP,
-			__constant float* invM,
-			__read_only image3d_t volume)
+				  uint Nx, uint Ny,
+				  float boxMin_x,
+				  float boxMax_x,
+				  float boxMin_y,
+				  float boxMax_y,
+				  float boxMin_z,
+				  float boxMax_z,
+				  __constant float* invP,
+				  __constant float* invM,
+				  __read_only image3d_t volume)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
 	// CLK_FILTER_NEAREST ;
 	CLK_FILTER_LINEAR ;
 
+  uint x = get_global_id(0);
+  uint y = get_global_id(1);
+
+  float u = (x / (float) Nx)*2.0f-1.0f;
+  float v = (y / (float) Ny)*2.0f-1.0f;
+
+  float4 boxMin = (float4)(boxMin_x,boxMin_y,boxMin_z,1.f);
+  float4 boxMax = (float4)(boxMax_x,boxMax_y,boxMax_z,1.f);
+
+  // calculate eye ray in world space
+  float4 orig0, orig;
+  float4 direc0, direc;
+  float4 temp;
+  float4 back,front;
+
+
+  front = (float4)(u,v,-1,1);
+  back = (float4)(u,v,1,1);
   
-  uint xId = get_global_id(0);
-  uint yId = get_global_id(1);
 
-  uint workX = get_global_size(0);
-  uint workY = get_global_size(1);
+  orig0 = mult(invP,front);  
+  orig0 *= 1.f/orig0.w;
 
-  uint strideX = Nx/workX;
-  uint strideY = Ny/workY;
 
-  // printf("%i\n",strideY);
-
-  uint iX,iY;
-  for (iX = 0; iX < strideX; ++iX){
-  	for ( iY = 0; iY < strideY; ++iY){
-    
+  orig = mult(invM,orig0);
+  orig *= 1.f/orig.w;
   
-  	  uint x = xId+iX*workX;
-  	  uint y = yId+iY*workY;
+  temp = mult(invP,back);
 
-		  
-  	  float u = (x / (float) Nx)*2.0f-1.0f;
-  	  float v = (y / (float) Ny)*2.0f-1.0f;
+  temp *= 1.f/temp.w;
 
-  	  float4 boxMin = (float4)(-1.0f, -1.0f, -1.0f,-1.0f);
-  	  float4 boxMax = (float4)(1.0f, 1.0f, 1.0f,1.0f);
-
-  	  // calculate eye ray in world space
-  	  float4 orig0, orig;
-  	  float4 direc0, direc;
-  	  float4 temp;
-  	  float4 back,front;
-
-
-  	  front = (float4)(u,v,-1,1);
-  	  back = (float4)(u,v,1,1);
+  direc = mult(invM,normalize(temp-orig0));
+  direc.w = 0.0f;
   
-  	  orig0.x = dot(front, ((float4)(invP[0],invP[1],invP[2],invP[3])));
-  	  orig0.y = dot(front, ((float4)(invP[4],invP[5],invP[6],invP[7])));
-  	  orig0.z = dot(front, ((float4)(invP[8],invP[9],invP[10],invP[11])));
-  	  orig0.w = dot(front, ((float4)(invP[12],invP[13],invP[14],invP[15])));
 
-  	  orig0 *= 1.f/orig0.w;
-
-
-
-  
-  	  orig.x = dot(orig0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
-  	  orig.y = dot(orig0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
-  	  orig.z = dot(orig0, ((float4)(invM[8],invM[9],invM[10],invM[11])));
-  	  orig.w = dot(orig0, ((float4)(invM[12],invM[13],invM[14],invM[15])));
-
-  	  orig *= 1.f/orig.w;
-
-	  // if (xId+yId==0)
-	  // 	printf4(orig);
-
-	  
-  	  direc0.x = dot(back, ((float4)(invP[0],invP[1],invP[2],invP[3])));
-  	  direc0.y = dot(back, ((float4)(invP[4],invP[5],invP[6],invP[7])));
-  	  direc0.z = dot(back, ((float4)(invP[8],invP[9],invP[10],invP[11])));
-  	  direc0.w = dot(back, ((float4)(invP[12],invP[13],invP[14],invP[15])));
-
-  	  direc0 *= 1.f/direc0.w;
-
-  	  direc0 = normalize(direc0-orig0);
-
-  	  direc.x = dot(direc0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
-  	  direc.y = dot(direc0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
-  	  direc.z = dot(direc0, ((float4)(invM[8],invM[9],invM[10],invM[11])));
-  	  direc.w = 0.0f;
-
-
-  	  // find intersection with box
-  	  float tnear, tfar;
-  	  int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
-  	  if (!hit) {
-  	  	if ((x < Nx) && (y < Ny)) {
-  	  	  d_output[x+Nx*y] = 0.f;
-  	  	}
-  	  	return;
-  	  }
-  	  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
-
-  	  float colVal = 0;
-  
-  	  float t = tfar;
-
-  	  float4 pos;
-  
-  	  for(uint i=0; i<maxSteps; i++) {		
-  	  	pos = orig + t*direc;
-
-
-  	  	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
-
-  	  	// read from 3D texture        
-  	  	float newVal = read_imagef(volume, volumeSampler, pos).x;
-
-  	  	colVal = max(colVal, newVal);
-
-  	  	t -= tstep;
-  	  	if (t < tnear) break;
-  	  }
-
-  	  if ((x < Nx) && (y < Ny)) {
-
-  	  	d_output[x+Nx*y] = colVal;
-
-  	  }
-
-
-	}
+  // find intersection with box
+  float tnear, tfar;
+  int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
+  if (!hit) {
+  	if ((x < Nx) && (y < Ny)) {
+  	  d_output[x+Nx*y] = 0.f;
+  	}
+  	return;
   }
+  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
+
+  float colVal = 0;
+  
+  float t = tnear;
+
+  float4 pos;
+  uint i;
+  for(i=0; i<maxSteps; i++) {		
+  	pos = orig + t*direc;
+	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
+
+  	// read from 3D texture        
+  	float newVal = read_imagef(volume, volumeSampler, pos).x;
+
+  	colVal = max(colVal, newVal);
+
+  	t += tstep;
+  	if (t > tfar) break;
+  }
+
+
+  if ((x < Nx) && (y < Ny))
+	d_output[x+Nx*y] = colVal;
+
 }
 

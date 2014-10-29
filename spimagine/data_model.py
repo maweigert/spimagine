@@ -208,7 +208,7 @@ class DemoData(GenericData):
     def load(self,N = None):
         if N==None:
             logger.debug("loading precomputed demodata")
-            self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif"))
+            self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif")).astype(np.float32)
             N = 80
             self.stackSize = (10,N,N,N)
             self.fName = ""
@@ -231,7 +231,7 @@ class DemoData(GenericData):
                 for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
 
             u2 = np.exp(-7*R2**2)
-            self.data = (10000*(u + 2*u2)).astype(np.int16)
+            self.data = (10000*(u + 2*u2)).astype(np.uint16)
 
 
     def sizeT(self):

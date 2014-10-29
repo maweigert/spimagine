@@ -273,25 +273,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                            [0,1.],
                            [0,0]])
 
-        self.cubeCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0],
-                                   [-1.0,  1.0,  1.0], [-1.0, -1.0,  1.0],
-                                   [-1.0, -1.0,  1.0], [ 1.0, -1.0,  1.0],
-                                   [1.0,  -1.0,  1.0], [ 1.0,  1.0,  1.0],
-
-                                   [1.0,   1.0,  -1.0], [-1.0,  1.0,  -1.0],
-                                   [-1.0,  1.0,  -1.0], [-1.0, -1.0,  -1.0],
-                                   [-1.0, -1.0,  -1.0], [ 1.0, -1.0,  -1.0],
-                                   [1.0,  -1.0,  -1.0], [ 1.0,  1.0,  -1.0],
-
-                                   [1.0,   1.0,  1.0], [1.0,  1.0,  -1.0],
-                                   [-1.0,  1.0,  1.0], [-1.0, 1.0,  -1.0],
-                                   [-1.0, -1.0,  1.0], [-1.0,-1.0,  -1.0],
-                                   [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
-                  ])
-
-        self.cubeFaceCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0], [-1.0,  -1.0,  1.0],
-                                       [-1.0,  -1.0,  1.0], [1.0,  -1.0,  1.0], [1.0,  1.0,  1.0],
-                                       ])
+        # self.cubeCoords = create_cube_coords([-1,1,-1,1,-1,1])
 
         self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
 
@@ -308,11 +290,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform = transform
         self.transform._transformChanged.connect(self.refresh)
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
+        self.transform._boundsChanged.connect(self.setBounds)
 
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.renderer.set_data(self.dataModel[0])
+            self.renderer.set_data(self.dataModel[0], autoConvert = True)
             self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
 
             self.refresh()
@@ -320,10 +303,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataSourceChanged(self):
-        self.renderer.set_data(self.dataModel[0])
+        self.renderer.set_data(self.dataModel[0],autoConvert = True)
         self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
         self.refresh()
 
+
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        self.cubeCoords = create_cube_coords([x1,x2,y1,y2,z1,z2])
+        self.renderer.set_box_boundaries([x1,x2,y1,y2,z1,z2])
 
     def setStackUnits(self,px,py,pz):
         logger.debug("setStackUnits to %s"%[px,py,pz])
@@ -382,9 +369,9 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.programCube.enableAttributeArray("position")
 
                 self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
-                self.programCube.setAttributeArray("position", self.cubeCoord)
+                self.programCube.setAttributeArray("position", self.cubeCoords)
 
-                glDrawArrays(GL_LINES,0,len(self.cubeCoord))
+                glDrawArrays(GL_LINES,0,len(self.cubeCoords))
 
                 # self.programCube.setAttributeArray("position", .99*self.cubeFaceCoord)
                 # self.programCube.setUniformValue("color",QtGui.QVector4D(0,0,0,.6))
@@ -440,6 +427,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
+
             out = self.renderer.render()
 
 

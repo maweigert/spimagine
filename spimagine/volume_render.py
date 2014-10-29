@@ -31,9 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 import os
-from PyOCL import cl, OCLDevice, OCLProcessor
+from PyOCL import cl, OCLDevice, OCLProcessor, cl_datatype_dict
 from scipy.misc import imsave
 from numpy import *
+import numpy as np
 from scipy.linalg import inv
 
 
@@ -70,10 +71,11 @@ class VolumeRenderer:
             # simulate GPU fail...
             # raise Exception()
 
-            self.dev = OCLDevice(useGPU = True, useDevice = spimagine.__OPENCLDEVICE__)
+            self.dev = OCLDevice(useGPU = True,
+                                 useDevice = spimagine.__OPENCLDEVICE__)
 
             self.isGPU = True
-            self.dtype = uint16
+            self.dtypes = [np.float32,np.uint16]
 
         except Exception as e:
             print e
@@ -82,7 +84,7 @@ class VolumeRenderer:
             try:
                 self.dev = OCLDevice(useGPU = False)
                 self.isGPU = False
-                self.dtype = float32
+                self.dtypes = [np.float32]
             except Exception as e:
                 print e
                 print "could not find any OpenCL device ... sorry"
@@ -93,59 +95,110 @@ class VolumeRenderer:
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
-        self.invMBuf = self.dev.createBuffer(16,dtype=float32,
+        self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
-        self.invPBuf = self.dev.createBuffer(16,dtype=float32,
+        self.invPBuf = self.dev.createBuffer(16,dtype=np.float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
-        self.set_units()
 
         if size:
             self.resize(size)
         else:
             self.resize((200,200))
+
+        self.set_dtype()
+        self.set_box_boundaries()
+        self.set_units()
+
         self.set_modelView()
         self.set_projection()
+
+    def set_dtype(self,dtype = None):
+        if hasattr(self,"dtype") and  dtype is self.dtype:
+            return
+
+        if dtype is None:
+            dtype = self.dtypes[0]
+
+        if dtype in self.dtypes:
+            self.dtype = dtype
+        else:
+            raise NotImplementedError("data type should be either %s not %s"%(self.dtypes,dtype))
+
+        self.reset_buffer()
 
 
     def resize(self,size):
         self.width, self.height = size
-        self.buf = self.dev.createBuffer(self.height*self.width,dtype=self.dtype)
+        self.reset_buffer()
 
 
-    def get_data_slices(self,data):
-        """returns the slice of data to be rendered
-        in case data is bigger then gpu texture memory, we should downsample it
+    def reset_buffer(self):
+        if hasattr(self,"dtype"):
+            self.buf = self.dev.createBuffer(self.height*self.width,dtype=self.dtype)
+
+    def _get_downsampled_data_slices(self,data):
+        """in case data is bigger then gpu texture memory, we should downsample it
+        if so returns the slice of data to be rendered
+        else returns None (no downsampling)
         """
-        Nstep = int(ceil(sqrt(1.*data.nbytes/self.memMax)))
+        Nstep = int(np.ceil(np.sqrt(1.*data.nbytes/self.memMax)))
         slices = [slice(0,d,Nstep) for d in data.shape]
         if Nstep>1:
             logger.info("downsample image by factor of  %s"%Nstep)
+            return slices
+        else:
+            return None
 
-        return slices
+    def set_data(self,data, autoConvert = True, copyData = False):
+        if not autoConvert and not data.dtype in self.dtypes:
+            raise NotImplementedError("data type should be either %s not %s"%(self.dtypes,data.dtype))
 
-    def set_data(self,data):
-        self.dataSlices = self.get_data_slices(data)
-        self.set_shape(data[self.dataSlices].shape[::-1])
-        self.update_data(data)
+        if data.dtype.type in self.dtypes:
+            self.set_dtype(data.dtype.type)
+            _data = data
+        else:
+            print "converting type from %s to %s"%(data.dtype.type,self.dtype)
+            _data = data.astype(self.dtype)
+
+        self.dataSlices = self._get_downsampled_data_slices(_data)
+        if self.dataSlices is not None:
+            self.set_shape(_data[self.dataSlices].shape[::-1])
+        else:
+            self.set_shape(_data.shape[::-1])
+
+        self.update_data(_data, copyData = copyData)
 
     def set_shape(self,dataShape):
         if self.isGPU:
             self.dataImg = self.dev.createImage(dataShape,
-                                            mem_flags = cl.mem_flags.READ_ONLY)
+                mem_flags = cl.mem_flags.READ_ONLY,
+                channel_type = cl_datatype_dict[self.dtype])
         else:
             self.dataImg = self.dev.createImage(dataShape,
-                                            mem_flags = cl.mem_flags.READ_ONLY,
-                                            channel_order = cl.channel_order.Rx,
-                                            channel_type = cl.channel_type.FLOAT)
+                mem_flags = cl.mem_flags.READ_ONLY,
+                channel_order = cl.channel_order.Rx,
+                channel_type = cl_datatype_dict[self.dtype])
 
-    def update_data(self,data):
-        self._data = data[self.dataSlices].copy()
+    def update_data(self,data, copyData = False):
+        #do we really want to copy here?
+
+        if self.dataSlices is not None:
+            self._data = data[self.dataSlices].copy()
+        else:
+            if copyData:
+                self._data = data.copy()
+            else:
+                self._data = data
+
         if self._data.dtype != self.dtype:
             self._data = self._data.astype(self.dtype)
 
         self.dev.writeImage(self.dataImg,self._data)
+
+    def set_box_boundaries(self,boxBounds = [-1,1,-1,1,-1,1]):
+        self.boxBounds = np.array(boxBounds)
 
     def set_units(self,stackUnits = ones(3)):
         self.stackUnits = np.array(stackUnits)
@@ -156,11 +209,11 @@ class VolumeRenderer:
     def set_modelView(self, modelView = mat4_identity()):
         self.modelView = 1.*modelView
 
-    def _get_user_coords(self,x,y,z):
-        p = array([x,y,z,1])
-        worldp = dot(self.modelView,p)[:-2]
-        userp = (worldp+[1.,1.])*.5*array([self.width,self.height])
-        return userp[0],userp[1]
+    # def _get_user_coords(self,x,y,z):
+    #     p = array([x,y,z,1])
+    #     worldp = dot(self.modelView,p)[:-2]
+    #     userp = (worldp+[1.,1.])*.5*array([self.width,self.height])
+    #     return userp[0],userp[1]
 
     def _stack_scale_mat(self):
         # scaling the data according to size and units
@@ -172,9 +225,10 @@ class VolumeRenderer:
         return mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
 
-    def render(self,data = None, stackUnits = None, modelView = None):
+    def render(self,data = None, stackUnits = None, modelView = None, boxBounds = None):
         if data != None:
             self.set_data(data)
+
 
         if stackUnits != None:
             self.set_units(stackUnits)
@@ -192,26 +246,29 @@ class VolumeRenderer:
 
         mScale = self._stack_scale_mat()
 
-        invM = inv(dot(self.modelView,mScale))
-        self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(float32))
+        invM = inv(np.dot(self.modelView,mScale))
+        self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
 
         invP = inv(self.projection)
-        self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(float32))
+        self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
-        if self.isGPU:
-            self.proc.runKernel("max_project_Short",(self.width,self.height),None,
-                                self.buf,
-                                int32(self.width),int32(self.height),
-                                self.invPBuf,
-                                self.invMBuf,
-                                self.dataImg)
-        else:
-            self.proc.runKernel("max_project_Float",(self.width,self.height),None,
-                                self.buf,
-                                int32(self.width),int32(self.height),
-                                self.invPBuf,
-                                self.invMBuf,
-                                self.dataImg)
+        kernelNames = {np.uint16:"max_project_Short",
+                       np.float32:"max_project_Float"}
+        self.proc.runKernel(kernelNames[self.dtype],
+                            (self.width,self.height),
+                            None,
+                            self.buf,
+                            int32(self.width),int32(self.height),
+                            np.float32(self.boxBounds[0]),
+                            np.float32(self.boxBounds[1]),
+                            np.float32(self.boxBounds[2]),
+                            np.float32(self.boxBounds[3]),
+                            np.float32(self.boxBounds[4]),
+                            np.float32(self.boxBounds[5]),
+                            self.invPBuf,
+                            self.invMBuf,
+                            self.dataImg)
+
 
 
         return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
@@ -303,23 +360,29 @@ def _getDirec(P,M,u=1,v=0):
 def test_simple2():
     import time
     # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
-    N = 256
+    N = 512
 
-    d = linspace(0,100.,N**3).reshape((N,)*3).astype(float32)
+    d = linspace(0,100.,N**3).reshape((N,)*3).astype(np.uint16)
 
     rend = VolumeRenderer((600,600))
 
+    rend.set_modelView(mat4_rotation(.5,0,1.,0))
 
-    rend.set_data(d)
+    rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
+    t1 = time.time()
 
-    t = time.time()
+    rend.set_data(d, autoConvert = True)
+
+    t2 = time.time()
 
     out = rend.render()
 
-    print "time to render %s^3: %.2f ms"%(N,1000*(time.time()-t))
+    print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
 
+    print "time to render %s^3:\t %.2f ms"%(N,1000*(time.time()-t2))
 
+    return d, rend, out
 
 if __name__ == "__main__":
     # test_simple()
-    test_simple2()
+    d, rend, out = test_simple2()
