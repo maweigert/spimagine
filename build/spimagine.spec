@@ -25,12 +25,13 @@ a.datas += addAll("../spimagine/kernels")
 a.datas += addAll("../spimagine/images")
 a.datas += addAll("../spimagine/colormaps")
 
+print a.datas
+
 # include the libtiff dylib and all the py files (work around)
 a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
 # a.datas += [("tiff_h_4_0_3.py","/Library/Python/2.7/site-packages/libtiff/tiff_h_4_0_3.py","Data")]
 
 
-print a.datas
 
 # a.binaries += addAll("/usr/local/Cellar/libtiff/4.0.3/lib/","BINARY")
 

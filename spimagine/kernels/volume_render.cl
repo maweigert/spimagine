@@ -35,7 +35,10 @@ int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tn
 	return smallest_tmax > largest_tmin;
 }
 
-
+void printf4(const float4 v)
+{
+  printf("kernel: %.2f  %.2f  %.2f  %.2f\n",v.x,v.y,v.z,v.w); 
+}
 
 
 __kernel void
@@ -75,7 +78,7 @@ max_project_Short(__global short *d_output,
   orig0.w = dot(front, ((float4)(invP[12],invP[13],invP[14],invP[15])));
 
   orig0 *= 1.f/orig0.w;
-  
+
   orig.x = dot(orig0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
   orig.y = dot(orig0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
   orig.z = dot(orig0, ((float4)(invM[8],invM[9],invM[10],invM[11])));
@@ -201,6 +204,9 @@ max_project_Float(__global float *d_output,
   	  orig0.w = dot(front, ((float4)(invP[12],invP[13],invP[14],invP[15])));
 
   	  orig0 *= 1.f/orig0.w;
+
+
+
   
   	  orig.x = dot(orig0, ((float4)(invM[0],invM[1],invM[2],invM[3])));
   	  orig.y = dot(orig0, ((float4)(invM[4],invM[5],invM[6],invM[7])));
@@ -208,7 +214,11 @@ max_project_Float(__global float *d_output,
   	  orig.w = dot(orig0, ((float4)(invM[12],invM[13],invM[14],invM[15])));
 
   	  orig *= 1.f/orig.w;
-  
+
+	  // if (xId+yId==0)
+	  // 	printf4(orig);
+
+	  
   	  direc0.x = dot(back, ((float4)(invP[0],invP[1],invP[2],invP[3])));
   	  direc0.y = dot(back, ((float4)(invP[4],invP[5],invP[6],invP[7])));
   	  direc0.z = dot(back, ((float4)(invP[8],invP[9],invP[10],invP[11])));
