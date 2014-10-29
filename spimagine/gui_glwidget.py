@@ -427,11 +427,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
-
+            self.renderer.set_max_val(self.transform.maxVal)
+            self.renderer.set_gamma(self.transform.gamma)
             out = self.renderer.render()
 
-
-            self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
+            self.output = out
+            # self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
             # self.output = clip(self.output,0,0.99)
 
             logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
