@@ -6,30 +6,33 @@ logger = logging.getLogger(__name__)
 
 
 
-from numpy import *
+import numpy as np
 import bisect
 from PyQt4 import QtCore
 from spimagine.quaternion import *
 
 class TransformData(object):
-    def __init__(self,quatRot = Quaternion(), zoom = 1, dataPos = 0):
-        self.setData(quatRot,zoom,dataPos)
+    def __init__(self,quatRot = Quaternion(), zoom = 1, dataPos = 0, bounds = [-1,1,-1,1,-1,1]):
+        self.setData(quatRot,zoom,dataPos,bounds)
 
 
     def __repr__(self):
-        return "Quaternion: %s \t %s \t %s: "%(str(self.quatRot),self.zoom,self.dataPos)
+        return " %s \t %s \t %s \t%s: "%(str(self.quatRot),self.zoom,self.dataPos, self.bounds)
 
-    def setData(self,quatRot,zoom, dataPos):
+    def setData(self,quatRot,zoom, dataPos, bounds):
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
         self.dataPos = dataPos
+        self.bounds  = np.array(bounds)
 
     @classmethod
     def interp(cls,x1,x2,t):
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
         newPos = int((1.-t)*x1.dataPos + t*x2.dataPos)
-        return TransformData(quatRot = newQuat,zoom = newZoom, dataPos= newPos)
+        newBounds = (1.-t)*x1.bounds + t*x2.bounds
+        return TransformData(quatRot = newQuat,zoom = newZoom,
+                             dataPos= newPos, bounds= newBounds)
 
 
 class KeyFrame(object):
@@ -107,7 +110,7 @@ class KeyFrameList(QtCore.QObject):
 
         # linear interpolating
         frameLeft, frameRight = self.keyDict[leftID], self.keyDict[rightID]
-        if abs(frameRight.tFrame-frameLeft.tFrame)<1.e-7:
+        if np.abs(frameRight.tFrame-frameLeft.tFrame)<1.e-7:
             lam = 0.
         else:
             lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
@@ -125,7 +128,7 @@ def test_interpolation():
     k = KeyFrameList()
     k.addItem(KeyFrame(.5,0,TransformData(quatRot=Quaternion(.71,.71,0,0))))
 
-    for t in linspace(0,1,10):
+    for t in np.linspace(0,1,10):
         print t, k.getTransform(t)
 
 
@@ -138,5 +141,5 @@ if __name__ == '__main__':
 
     print k
 
-    for t in linspace(0,1,11):
+    for t in np.linspace(0,1,11):
         print t, k.getTransform(t)

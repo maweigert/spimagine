@@ -27,6 +27,7 @@ class TransformModel(QtCore.QObject):
     _rotationChanged = QtCore.pyqtSignal()
     _slicePosChanged =  QtCore.pyqtSignal(int)
     _sliceDimChanged =  QtCore.pyqtSignal(int)
+    _boundsChanged = QtCore.pyqtSignal(float,float,float,float,float,float)
 
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
@@ -50,6 +51,7 @@ class TransformModel(QtCore.QObject):
         self.setValueScale(0,maxVal)
         self.setGamma(1.)
         self.setBox(True)
+        self.setBounds(-1,1.,-1,1,-1,1)
 
         if not hasattr(self,"isSlice"):
             self.setShowSlice(False)
@@ -69,6 +71,10 @@ class TransformModel(QtCore.QObject):
         self.update()
         self._transformChanged.emit()
 
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        self.bounds = np.array([x1,x2,y1,y2,z1,z2])
+        self._boundsChanged.emit(x1,x2,y1,y2,z1,z2)
+        self._transformChanged.emit()
 
     def setShowSlice(self,isSlice=True):
         self.isSlice = isSlice
@@ -195,6 +201,8 @@ class TransformModel(QtCore.QObject):
         self.setQuaternion(transformData.quatRot)
         self.setZoom(transformData.zoom)
         self.setPos(transformData.dataPos)
-
+        self.setBounds(*transformData.bounds)
+        
     def toTransformData(self):
-        return TransformData(quatRot = self.quatRot, zoom = self.zoom, dataPos = self.dataPos)
+        return TransformData(quatRot = self.quatRot, zoom = self.zoom,
+                             dataPos = self.dataPos, bounds = self.bounds)

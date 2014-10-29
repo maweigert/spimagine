@@ -48,6 +48,8 @@ class SettingsPanel(QtGui.QWidget):
     _playIntervalChanged = QtCore.pyqtSignal(int)
     _dirNameChanged =  QtCore.pyqtSignal(str)
     _frameNumberChanged = QtCore.pyqtSignal(int)
+    _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
+
 
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
@@ -119,7 +121,7 @@ class SettingsPanel(QtGui.QWidget):
         self.colormaps = list(spimagine.__COLORMAPDICT__.keys())
 
         self.colorCombo.setIconSize(QtCore.QSize(100,20))
-        
+
         for s in self.colormaps:
             self.colorCombo.addItem(QtGui.QIcon(absPath("colormaps/cmap_%s.png"%s)),"")
 
@@ -150,6 +152,25 @@ class SettingsPanel(QtGui.QWidget):
         line.setFrameShape(QtGui.QFrame.HLine)
 
         vbox.addWidget(line)
+
+        #################
+
+        gridBox = QtGui.QGridLayout()
+        self.sliderBounds = [QtGui.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
+        for i,s in enumerate(self.sliderBounds):
+            s.setTickPosition(QtGui.QSlider.TicksBothSides)
+            s.setRange(-100,100)
+            s.setTickInterval(1)
+            s.setFocusPolicy(QtCore.Qt.ClickFocus)
+            s.setTracking(True)
+            s.setValue(-100+200*(i%2))
+            s.valueChanged.connect(self.boundsChanged)
+            s.setStyleSheet("height: 12px; border = 0px;")
+
+            gridBox.addWidget(s,i,1)
+
+
+        vbox.addLayout(gridBox)
 
         vbox.addWidget(QtGui.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
 
@@ -206,6 +227,7 @@ class SettingsPanel(QtGui.QWidget):
         self.setLayout(vbox)
 
 
+
     def setDirName(self,dirName):
         logger.debug("setDirName: %s"%dirName)
         self.dirName = dirName
@@ -223,6 +245,16 @@ class SettingsPanel(QtGui.QWidget):
         for e,p in zip(self.stackEdits,[px,py,pz]):
             e.setText(str(p))
 
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        for x,s in zip([x1,x2,y1,y2,z1,z2],self.sliderBounds):
+            flag = s.blockSignals(True)
+            s.setValue(x*100)
+            s.blockSignals(flag)
+
+
+    def boundsChanged(self):
+        bounds = [s.value()/100. for s in self.sliderBounds]
+        self._boundsChanged.emit(*bounds)
 
     def stackUnitsChanged(self):
         try:

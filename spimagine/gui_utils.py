@@ -67,7 +67,7 @@ def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
     checkStr = checkBoxStyleStr%(absPath(img1),absPath(img2))
     if os.name =="nt":
         checkStr = checkStr.replace("\\","/")
-       
+
     check.setStyleSheet(checkStr)
     check.setToolTip(tooltip)
     return check
@@ -155,3 +155,38 @@ def slice_coords(relPos,dim):
     coords[:,dim] = -1.+2*relPos
 
     return coords
+
+
+def create_cube_coords(bounds):
+    x1,x2,y1,y2,z1,z2 = bounds
+    return np.array([[x2, y2, z2], [x1, y2, z2],
+                     [x1, y2, z2], [x1, y1, z2],
+                     [x1, y1, z2], [x2, y1, z2],
+                     [x2, y1, z2], [x2, y2, z2],
+
+                     [x2, y2, z1], [x1, y2, z1],
+                     [x1, y2, z1], [x1, y1, z1],
+                     [x1, y1, z1], [x2, y1, z1],
+                     [x2, y1, z1], [x2, y2, z1],
+
+                     [x2, y2, z2], [x2, y2, z1],
+                     [x1, y2, z2], [x1, y2, z1],
+                     [x1, y1, z2], [x1, y1, z1],
+                     [x2, y1, z2], [x2, y1, z1],
+                     ])
+
+    # return np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0],
+    #                  [-1.0,  1.0,  1.0], [-1.0, -1.0,  1.0],
+    #                  [-1.0, -1.0,  1.0], [ 1.0, -1.0,  1.0],
+    #                  [1.0,  -1.0,  1.0], [ 1.0,  1.0,  1.0],
+
+    #                  [1.0,   1.0,  -1.0], [-1.0,  1.0,  -1.0],
+    #                  [-1.0,  1.0,  -1.0], [-1.0, -1.0,  -1.0],
+    #                  [-1.0, -1.0,  -1.0], [ 1.0, -1.0,  -1.0],
+    #                  [1.0,  -1.0,  -1.0], [ 1.0,  1.0,  -1.0],
+
+    #                  [1.0,   1.0,  1.0], [1.0,  1.0,  -1.0],
+    #                  [-1.0,  1.0,  1.0], [-1.0, 1.0,  -1.0],
+    #                  [-1.0, -1.0,  1.0], [-1.0,-1.0,  -1.0],
+    #                  [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
+    #                  ])
