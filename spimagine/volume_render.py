@@ -108,6 +108,9 @@ class VolumeRenderer:
             self.resize((200,200))
 
         self.set_dtype()
+        self.set_gamma()
+        self.set_max_val()
+
         self.set_box_boundaries()
         self.set_units()
 
@@ -150,6 +153,13 @@ class VolumeRenderer:
             return slices
         else:
             return None
+
+    def set_max_val(self,maxVal = 0.):
+        self.maxVal = maxVal
+
+    def set_gamma(self,gamma = 1.):
+        self.gamma = gamma
+
 
     def set_data(self,data, autoConvert = True, copyData = False):
         if not autoConvert and not data.dtype in self.dtypes:
@@ -225,16 +235,28 @@ class VolumeRenderer:
         return mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
 
-    def render(self,data = None, stackUnits = None, modelView = None, boxBounds = None):
-        if data != None:
+    def render(self,data = None, stackUnits = None,
+               maxVal = None, gamma = None,
+               modelView = None, projection = None,
+               boxBounds = None):
+
+        if data is not None:
             self.set_data(data)
 
+        if maxVal is not None:
+            self.set_max_val(maxVal)
 
-        if stackUnits != None:
+        if gamma is not None:
+            self.set_gamma(gamma)
+
+        if stackUnits is not None:
             self.set_units(stackUnits)
 
-        if modelView != None:
+        if modelView is not None:
             self.set_modelView(modelView)
+
+        if projection is not None:
+            self.set_projection(projection)
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
@@ -254,6 +276,8 @@ class VolumeRenderer:
 
         kernelNames = {np.uint16:"max_project_Short",
                        np.float32:"max_project_Float"}
+
+
         self.proc.runKernel(kernelNames[self.dtype],
                             (self.width,self.height),
                             None,
@@ -265,10 +289,11 @@ class VolumeRenderer:
                             np.float32(self.boxBounds[3]),
                             np.float32(self.boxBounds[4]),
                             np.float32(self.boxBounds[5]),
+                            np.float32(self.maxVal),
+                            np.float32(self.gamma),
                             self.invPBuf,
                             self.invMBuf,
                             self.dataImg)
-
 
 
         return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
@@ -360,22 +385,22 @@ def _getDirec(P,M,u=1,v=0):
 def test_simple2():
     import time
     # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
-    N = 512
+    N = 256
 
-    d = linspace(0,100.,N**3).reshape((N,)*3).astype(np.uint16)
+    d = linspace(0,100.,N**3).reshape((N,)*3).astype(np.float32)
 
     rend = VolumeRenderer((600,600))
 
     rend.set_modelView(mat4_rotation(.5,0,1.,0))
 
-    rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
+    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
     t1 = time.time()
 
     rend.set_data(d, autoConvert = True)
 
     t2 = time.time()
 
-    out = rend.render()
+    out = rend.render(scale = 200.)
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
 

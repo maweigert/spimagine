@@ -59,6 +59,8 @@ max_project_Short(__global short *d_output,
 				  float boxMax_y,
 				  float boxMin_z,
 				  float boxMax_z,
+				  float maxVal,
+				  float gamma,				  
 				  __constant float* invP,
 				  __constant float* invM,
 				  __read_only image3d_t volume)
@@ -134,6 +136,9 @@ max_project_Short(__global short *d_output,
   	if (t > tfar) break;
   }
 
+  colVal = (maxVal == 0)?colVal:colVal/maxVal;
+  colVal = (short)pow(colVal,gamma);
+
 
   if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
@@ -152,6 +157,8 @@ max_project_Float(__global float *d_output,
 				  float boxMax_y,
 				  float boxMin_z,
 				  float boxMax_z,
+				  float maxVal,
+				  float gamma,
 				  __constant float* invP,
 				  __constant float* invM,
 				  __read_only image3d_t volume)
@@ -226,6 +233,8 @@ max_project_Float(__global float *d_output,
   	if (t > tfar) break;
   }
 
+  colVal = (maxVal == 0)?colVal:colVal/maxVal;
+  colVal = pow(colVal,gamma);
 
   if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
