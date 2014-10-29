@@ -174,13 +174,13 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
 if __name__ == '__main__':
 
-    d = np.ones((512,)*3)
+    # d = np.ones((512,)*3)
 
 
-    volshow(d,blocking = False)
+    # volshow(d,blocking = False)
 
     
-    # volshow(DemoData(),blocking = True, cmap = "coolwarm")
+    volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 
     # N = 128

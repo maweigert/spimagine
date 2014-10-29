@@ -4,7 +4,7 @@
 
 compatible with OpenGL, i.e.
 
-projMatPerspective = gluPerspective
+mat4_perspective = gluPerspective
 ...etc
 
 
@@ -15,43 +15,8 @@ email: mweigert@mpi-cbg.de
 import numpy as np
 from quaternion import Quaternion
 
-def rotMatX(phi):
-    return np.array([np.cos(phi),0,np.sin(phi),0,
-                  0,1, 0,0,
-                  -np.sin(phi),0, np.cos(phi),0,
-                  0,0,0,1]).reshape(4,4)
 
-def rotMat(w=0,x=1,y=0,z=0):
-    """ the rotation matrix for a rotation by angle w around axis [x,y,z]"""
-    u_cross = np.array([[0,-z,y],
-                        [z,0,-x],
-                        [-y,x,0]])
-
-    u_tens = np.outer([x,y,z],[x,y,z])
-
-    return np.cos(w)*np.identity(3)+np.sin(w)*u_cross + (1-np.cos(w))*u_tens
-
-def rotMat4(w=0,x=1,y=0,z=0):
-    n = 1.*np.array([x,y,z])
-    n *= 1./np.sqrt(np.sum(n**2))
-    q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
-    return q.toRotation4()
-
-
-def transMatReal(x=0,y=0,z=0):
-    return np.array([1.0, 0.0, 0.0, x,
-                          0.0, 1.0, 0.0, y,
-                          0.0, 0.0, 1.0, z,
-                          0, 0, 0, 1.0]).reshape(4,4)
-
-def transMat(x=0,y=0,z=0):
-    return np.array([1.0, 0.0, 0.0, 0.,
-                          0.0, 1.0, 0.0, 0.0,
-                          0.0, 0.0, 1.0, 0.0,
-                          x, y, z, 1.0]).reshape(4,4)
-
-
-def scaleMat(x =1.,y=1.,z=1.):
+def mat4_scale(x =1.,y=1.,z=1.):
     return np.array([x, 0.0, 0.0, 0.,
                   0.0, y, 0.0, 0.0,
                   0.0, 0.0, z, 0.0,
@@ -59,7 +24,15 @@ def scaleMat(x =1.,y=1.,z=1.):
 
 
 
-def projMatPerspective(fovy = 45,aspect = 1.,
+def mat4_rotation(w=0,x=1,y=0,z=0):
+    n = np.array([x,y,z])
+    n *= 1./np.sqrt(np.sum(n**2))
+    q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
+    return q.toRotation4()
+
+
+
+def mat4_perspective(fovy = 45,aspect = 1.,
                        z1 = 0.1, z2 = 10):
     """ like gluPerspective(fovy, aspect, zNear, zFar)
         fovy in degrees
@@ -71,7 +44,7 @@ def projMatPerspective(fovy = 45,aspect = 1.,
                   [0,0,-1,0]])
 
 
-def projMatOrtho(x1 = -1, x2 = 1,
+def mat4_ortho(x1 = -1, x2 = 1,
                  y1 = -1, y2 = 1,
                  z1 = -1, z2 = 1):
     """ like glOrtho """
@@ -84,12 +57,91 @@ def projMatOrtho(x1 = -1, x2 = 1,
                      [0,0,0,1.]])
 
 
+def mat4_identity():
+    return np.identity(4)
 
+
+def mat4_translate(x=0,y=0,z=0):
+    M = mat4_identity()
+    M[:3,3] = x,y,z
+    return M
+
+def mat4_lookat(eye,center,up):
+    _eye = np.array(eye)
+    _center = np.array(center)
+    _up = np.array(up)
+
+    _fwd = _center - _eye
+
+    #normalize
+    _fwd *= 1./np.sqrt(np.sum(_fwd**2))
+
+    
+    s = np.cross(_fwd, _up)
+
+    s *= 1./np.sqrt(np.sum(s**2))
+
+    
+    _up = np.cross(s, _fwd)
+
+    M = np.identity(4)
+    M[0,:3] = s
+    M[1,:3] = _up
+    M[2,:3] = - _fwd
+
+    return np.dot(M,mat4_translate(*(-_eye)))
+
+
+
+
+# gluLookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble centerx,
+#       GLdouble centery, GLdouble centerz, GLdouble upx, GLdouble upy,
+#       GLdouble upz)
+# {
+#     float forward[3], side[3], up[3];
+#     GLfloat m[4][4];
+
+#     forward[0] = centerx - eyex;
+#     forward[1] = centery - eyey;
+#     forward[2] = centerz - eyez;
+
+#     up[0] = upx;
+#     up[1] = upy;
+#     up[2] = upz;
+
+#     normalize(forward);
+
+#     /* Side = forward x up */
+#     cross(forward, up, side);
+#     normalize(side);
+
+#     /* Recompute up as: up = side x forward */
+#     cross(side, forward, up);
+
+#     __gluMakeIdentityf(&m[0][0]);
+#     m[0][0] = side[0];
+#     m[1][0] = side[1];
+#     m[2][0] = side[2];
+
+#     m[0][1] = up[0];
+#     m[1][1] = up[1];
+#     m[2][1] = up[2];
+
+#     m[0][2] = -forward[0];
+#     m[1][2] = -forward[1];
+#     m[2][2] = -forward[2];
+
+#     glMultMatrixf(&m[0][0]);
+#     glTranslated(-eyex, -eyey, -eyez);
+# }
 
 
 if __name__ == '__main__':
 
-    print rotMat(.1,0,0,1)
+    print mat4_lookat([0,0,10],[0,0,0],[0,1,0])
+
+
+    # print rotMat(.1,0,0,1)
     # orthoM = projMatOrtho(-2,2,-2,2,-10,10)
 
     # perspM = projMatPerspective(45,1,.1,10)

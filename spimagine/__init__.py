@@ -34,22 +34,37 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
 
 
 try:
-    c = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
-    __OPENCLDEVICE__ = int(c.get("opencldevice"))
-    __DEFAULTCOLORMAP__ = c.get("colormap")
+    __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+    __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
+    __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
 except:
     __OPENCLDEVICE__ = 0
     __DEFAULTCOLORMAP__ = "coolwarm"
 
 
-from gui_utils import absPath, arrayFromImage
+
+from spimagine.gui_utils import arrayFromImage
+
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        print "found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath))
+
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
 
 import re
 
 def _load_colormaps():
     global __COLORMAPDICT__
     __COLORMAPDICT__ = {}
-    basePath = absPath("colormaps")
+    basePath = absPath("colormaps/")
     reg = re.compile("cmap_(.*)\.png")
     for fName in os.listdir(basePath):
         match = reg.match(fName)

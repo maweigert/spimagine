@@ -166,7 +166,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer = VolumeRenderer((800,800))
         self.renderer.dev.printInfo()
-        self.renderer.set_projection(projMatPerspective(60,1.,.1,10))
+        self.renderer.set_projection(mat4_perspective(60,1.,.1,10))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)

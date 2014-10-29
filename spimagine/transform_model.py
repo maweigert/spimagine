@@ -128,8 +128,6 @@ class TransformModel(QtCore.QObject):
         q = Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z)
         self.setQuaternion(self.quatRot * q)
 
-
-
     def setRotation(self,angle,x,y,z):
         self.setQuaternion(Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z))
 
@@ -151,9 +149,9 @@ class TransformModel(QtCore.QObject):
     def setPerspective(self, isPerspective = True):
         self.isPerspective = isPerspective
         if isPerspective:
-            self.projection = projMatPerspective(60.,1.,.1,10)
+            self.projection = mat4_perspective(60.,1.,.1,10)
         else:
-            self.projection = projMatOrtho(-2.,2.,-2.,2.,-1.5,1.5)
+            self.projection = mat4_ortho(-2.,2.,-2.,2.,-1.5,1.5)
 
         self.update()
         self._perspectiveChanged.emit(isPerspective)
@@ -167,28 +165,28 @@ class TransformModel(QtCore.QObject):
         this should be used when drawing standard opengl primitives with the same trasnformation as
         the rendered model"""
 
-        model = self.getUnscaledModelView()
+        modelView = self.getUnscaledModelView()
 
         #scale the interns
         if hasattr(self,"dataModel"):
             Nz,Ny,Nx = self.dataModel.size()[1:]
             dx,dy,dz = self.stackUnits
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
-            mScale =  scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
-            model = np.dot(model,mScale)
+            mScale =  mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
+            modelView = np.dot(modelView,mScale)
 
-        return model
+        return modelView
 
 
 
 
     def getUnscaledModelView(self):
-        view  = transMatReal(0,0,-self.cameraZ)
+        view  = mat4_translate(0,0,-self.cameraZ)
 
 
-        model = scaleMat(*[self.scaleAll]*3)
+        model = mat4_scale(*[self.scaleAll]*3)
         model = np.dot(model,self.quatRot.toRotation4())
-        model = np.dot(model,transMatReal(*self.translate))
+        model = np.dot(model,mat4_translate(*self.translate))
 
         # return model
         return np.dot(view,model)

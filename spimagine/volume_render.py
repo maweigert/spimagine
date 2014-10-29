@@ -150,10 +150,10 @@ class VolumeRenderer:
     def set_units(self,stackUnits = ones(3)):
         self.stackUnits = np.array(stackUnits)
 
-    def set_projection(self,projection = scaleMat()):
+    def set_projection(self,projection = mat4_identity()):
         self.projection = projection
 
-    def set_modelView(self, modelView = scaleMat()):
+    def set_modelView(self, modelView = mat4_identity()):
         self.modelView = 1.*modelView
 
     def _get_user_coords(self,x,y,z):
@@ -169,7 +169,7 @@ class VolumeRenderer:
 
         # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
         maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
-        return scaleMat(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
+        return mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
 
     def render(self,data = None, stackUnits = None, modelView = None):
