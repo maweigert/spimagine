@@ -439,7 +439,7 @@ class SliceWidget(QtGui.QWidget):
         self.sliderSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.WheelFocus)
 
-        self.sliderSlice.setTracking(False)
+        self.sliderSlice.setTracking(True)
 
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)

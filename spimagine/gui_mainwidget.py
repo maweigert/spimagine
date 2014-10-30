@@ -156,6 +156,23 @@ class MainWidget(QtGui.QWidget):
 
         self.gammaSlider.setValue(50)
 
+        # _x1 = 1.e-3
+        # _x2 = 2.**16
+
+        # def foo(x):
+        #     y = 200*np.log(1.*x/_x1)/np.log(1.*_x2/_x1)
+        #     z = _x1*(1.*_x2/_x1)**(y/200.)
+            
+        #     print x, y, z
+
+        # self.scaleSlider.valueChanged.connect(
+        #     lambda x: self.transform.setValueScale(0,_x1*(1.*_x2/_x1)**(x/200.)))
+
+        # self.transform._maxChanged.connect(foo)
+
+        # self.transform._maxChanged.connect(
+        #     lambda x: self.scaleSlider.setValue(int(200*np.log(1+1.*x/_x1)/np.log(1.*_x2/_x1))))
+
         self.scaleSlider.valueChanged.connect(
             lambda x: self.transform.setValueScale(0,x**2))
         self.transform._maxChanged.connect(
@@ -519,6 +536,8 @@ class MainWidget(QtGui.QWidget):
 
     def onRotateTimer(self):
         self.transform.addRotation(-.02,0,1.,0)
+        self.glWidget.render()
+        self.glWidget.updateGL()
 
     def mouseDoubleClickEvent(self,event):
         super(MainWidget,self).mouseDoubleClickEvent(event)
