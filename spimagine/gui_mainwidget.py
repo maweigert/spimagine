@@ -92,10 +92,12 @@ class MainWidget(QtGui.QWidget):
 
         self.sliceWidget.setTransform(self.transform)
 
-        self.fwdButton = createStandardButton(self, fName = absPath("images/icon_forward.png"),
-                                              method = self.forward, width = 18, tooltip="forward")
-        self.bwdButton = createStandardButton(self, fName = absPath("images/icon_backward.png"),
-                                              method = self.backward, width = 18, tooltip="backward")
+        self.fwdButton = createStandardButton(self,
+                fName = absPath("images/icon_forward.png"),
+                method = self.forward, width = 18, tooltip="forward")
+        self.bwdButton = createStandardButton(self,
+                fName = absPath("images/icon_backward.png"),
+                method = self.backward, width = 18, tooltip="backward")
 
         self.startButton = createStandardButton(self, fName = absPath("images/icon_start.png"),
                                                 method = self.startPlay, tooltip="play")
@@ -246,7 +248,7 @@ class MainWidget(QtGui.QWidget):
 
 
         self.rotateTimer = QtCore.QTimer(self)
-        self.rotateTimer.setInterval(50)
+        self.rotateTimer.setInterval(70)
         self.rotateTimer.timeout.connect(self.onRotateTimer)
 
         self.playTimer = QtCore.QTimer(self)
@@ -545,7 +547,7 @@ if __name__ == '__main__':
     win.setModel(DataModel(DemoData()))
 
     # win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
-    
+
     win.show()
     win.raise_()
 

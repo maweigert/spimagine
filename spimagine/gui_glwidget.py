@@ -425,12 +425,16 @@ class GLWidget(QtOpenGL.QGLWidget):
     def render(self):
         logger.debug("render")
         if self.dataModel:
+            # import time
+            # t = time.time()
+
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
             self.output = self.renderer.render()
-            logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
+
+            # print "time: %.f"%(1000*(time.time()-t))
 
 
     def saveFrame(self,fName):

@@ -68,6 +68,7 @@ class TransformModel(QtCore.QObject):
         self.cameraZ = 5.
         self.zoom  = 1.
         self.scaleAll = 1.
+        self.setBounds(-1,1.,-1,1,-1,1)
         self.update()
         self._transformChanged.emit()
 
@@ -202,7 +203,7 @@ class TransformModel(QtCore.QObject):
         self.setZoom(transformData.zoom)
         self.setPos(transformData.dataPos)
         self.setBounds(*transformData.bounds)
-        
+
     def toTransformData(self):
         return TransformData(quatRot = self.quatRot, zoom = self.zoom,
                              dataPos = self.dataPos, bounds = self.bounds)

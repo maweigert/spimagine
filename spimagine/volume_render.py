@@ -406,6 +406,34 @@ def test_simple2():
 
     return d, rend, out
 
+
+def test_real():
+    import imgtools
+    import time
+    
+    d = imgtools.read3dTiff("/Users/mweigert/Data/sqeazy_corpus/Norden_GFP-LAP_4-1.tif")
+
+    rend = VolumeRenderer((600,600))
+
+    rend.set_modelView(mat4_rotation(.5,0,1.,0))
+
+    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
+    t1 = time.time()
+
+    rend.set_data(d, autoConvert = True)
+    rend.set_units([1.,1.,6.])
+    t2 = time.time()
+
+    out = rend.render(maxVal = 200.)
+
+    print "time to set data :\t %.2f ms"%(1000*(t2-t1))
+
+    print "time to render:\t %.2f ms"%(1000*(time.time()-t2))
+
+    return d, rend, out
+
+
+
 if __name__ == "__main__":
     # test_simple()
-    d, rend, out = test_simple2()
+    d, rend, out = test_real()
