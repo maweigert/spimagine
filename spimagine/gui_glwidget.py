@@ -108,7 +108,6 @@ void main()
 
 //  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
 
-// gl_FragColor = vec4(1.,lut.yz,1);
 
 }
 """
