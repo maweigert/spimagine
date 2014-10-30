@@ -429,12 +429,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
-            out = self.renderer.render()
-
-            self.output = out
-            # self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
-            # self.output = clip(self.output,0,0.99)
-
+            self.output = self.renderer.render()
             logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
 
 
@@ -520,14 +515,15 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
 if __name__ == '__main__':
-    from data_model import DataModel, DemoData, SpimData
+    from data_model import DataModel, DemoData, SpimData, TiffData
 
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    win.setModel(DataModel(DemoData()))
+    # win.setModel(DataModel(DemoData()))
+    win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
 
     # win.transform.setStackUnits(1.,1.,5.)
 
