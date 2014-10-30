@@ -25,7 +25,7 @@ from spimagine.keyframe_model import KeyFrameList
 
 from spimagine.keyframe_view import KeyFramePanel
 from spimagine.gui_settings import SettingsPanel
-from spimagine.data_model import DataModel, DemoData, SpimData
+from spimagine.data_model import DataModel, DemoData, SpimData, TiffData
 from spimagine import egg3d
 
 from spimagine.gui_slice_view import SliceWidget
@@ -543,6 +543,9 @@ if __name__ == '__main__':
     win = MainWidget()
 
     win.setModel(DataModel(DemoData()))
+
+    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
+    
     win.show()
     win.raise_()
 

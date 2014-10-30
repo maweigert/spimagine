@@ -138,8 +138,7 @@ class VolumeRenderer:
 
 
     def reset_buffer(self):
-        if hasattr(self,"dtype"):
-            self.buf = self.dev.createBuffer(self.height*self.width,dtype=self.dtype)
+        self.buf = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
 
     def _get_downsampled_data_slices(self,data):
         """in case data is bigger then gpu texture memory, we should downsample it
@@ -260,11 +259,11 @@ class VolumeRenderer:
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
+            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
         if not modelView and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
+            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
         mScale = self._stack_scale_mat()
 
@@ -274,11 +273,8 @@ class VolumeRenderer:
         invP = inv(self.projection)
         self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
-        kernelNames = {np.uint16:"max_project_Short",
-                       np.float32:"max_project_Float"}
 
-
-        self.proc.runKernel(kernelNames[self.dtype],
+        self.proc.runKernel("max_project",
                             (self.width,self.height),
                             None,
                             self.buf,
@@ -293,10 +289,12 @@ class VolumeRenderer:
                             np.float32(self.gamma),
                             self.invPBuf,
                             self.invMBuf,
-                            self.dataImg)
+                            self.dataImg,
+                            np.int32(self.dtype == np.uint16)
+                            )
 
 
-        return self.dev.readBuffer(self.buf,dtype = self.dtype).reshape(self.width,self.height)
+        return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):
@@ -384,7 +382,7 @@ def _getDirec(P,M,u=1,v=0):
 
 def test_simple2():
     import time
-    # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
+
     N = 256
 
     d = linspace(0,100.,N**3).reshape((N,)*3).astype(np.float32)
@@ -400,7 +398,7 @@ def test_simple2():
 
     t2 = time.time()
 
-    out = rend.render(scale = 200.)
+    out = rend.render(maxVal = 200.)
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
 
