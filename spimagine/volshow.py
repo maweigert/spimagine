@@ -169,7 +169,7 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
     if blocking:
         getCurrentApp().exec_()
     else:
-        return window.glWidget
+        return window
 
 
 if __name__ == '__main__':

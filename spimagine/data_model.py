@@ -238,7 +238,7 @@ class DemoData(GenericData):
         return self.nT
 
     def __getitem__(self,pos):
-        return self.data*np.exp(-.3*pos)
+        return (self.data*np.exp(-.3*pos)).astype(np.uint16)
 
 
 class EmptyData(GenericData):

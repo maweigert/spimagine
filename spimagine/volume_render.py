@@ -89,7 +89,7 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = self.dev.device.get_info(getattr(
+        self.memMax = .4*self.dev.device.get_info(getattr(
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
@@ -145,7 +145,9 @@ class VolumeRenderer:
         if so returns the slice of data to be rendered
         else returns None (no downsampling)
         """
-        Nstep = int(np.ceil(np.sqrt(1.*data.nbytes/self.memMax)))
+        # Nstep = int(np.ceil(np.sqrt(1.*data.nbytes/self.memMax)))
+        Nstep = int(np.ceil((1.*data.nbytes/self.memMax)**(1./3)))
+
         slices = [slice(0,d,Nstep) for d in data.shape]
         if Nstep>1:
             logger.info("downsample image by factor of  %s"%Nstep)
@@ -410,7 +412,7 @@ def test_simple2():
 def test_real():
     import imgtools
     import time
-    
+
     d = imgtools.read3dTiff("/Users/mweigert/Data/sqeazy_corpus/Norden_GFP-LAP_4-1.tif")
 
     rend = VolumeRenderer((600,600))

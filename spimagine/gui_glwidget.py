@@ -181,8 +181,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.dataModel = None
 
-
-
+        self.setMouseTracking(True)
 
         self.refresh()
 
@@ -214,11 +213,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
 
+            self.setCursor(QtCore.Qt.BusyCursor)
 
             if self.dataModel:
                 self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
             else:
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
+
+            self.setCursor(QtCore.Qt.ArrowCursor)
 
 
     def set_colormap(self,name):
@@ -359,12 +361,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             proj = self.transform.getProjection()
 
-            finalMat = dot(proj,modelView)
+            self.finalMat = dot(proj,modelView)
 
             if self.transform.isBox:
                 # Draw the cube
                 self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
 
                 self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
@@ -490,8 +492,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.buttons() == QtCore.Qt.RightButton:
             (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
 
+        # self.setCursor(QtCore.Qt.ClosedHandCursor)
 
+    def mouseReleaseEvent(self, event):
+        super(GLWidget, self).mouseReleaseEvent(event)
+
+        # self.setCursor(QtCore.Qt.ArrowCursor)
+       
     def mouseMoveEvent(self, event):
+
+        # c = append(self.cubeCoords,ones(24)[:,newaxis],axis=1)
+        # cUser = dot(c,self.finalMat)
+        # cUser = cUser[:,:3]/cUser[:,-1,newaxis]
+        # print self.finalMat
+        # print c[0], cUser[0]
         # Rotation
         if event.buttons() == QtCore.Qt.LeftButton:
 
@@ -525,8 +539,8 @@ if __name__ == '__main__':
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    # win.setModel(DataModel(DemoData()))
-    win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
+    win.setModel(DataModel(DemoData(10)))
+    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
 
     # win.transform.setStackUnits(1.,1.,5.)
 
