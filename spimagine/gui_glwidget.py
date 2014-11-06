@@ -165,7 +165,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer = VolumeRenderer((800,800))
         self.renderer.dev.printInfo()
-        self.renderer.set_projection(mat4_perspective(60,1.,.1,10))
+        self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
@@ -173,7 +173,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(50)
+        self.renderTimer.setInterval(20)
         self.renderTimer.timeout.connect(self.onRenderTimer)
         self.renderTimer.start()
 
@@ -181,7 +181,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.dataModel = None
 
-        self.setMouseTracking(True)
+        # self.setMouseTracking(True)
 
         self.refresh()
 
