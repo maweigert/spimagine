@@ -224,7 +224,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def set_colormap(self,name):
-        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+        """name should be either jet, hot, gray coolwarm"""
 
         try:
             arr = spimagine.__COLORMAPDICT__[name]
@@ -233,6 +233,18 @@ class GLWidget(QtOpenGL.QGLWidget):
         except:
             print "could not load colormap %s"%name
 
+
+    def set_colormap_rgb(self,color=[1.,1.,1.]):
+        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
+
+            
+    def _set_colormap_array(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+
+
+        self.makeCurrent()
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        self.refresh()
 
 
     def initializeGL(self):
@@ -282,6 +294,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        glLineWidth(2.0);
         # glBlendFunc(GL_ONE,GL_ONE)
 
         glDisable(GL_DEPTH_TEST)
@@ -382,7 +395,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             if self.transform.isSlice:
                 # draw the slice
                 self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
 
                 self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
@@ -498,7 +511,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         super(GLWidget, self).mouseReleaseEvent(event)
 
         # self.setCursor(QtCore.Qt.ArrowCursor)
-       
+
     def mouseMoveEvent(self, event):
 
         # c = append(self.cubeCoords,ones(24)[:,newaxis],axis=1)

@@ -93,3 +93,5 @@ logger.setLevel(logging.INFO)
 # from spimagine.volume_render import VolumeRenderer
 
 from volshow import volshow, volfig
+
+from data_model import SpimData, TiffData, NumpyData

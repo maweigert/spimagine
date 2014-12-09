@@ -26,7 +26,7 @@ def mat4_scale(x =1.,y=1.,z=1.):
 
 def mat4_rotation(w=0,x=1,y=0,z=0):
     n = np.array([x,y,z])
-    n *= 1./np.sqrt(np.sum(n**2))
+    n *= 1./np.sqrt(1.*np.sum(n**2))
     q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
     return q.toRotation4()
 

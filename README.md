@@ -22,6 +22,7 @@ you wanna install libtiff to speed up opening of tiff files
 On Mac, clang might complain about non supported compiler flags, a quick fix to which is
 
 > export CFLAGS=-Qunused-arguments
+
 > export CPPFLAGS=-Qunused-arguments
 
 
