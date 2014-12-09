@@ -190,7 +190,6 @@ class TransformModel(QtCore.QObject):
     def getUnscaledModelView(self):
         view  = mat4_translate(0,0,-self.cameraZ)
 
-
         model = mat4_scale(*[self.scaleAll]*3)
         model = np.dot(model,self.quatRot.toRotation4())
         model = np.dot(model,mat4_translate(*self.translate))

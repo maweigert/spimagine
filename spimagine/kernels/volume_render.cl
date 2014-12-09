@@ -156,8 +156,8 @@ max_project(__global float *d_output,
   if ((x < Nx) && (y < Ny))
 	d_output[x+Nx*y] = colVal;
 
-  if ((x == Nx/2) && (y == Ny/2))
-	printf4((float4)(tnear,tfar,0,0));
+  // if ((x == Nx/2) && (y == Ny/2))
+  // 	printf4((float4)(tnear,tfar,0,0));
 
 }
 

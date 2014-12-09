@@ -69,7 +69,7 @@ class VolumeRenderer:
 
         try:
             # simulate GPU fail...
-            # raise Exception()
+            raise Exception()
 
             self.dev = OCLDevice(useGPU = True,
                                  useDevice = spimagine.__OPENCLDEVICE__)
@@ -189,7 +189,7 @@ class VolumeRenderer:
         else:
             self.dataImg = self.dev.createImage(dataShape,
                 mem_flags = cl.mem_flags.READ_ONLY,
-                channel_order = cl.channel_order.Rx,
+                channel_order = cl.channel_order.INTENSITY,
                 channel_type = cl_datatype_dict[self.dtype])
 
     def update_data(self,data, copyData = False):
