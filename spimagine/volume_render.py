@@ -69,7 +69,7 @@ class VolumeRenderer:
 
         try:
             # simulate GPU fail...
-            raise Exception()
+            # raise Exception()
 
             self.dev = OCLDevice(useGPU = True,
                                  useDevice = spimagine.__OPENCLDEVICE__)
