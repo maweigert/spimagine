@@ -10,6 +10,10 @@ import numpy as np
 import bisect
 from PyQt4 import QtCore
 from spimagine.quaternion import *
+import json
+
+import spimagine
+
 
 class TransformData(object):
     def __init__(self,quatRot = Quaternion(), zoom = 1, dataPos = 0, bounds = [-1,1,-1,1,-1,1]):
@@ -17,7 +21,7 @@ class TransformData(object):
 
 
     def __repr__(self):
-        return " %s \t %s \t %s \t%s: "%(str(self.quatRot),self.zoom,self.dataPos, self.bounds)
+        return "TransformData:\n%s \t %s \t %s \t%s: "%(str(self.quatRot),self.zoom,self.dataPos, self.bounds)
 
     def setData(self,quatRot,zoom, dataPos, bounds):
         self.quatRot = Quaternion.copy(quatRot)
@@ -35,6 +39,7 @@ class TransformData(object):
                              dataPos= newPos, bounds= newBounds)
 
 
+
 class KeyFrame(object):
     def __init__(self,tFrame = 0, transformData = TransformData()):
         self.tFrame = tFrame
@@ -46,6 +51,9 @@ class KeyFrame(object):
     def __cmp__(self,rhs):
         return cmp(self.tFrame,rhs.tFrame)
 
+
+
+""" the keyframe model """
 
 class KeyFrameList(QtCore.QObject):
 
@@ -63,6 +71,10 @@ class KeyFrameList(QtCore.QObject):
 
     def __repr__(self):
         return "\n".join("%s \t %s"%(self.keyDict[k[1]],k[1]) for k in self.tFrames)
+
+
+    def dump_to_file(self,fName):
+        print json.dumps(self._to_dict)
 
     def addItem(self, keyFrame = KeyFrame()):
         logger.debug("KeyFrameList.addItem: %s",keyFrame)
@@ -122,6 +134,55 @@ class KeyFrameList(QtCore.QObject):
         return newTrans
 
 
+    def _to_JSON(self):
+        return json.dumps(self,cls = KeyFrameEncoder)
+
+    @classmethod
+    def _from_JSON(self,jsonStr):
+        return json.loads(jsonStr,cls = KeyFrameDecoder)
+
+
+
+"""JSON routines to save and load from file"""
+
+class KeyFrameEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray) and obj.ndim ==1:
+            return obj.tolist()
+
+        elif isinstance(obj, Quaternion):
+            return obj.data.tolist()
+
+        elif isinstance(obj, (
+                KeyFrame,
+                KeyFrameList,
+                TransformData,
+                spimagine.transform_model.TransformData)):
+            return obj.__dict__
+
+        return json.JSONEncoder.default(self, obj)
+
+
+class KeyFrameDecoder(json.JSONDecoder):
+    def decode(self, s, classname = ""):
+        # print classname," XXXX\n" ,s
+        if classname == "":
+
+            dec = json.JSONDecoder.decode(self,s)
+            ret = KeyFrameList()
+            ret._countID = dec["_countID"]
+            ret.tFrames = dec["tFrames"]
+            ret.keyDict = self.decode(dec["keyDict"],"keyDict")
+            return ret
+        elif classname == "keyDict":
+            return dict((int(k),KeyFrame(v["tFrame"],self.decode(v["transformData"],"transformData"))) for k,v in s.iteritems())
+
+        elif classname == "transformData":
+            t =  TransformData()
+            t.__dict__ = s
+            t.quatRot = Quaternion(*t.quatRot)
+            t.bounds = np.array(t.bounds)
+            return t
 
 
 def test_interpolation():
@@ -132,14 +193,28 @@ def test_interpolation():
         print t, k.getTransform(t)
 
 
+
 if __name__ == '__main__':
 
 
     k = KeyFrameList()
 
-    k.addItem(KeyFrame(.5,TransformData(quatRot = Quaternion(.71,.71,0,0))))
+    k.addItem(KeyFrame(.5,TransformData(zoom=.4,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
-    print k
+    # print k
 
-    for t in np.linspace(0,1,11):
-        print t, k.getTransform(t)
+    # for t in np.linspace(0,1,6):
+    #     print t, k.getTransform(t)
+
+
+
+    s = k._to_JSON()
+
+    print "\n\n\n"
+
+    # k2 = json.loads(s,cls = KeyFrameDecoder)
+
+    k2 = KeyFrameList._from_JSON(open("test.json").read())
+
+    # for t in np.linspace(0,1,6):
+    #     print t, k2.getTransform(t)

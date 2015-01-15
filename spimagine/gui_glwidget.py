@@ -71,7 +71,7 @@ from spimagine.gui_utils import *
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
     from scipy import linalg
-
+    
 
 import time
 from spimagine.quaternion import Quaternion
@@ -213,6 +213,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
 
+            print "PAAATH ", path
             self.setCursor(QtCore.Qt.BusyCursor)
 
             if self.dataModel:
@@ -237,7 +238,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def set_colormap_rgb(self,color=[1.,1.,1.]):
         self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
 
-            
+
     def _set_colormap_array(self,arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
 
