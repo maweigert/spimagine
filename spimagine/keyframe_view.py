@@ -18,6 +18,24 @@ from transform_model import TransformModel
 
 from time import sleep, time
 
+
+
+#this should fix an annoying file url drag drop bug in mac yosemite
+import platform
+if platform.system() =="Darwin" and platform.release()[:2] == "14":
+    try:
+        import Foundation
+    except ImportError:
+        raise("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
+
+    _SYSTEM_DARWIN_14 = True
+    def _parseFileNameFix(fpath):
+        return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
+else:
+    _SYSTEM_DARWIN_14 = False
+
+
+
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     import sys
@@ -360,6 +378,10 @@ class KeyListView(QGraphicsView):
 
                 object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
+
+
+
+
 class RecordThread(QThread):
     notifyProgress = pyqtSignal(int)
     def __init__(self,glWidget,keyView):
@@ -387,6 +409,7 @@ class KeyFramePanel(QWidget):
     def initUI(self):
         self.keyView =  KeyListView()
 
+        self.setAcceptDrops(True)
 
         self.playTimer = QTimer(self)
         self.playTimer.setInterval(30)
@@ -414,6 +437,24 @@ class KeyFramePanel(QWidget):
         self.recordButton.setMaximumWidth(24)
         self.recordButton.setMaximumHeight(24)
 
+        self.saveButton = QPushButton("",self)
+        self.saveButton.setStyleSheet("background-color: black")
+        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
+        self.saveButton.setIcon(QIcon(absPath("images/icon_save.png")))
+        self.saveButton.setIconSize(QSize(24,24))
+        self.saveButton.clicked.connect(self.onSave)
+        self.saveButton.setMaximumWidth(24)
+        self.saveButton.setMaximumHeight(24)
+
+        self.trashButton = QPushButton("",self)
+        self.trashButton.setStyleSheet("background-color: black")
+        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
+        self.trashButton.setIcon(QIcon(absPath("images/icon_trash.png")))
+        self.trashButton.setIconSize(QSize(24,24))
+        self.trashButton.clicked.connect(self.onTrash)
+        self.trashButton.setMaximumWidth(24)
+        self.trashButton.setMaximumHeight(24)
+
         self.progressBar = QProgressBar(self)
         self.progressBar.setRange(0,100)
         # self.recordThread = RecordThread(self.glWidget,self.keyView)
@@ -422,8 +463,12 @@ class KeyFramePanel(QWidget):
 
 
         hbox = QHBoxLayout()
+
+
         hbox.addWidget(self.playButton)
         hbox.addWidget(self.recordButton)
+        hbox.addWidget(self.saveButton)
+        hbox.addWidget(self.trashButton)
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.keyView)
@@ -490,8 +535,6 @@ class KeyFramePanel(QWidget):
     def onPlayTimer(self):
         self.t = (self.t+0.01)%1.
 
-
-
         trans = self.keyView.keyList.getTransform(self.t)
         # print self.t,trans
 
@@ -511,7 +554,45 @@ class KeyFramePanel(QWidget):
         # self.glWidget.transform.setPos(newpos)
         # self.glWidget.dataModel.setPos(newpos)
 
+    def onSave(self):
+        fName = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
+        if fName:
+            self.save_to_JSON(fName)
 
+
+    def onTrash(self):
+        self.keyView.setKeyListModel(KeyFrameList())
+            
+    def save_to_JSON(self,fName):
+        with open(fName,"w") as f:
+            f.write(self.keyView.keyList._to_JSON())
+
+    def load_from_JSON(self,fName):
+        with open(fName,"r") as f:
+            try:
+                newKeyList = KeyFrameList._from_JSON(f.read())
+                self.keyView.setKeyListModel(newKeyList)
+            except:
+                print "not a valid keyframe json file: %s"%fName
+
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+        
+    def dropEvent(self, event):
+
+        for url in event.mimeData().urls():
+            event.accept()
+            path = url.toLocalFile().toLocal8Bit().data()
+
+            if _SYSTEM_DARWIN_14:
+                path = _parseFileNameFix(path)
+
+            self.load_from_JSON(path)
 
 class MainWindow(QMainWindow):
 
@@ -535,11 +616,12 @@ class MainWindow(QMainWindow):
 
         k = KeyFrameList()
         k.addItem(KeyFrame(0.4))
-        k.addItem(KeyFrame(0.9))
+        # k.addItem(KeyFrame(0.9))
+
+
 
         self.keyPanel.keyView.setKeyListModel(k)
 
-        self.keyPanel.keyView.setTransformModel(None)
 
         self.setCentralWidget(self.keyPanel)
 
@@ -557,6 +639,8 @@ if __name__ == '__main__':
     win = MainWindow()
     win.show()
     win.raise_()
+
+    # win.keyPanel.load_from_JSON("test.json")
 
 
     app.exec_()
