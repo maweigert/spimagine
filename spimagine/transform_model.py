@@ -19,7 +19,7 @@ from spimagine.keyframe_model import TransformData
 
 
 class TransformModel(QtCore.QObject):
-    _maxChanged = QtCore.pyqtSignal(int)
+    _maxChanged = QtCore.pyqtSignal(float)
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
     _perspectiveChanged = QtCore.pyqtSignal(int)
@@ -111,7 +111,9 @@ class TransformModel(QtCore.QObject):
 
     def setValueScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
+        logger.debug("set scale to %s,%s"%(minVal, maxVal))
         self._maxChanged.emit(self.maxVal)
+
         self._transformChanged.emit()
 
 
