@@ -2,6 +2,16 @@ import os
 __CONFIGFILE__ = os.path.expanduser("~/.spimagine")
 
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+
+
+
+
 global __OPENCLDEVICE__
 global __DEFAULTCOLORMAP__
 
@@ -10,6 +20,7 @@ global __COLORMAPDICT__
 import ConfigParser, StringIO
 
 import sys
+
 
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
@@ -83,11 +94,6 @@ def setOpenCLDevice(num):
 
 
 
-import logging
-logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)
 
 
 # from spimagine.volume_render import VolumeRenderer
@@ -95,3 +101,18 @@ logger.setLevel(logging.INFO)
 from volshow import volshow, volfig
 
 from data_model import SpimData, TiffData, NumpyData
+
+
+#this should fix an annoying file url drag drop bug in mac yosemite
+import platform
+if platform.system() =="Darwin" and platform.release()[:2] == "14":
+    try:
+        import Foundation
+    except ImportError:
+        raise("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
+
+    _SYSTEM_DARWIN_14 = True
+    def _parseFileNameFix(fpath):
+        return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
+else:
+    _SYSTEM_DARWIN_14 = False

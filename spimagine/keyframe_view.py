@@ -18,21 +18,8 @@ from transform_model import TransformModel
 
 from time import sleep, time
 
+import spimagine
 
-
-#this should fix an annoying file url drag drop bug in mac yosemite
-import platform
-if platform.system() =="Darwin" and platform.release()[:2] == "14":
-    try:
-        import Foundation
-    except ImportError:
-        raise("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
-
-    _SYSTEM_DARWIN_14 = True
-    def _parseFileNameFix(fpath):
-        return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
-else:
-    _SYSTEM_DARWIN_14 = False
 
 
 
@@ -252,14 +239,21 @@ class KeyNode(QGraphicsItem):
 
 class KeyFrameScene(QGraphicsScene):
     WIDTH = 100
-    HEIGHT = 50
+    HEIGHT = 10
 
-    # def mousePressEvent(self, event):
-    #     print "Scene"
-    #     super(KeyFrameScene, self).mousePressEvent(event)
-    #     item = self.itemAt(event.scenePos())
-    #     if event.button() == Qt.RightButton and  type(item) != KeyNode:
-    #         print "Hurray"
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+
+    # def __init__(self, parent):
+    #     super(KeyFrameScene, self).__init__(parent)
+
 
 
 class KeyListView(QGraphicsView):
@@ -275,10 +269,16 @@ class KeyListView(QGraphicsView):
         self.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Fixed)
 
         self.scene = KeyFrameScene(self)
+
+        self.setMinimumHeight(30)
+        self.setMaximumHeight(30)
+
         self.scene.setItemIndexMethod(QGraphicsScene.NoIndex)
         self.scene.setSceneRect(0, -KeyFrameScene.HEIGHT/2, KeyFrameScene.WIDTH, KeyFrameScene.HEIGHT)
 
         self.setScene(self.scene)
+
+        # self.scale(1,.1)
 
         # self.setMinimumSize(300,20)
         self.setWindowTitle("KeyFrameView")
@@ -301,7 +301,6 @@ class KeyListView(QGraphicsView):
 
 
     def setKeyListModel(self,keyList):
-
         self.keyList = keyList
         self.resetScene()
         self.keyList._modelChanged.connect(self.modelChanged)
@@ -338,12 +337,8 @@ class KeyListView(QGraphicsView):
         super(KeyListView, self).keyPressEvent(event)
 
     def resizeEvent(self,event):
-        # super(KeyListView, self).resizeEvent(event)
-
         self.relativeAspect = 1.*event.size().width()/KeyFrameScene.WIDTH
-        # print event.size()
         self.setTransform(QTransform.fromScale(self.relativeAspect*self.zoom, 1.))
-        # self.resize(event.size().width(),KeyFrameScene.HEIGHT)
 
 
     def wheelEvent(self, event):
@@ -354,7 +349,8 @@ class KeyListView(QGraphicsView):
 
     def drawBackground(self,painter, rect):
         sceneRect = self.sceneRect()
-        painter.setBrush(Qt.black)
+        # painter.setBrush(Qt.black)
+        painter.setBrush(QColor(50,50,50))
         painter.drawRect(sceneRect)
 
 
@@ -379,6 +375,24 @@ class KeyListView(QGraphicsView):
                 object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
 
+    def load_from_JSON(self,fName):
+        with open(fName,"r") as f:
+            try:
+                newKeyList = KeyFrameList._from_JSON(f.read())
+                self.setKeyListModel(newKeyList)
+            except:
+                print "not a valid keyframe json file: %s"%fName
+
+    def dropEvent(self, event):
+        logger.debug("droping...")
+        for url in event.mimeData().urls():
+            event.accept()
+            path = url.toLocalFile().toLocal8Bit().data()
+
+            if spimagine._SYSTEM_DARWIN_14:
+                path = spimagine._parseFileNameFix(path)
+
+            self.load_from_JSON(path)
 
 
 
@@ -402,7 +416,7 @@ class KeyFramePanel(QWidget):
     def __init__(self, glWidget):
         super(QWidget,self).__init__()
         self.glWidget = glWidget
-        self.resize(500, 50)
+        self.resize(500, 30)
         self.initUI()
 
 
@@ -472,7 +486,7 @@ class KeyFramePanel(QWidget):
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.keyView)
-        vbox.addWidget(self.progressBar)
+        # vbox.addWidget(self.progressBar)
 
         hbox.addLayout(vbox)
 
@@ -481,6 +495,7 @@ class KeyFramePanel(QWidget):
 
         self.setDirName("./")
         self.t = 0
+
 
 
     def resetModels(self,transformModel,keyList=KeyFrameList()):
@@ -562,44 +577,44 @@ class KeyFramePanel(QWidget):
 
     def onTrash(self):
         self.keyView.setKeyListModel(KeyFrameList())
-            
-    def save_to_JSON(self,fName):
-        with open(fName,"w") as f:
-            f.write(self.keyView.keyList._to_JSON())
 
-    def load_from_JSON(self,fName):
-        with open(fName,"r") as f:
-            try:
-                newKeyList = KeyFrameList._from_JSON(f.read())
-                self.keyView.setKeyListModel(newKeyList)
-            except:
-                print "not a valid keyframe json file: %s"%fName
+    # def save_to_JSON(self,fName):
+    #     with open(fName,"w") as f:
+    #         f.write(self.keyView.keyList._to_JSON())
+
+    # def load_from_JSON(self,fName):
+    #     with open(fName,"r") as f:
+    #         try:
+    #             newKeyList = KeyFrameList._from_JSON(f.read())
+    #             self.keyView.setKeyListModel(newKeyList)
+    #         except:
+    #             print "not a valid keyframe json file: %s"%fName
 
 
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
+    # def dragEnterEvent(self, event):
+    #     if event.mimeData().hasUrls():
+    #         event.accept()
+    #     else:
+    #         event.ignore()
 
-        
-    def dropEvent(self, event):
 
-        for url in event.mimeData().urls():
-            event.accept()
-            path = url.toLocalFile().toLocal8Bit().data()
+    # def dropEvent(self, event):
 
-            if _SYSTEM_DARWIN_14:
-                path = _parseFileNameFix(path)
+    #     for url in event.mimeData().urls():
+    #         event.accept()
+    #         path = url.toLocalFile().toLocal8Bit().data()
 
-            self.load_from_JSON(path)
+    #         if _SYSTEM_DARWIN_14:
+    #             path = spimagine._parseFileNameFix(path)
+
+    #         self.load_from_JSON(path)
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow,self).__init__()
 
-        self.resize(500, 100)
+        self.resize(500, 40)
         self.setWindowTitle("Key Frame View")
 
 
@@ -628,7 +643,24 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("background-color:black;")
 
 
+    # def resizeEvent(self,event):
+    #     newSize = event.size()
+    #     newSize.setHeight(10)
+    #     self.resize(newSize)
 
+
+class MainWindowEmpty(QMainWindow):
+
+    def __init__(self):
+        super(MainWindowEmpty,self).__init__()
+
+        self.setWindowTitle("Key Frame View")
+
+        self.foo = KeyListView()
+
+        self.setCentralWidget(self.foo)
+
+        self.setStyleSheet("background-color:black;")
 
 if __name__ == '__main__':
 
@@ -637,10 +669,10 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     win = MainWindow()
+
+    # win = MainWindowEmpty()
+
     win.show()
     win.raise_()
-
-    # win.keyPanel.load_from_JSON("test.json")
-
 
     app.exec_()

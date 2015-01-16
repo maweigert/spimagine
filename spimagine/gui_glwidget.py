@@ -213,7 +213,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
 
-            print "PAAATH ", path
+            if spimagine._SYSTEM_DARWIN_14:
+                path = spimagine._parseFileNameFix(path)
+
             self.setCursor(QtCore.Qt.BusyCursor)
 
             if self.dataModel:

@@ -63,6 +63,10 @@ def absPath(myPath):
 
 
 class MainWidget(QtGui.QWidget):
+    N_SCALE_MIN_EXP = -16
+    N_SCALE_MAX_EXP = 16
+    N_SCALE_SLIDER = 500
+    N_GAMMA_SLIDER = 200
 
     def __init__(self, parent = None):
         super(QtGui.QWidget,self).__init__(parent)
@@ -143,40 +147,39 @@ class MainWidget(QtGui.QWidget):
 
         self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
 
-        Nslider = 250
-        self.scaleSlider.setRange(1, Nslider)
+        self.scaleSlider.setRange(1, self.N_SCALE_SLIDER)
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.scaleSlider.setToolTip("value scale")
 
         self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.gammaSlider.setRange(0, 200)
+        self.gammaSlider.setRange(0, self.N_GAMMA_SLIDER)
         self.gammaSlider.setToolTip("value gamma")
 
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.gammaSlider.setValue(50)
 
-        # _x1 = 1.e-3
-        # _x2 = 2.**16
-
-        # def foo(x):
-        #     y = 200*np.log(1.*x/_x1)/np.log(1.*_x2/_x1)
-        #     z = _x1*(1.*_x2/_x1)**(y/200.)
-            
-        #     print x, y, z
-
         # self.scaleSlider.valueChanged.connect(
-        #     lambda x: self.transform.setValueScale(0,_x1*(1.*_x2/_x1)**(x/200.)))
-
-        # self.transform._maxChanged.connect(foo)
-
+        #     lambda x: self.transform.setValueScale(0,x**2))
         # self.transform._maxChanged.connect(
-        #     lambda x: self.scaleSlider.setValue(int(200*np.log(1+1.*x/_x1)/np.log(1.*_x2/_x1))))
+        #     lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
 
-        self.scaleSlider.valueChanged.connect(
-            lambda x: self.transform.setValueScale(0,x**2))
-        self.transform._maxChanged.connect(
-            lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
+        def func_from_n(n):
+            return 2**(self.N_SCALE_MIN_EXP+(self.N_SCALE_MAX_EXP-self.N_SCALE_MIN_EXP)*(n-1.)/(self.N_SCALE_SLIDER-1))
+
+
+        def func_to_n(x):
+            if x<2**self.N_SCALE_MIN_EXP:
+                print "gg", x
+                return 1
+            elif x>2**self.N_SCALE_MAX_EXP:
+                return self.N_SCALE_SLIDER
+
+            return int(round(1.+(self.N_SCALE_SLIDER-1.)*(np.log2(x)-self.N_SCALE_MIN_EXP)/(self.N_SCALE_MAX_EXP-1.*self.N_SCALE_MIN_EXP)))
+
+
+        self.scaleSlider.valueChanged.connect(lambda x: self.transform.setValueScale(0,func_from_n(x)))
+        self.transform._maxChanged.connect(lambda x: self.scaleSlider.setValue(func_to_n(x)))
 
 
         gammaMin, gammaMax = .25, 2.
