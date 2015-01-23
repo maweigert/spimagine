@@ -75,7 +75,6 @@ class MainWidget(QtGui.QWidget):
 
         self.isCloseFlag = False
 
-
         self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
