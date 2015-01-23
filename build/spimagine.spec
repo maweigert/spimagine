@@ -14,7 +14,8 @@ def addAll(folderPath,attrib = "Data"):
 a = Analysis(['../spimagine/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine',
                      '/Library/Python/2.7/site-packages/libtiff'],
-             hiddenimports=[],
+             hiddenimports=[
+                 'scipy.special._ufuncs_cxx'],
              hookspath=None,
              runtime_hooks=None)
 pyz = PYZ(a.pure)

@@ -32,8 +32,13 @@ logger = logging.getLogger(__name__)
 
 import os
 from PyOCL import cl, OCLDevice, OCLProcessor, cl_datatype_dict
+
+#this is due to some pyinstaller bug!
+from scipy.integrate import *
+
+
+
 from scipy.misc import imsave
-from numpy import *
 import numpy as np
 from scipy.linalg import inv
 
@@ -211,7 +216,7 @@ class VolumeRenderer:
     def set_box_boundaries(self,boxBounds = [-1,1,-1,1,-1,1]):
         self.boxBounds = np.array(boxBounds)
 
-    def set_units(self,stackUnits = ones(3)):
+    def set_units(self,stackUnits = np.ones(3)):
         self.stackUnits = np.array(stackUnits)
 
     def set_projection(self,projection = mat4_identity()):
@@ -276,11 +281,30 @@ class VolumeRenderer:
         self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
 
-        self.proc.runKernel("max_project",
+        # self.proc.runKernel("max_project",
+        #                     (self.width,self.height),
+        #                     None,
+        #                     self.buf,
+        #                     np.int32(self.width),np.int32(self.height),
+        #                     np.float32(self.boxBounds[0]),
+        #                     np.float32(self.boxBounds[1]),
+        #                     np.float32(self.boxBounds[2]),
+        #                     np.float32(self.boxBounds[3]),
+        #                     np.float32(self.boxBounds[4]),
+        #                     np.float32(self.boxBounds[5]),
+        #                     np.float32(self.maxVal),
+        #                     np.float32(self.gamma),
+        #                     self.invPBuf,
+        #                     self.invMBuf,
+        #                     self.dataImg,
+        #                     np.int32(self.dtype == np.uint16)
+        #                     )
+
+        self.proc.runKernel("max_project_test",
                             (self.width,self.height),
                             None,
                             self.buf,
-                            int32(self.width),int32(self.height),
+                            np.int32(self.width),np.int32(self.height),
                             np.float32(self.boxBounds[0]),
                             np.float32(self.boxBounds[1]),
                             np.float32(self.boxBounds[2]),

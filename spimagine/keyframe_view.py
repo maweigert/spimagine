@@ -175,7 +175,8 @@ class KeyNode(QGraphicsItem):
         painter.setPen(QPen(Qt.black, 0))
         painter.setPen(QPen(Qt.transparent, 0))
 
-        painter.drawEllipse(*self.shapeSize)
+        # painter.drawEllipse(*self.shapeSize)
+        painter.drawRect(*self.shapeSize)
         # painter.drawPie(*(list(self.shapeSize)+[0,180*16]))
 
     def itemChange(self, change, value):
@@ -414,7 +415,7 @@ class RecordThread(QThread):
 
 class KeyFramePanel(QWidget):
     def __init__(self, glWidget):
-        super(QWidget,self).__init__()
+        super(KeyFramePanel,self).__init__()
         self.glWidget = glWidget
         self.resize(500, 30)
         self.initUI()
@@ -649,6 +650,25 @@ class MainWindow(QMainWindow):
     #     self.resize(newSize)
 
 
+class FooWidget(QWidget):
+    def __init__(self):
+        super(FooWidget,self).__init__()
+
+        foo = KeyListView()
+
+
+        slider = QSlider(Qt.Horizontal)
+        slider.setTickPosition(QSlider.TicksBothSides)
+        slider.setTickInterval(1)
+        slider.setFocusPolicy(Qt.ClickFocus)
+        slider.setTracking(True)
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(foo)
+        vbox.addWidget(slider)
+
+        self.setLayout(vbox)
+
 class MainWindowEmpty(QMainWindow):
 
     def __init__(self):
@@ -656,10 +676,12 @@ class MainWindowEmpty(QMainWindow):
 
         self.setWindowTitle("Key Frame View")
 
-        self.foo = KeyListView()
+        self.foo = FooWidget()
+
+
 
         self.setCentralWidget(self.foo)
-
+        self.resize(500,60)
         self.setStyleSheet("background-color:black;")
 
 if __name__ == '__main__':
@@ -668,9 +690,9 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
-    win = MainWindow()
+    # win = MainWindow()
 
-    # win = MainWindowEmpty()
+    win = MainWindowEmpty()
 
     win.show()
     win.raise_()

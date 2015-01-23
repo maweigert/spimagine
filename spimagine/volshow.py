@@ -177,8 +177,7 @@ if __name__ == '__main__':
     # d = np.ones((512,)*3)
 
 
-    # volshow(d,blocking = False)
-
+    # volshow(DemoData(10),blocking = False)
     
     volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
