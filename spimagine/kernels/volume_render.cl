@@ -278,25 +278,27 @@ max_project_exp(__global float *d_output,
 
 __kernel void
 max_project_test(__global float *d_output, 
-			uint Nx, uint Ny,
-			float boxMin_x,
-			float boxMax_x,
-			float boxMin_y,
-			float boxMax_y,
-			float boxMin_z,
-			float boxMax_z,
-			float maxVal,
-			float gamma,
-			__constant float* invP,
-			__constant float* invM,
-			__read_only image3d_t volume,
-			int isShortType)
+				 uint Nx, uint Ny,
+				 float boxMin_x,
+				 float boxMax_x,
+				 float boxMin_y,
+				 float boxMax_y,
+				 float boxMin_z,
+				 float boxMax_z,
+				 float maxVal,
+				 float gamma,
+				 float alpha_pow,
+
+				 __constant float* invP,
+				 __constant float* invM,
+				 __read_only image3d_t volume,
+				 int isShortType)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
 	// CLK_FILTER_NEAREST ;
 	CLK_FILTER_LINEAR ;
-
+  
   uint x = get_global_id(0);
   uint y = get_global_id(1);
 
@@ -373,7 +375,7 @@ max_project_test(__global float *d_output,
 	colVal = max(colVal, newVal*(1-alphaVal));
 
 	
-	alphaVal += .1*(1.f-alphaVal)*newVal*newVal;
+	alphaVal += (1.f-alphaVal)*pow(newVal,alpha_pow);
 	
   	t += tstep;
   	if ((t > tfar) || (alphaVal >=1.f))

@@ -32,6 +32,8 @@ class TransformModel(QtCore.QObject):
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
 
+    _alphaPowChanged = QtCore.pyqtSignal(float)
+
     def __init__(self):
         super(TransformModel,self).__init__()
         self.reset()
@@ -50,6 +52,7 @@ class TransformModel(QtCore.QObject):
         self.setPerspective()
         self.setValueScale(0,maxVal)
         self.setGamma(1.)
+        self.setAlphaPow(100.)
         self.setBox(True)
         self.setBounds(-1,1.,-1,1,-1,1)
 
@@ -109,6 +112,13 @@ class TransformModel(QtCore.QObject):
         self._gammaChanged.emit(self.gamma)
         self._transformChanged.emit()
 
+
+    def setAlphaPow(self, alphaPow):
+        logger.debug("setAlphaPow(%s)",alphaPow)
+        self.alphaPow = alphaPow
+        self._alphaPowChanged.emit(self.alphaPow)
+        self._transformChanged.emit()
+        
     def setValueScale(self,minVal,maxVal):
         self.minVal, self.maxVal = minVal, maxVal
         logger.debug("set scale to %s,%s"%(minVal, maxVal))

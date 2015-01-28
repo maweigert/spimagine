@@ -116,6 +116,7 @@ class VolumeRenderer:
         self.set_gamma()
         self.set_max_val()
 
+        self.set_alpha_pow()
         self.set_box_boundaries()
         self.set_units()
 
@@ -166,6 +167,9 @@ class VolumeRenderer:
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
 
+    def set_alpha_pow(self,alphaPow = 10.):
+        self.alphaPow = alphaPow
+        
 
     def set_data(self,data, autoConvert = True, copyData = False):
         if not autoConvert and not data.dtype in self.dtypes:
@@ -313,6 +317,7 @@ class VolumeRenderer:
                             np.float32(self.boxBounds[5]),
                             np.float32(self.maxVal),
                             np.float32(self.gamma),
+                            np.float32(self.alphaPow),
                             self.invPBuf,
                             self.invMBuf,
                             self.dataImg,
