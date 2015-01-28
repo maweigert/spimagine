@@ -71,7 +71,7 @@ from spimagine.gui_utils import *
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
     from scipy import linalg
-    
+
 
 import time
 from spimagine.quaternion import Quaternion
@@ -107,6 +107,45 @@ void main()
   gl_FragColor = vec4(lut.xyz,col.x);
 
 //  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+
+
+}
+"""
+vertShaderSliceTex ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+attribute vec2 texcoord;
+varying vec2 mytexcoord;
+
+void main()
+{
+    vec3 pos = position;
+    gl_Position = mvpMatrix *vec4(pos, 1.0);
+
+    mytexcoord = texcoord;
+}
+"""
+
+fragShaderSliceTex = """
+uniform sampler2D texture;
+uniform sampler2D texture_LUT;
+varying vec2 mytexcoord;
+
+void main()
+{
+   vec4 col = texture2D(texture,mytexcoord);
+
+   vec4 lut = texture2D(texture_LUT,col.xy);
+
+ gl_FragColor = vec4(lut.xyz,1.);
+
+  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+
+  //gl_FragColor = vec4(1.,1.,1.,1.);;
+//gl_FragColor = mytexcoord.y*vec4(1.,1.,1.,1.);
+
+//gl_FragColor =texture2D(texture,mytexcoord);
+  //gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
 
 
 }
@@ -169,6 +208,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.sliceOutput = zeros((100,100),dtype = np.float32)
 
         self.setTransform(TransformModel())
 
@@ -270,10 +310,21 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programCube.bind()
         logger.debug("GLSL programCube log:%s",self.programCube.log())
 
+        self.programSlice = QtOpenGL.QGLShaderProgram()
+        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,
+                                                  vertShaderSliceTex)
+        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment,
+                                                  fragShaderSliceTex)
+        self.programSlice.link()
+        self.programSlice.bind()
+        logger.debug("GLSL programCube log:%s",self.programSlice.log())
+
+
 
         glClearColor(0,0,0,1.)
 
         self.texture = None
+        self.textureSlice = None
 
         self.quadCoord = np.array([[-1.,-1.,0.],
                            [1.,-1.,0.],
@@ -395,19 +446,55 @@ class GLWidget(QtOpenGL.QGLWidget):
 
                 # glDrawArrays(GL_TRIANGLES,0,len(self.cubeFaceCoord))
 
-            if self.transform.isSlice:
-                # draw the slice
-                self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programCube.enableAttributeArray("position")
-
-                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+            if self.transform.isSlice and self.sliceOutput is not None:
+                #draw the slice
+                self.programSlice.bind()
+                self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+                self.programSlice.enableAttributeArray("position")
 
                 pos, dim = self.transform.slicePos,self.transform.sliceDim
 
                 coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-                self.programCube.setAttributeArray("position", coords)
+
+                texcoords = [[0.,0.],[1,0.],[1.,1.],
+                             [1.,1.],[0.,1.],[0.,0.]]
+
+
+
+                print amin(self.sliceOutput),amax(self.sliceOutput)
+
+                self.programSlice.setAttributeArray("position", coords)
+                self.programSlice.setAttributeArray("texcoord", texcoords)
+
+                self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
+
+
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.textureSlice)
+                self.programSlice.setUniformValue("texture",0)
+
+
+                glActiveTexture(GL_TEXTURE1)
+                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+                self.programSlice.setUniformValue("texture_LUT",1)
+
+
                 glDrawArrays(GL_TRIANGLES,0,len(coords))
+
+                # OLD
+                # draw the slice
+                # self.programCube.bind()
+                # self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+                # self.programCube.enableAttributeArray("position")
+
+                # self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+
+
+                # pos, dim = self.transform.slicePos,self.transform.sliceDim
+
+                # coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+                # self.programCube.setAttributeArray("position", coords)
+                # glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
             # Draw the render texture
@@ -449,9 +536,20 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
+            self.renderer.set_alpha_pow(self.transform.alphaPow)
             self.output = self.renderer.render()
 
-            # print "time: %.f"%(1000*(time.time()-t))
+            if self.transform.isSlice:
+                if self.transform.sliceDim==0:
+                    out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
+                elif self.transform.sliceDim==1:
+                    out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
+                elif self.transform.sliceDim==2:
+                    out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
+
+                # self.sliceOutput = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
+                self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
+
 
 
     def saveFrame(self,fName):

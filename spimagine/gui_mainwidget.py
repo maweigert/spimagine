@@ -271,6 +271,9 @@ class MainWidget(QtGui.QWidget):
         self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)
 
         self.settingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
+
+        self.settingsView._alphaPowChanged.connect(self.glWidget.transform.setAlphaPow)
+
         self.glWidget.transform._boundsChanged.connect(self.settingsView.setBounds)
 
         self.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)

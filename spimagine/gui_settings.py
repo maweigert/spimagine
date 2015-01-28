@@ -49,7 +49,7 @@ class SettingsPanel(QtGui.QWidget):
     _dirNameChanged =  QtCore.pyqtSignal(str)
     _frameNumberChanged = QtCore.pyqtSignal(int)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
-
+    _alphaPowChanged = QtCore.pyqtSignal(float)
 
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
@@ -144,6 +144,19 @@ class SettingsPanel(QtGui.QWidget):
         gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),6,0)
         gridBox.addWidget(self.checkEgg,6,1)
 
+
+
+        self.sliderAlphaPow = QtGui.QSlider(QtCore.Qt.Horizontal) 
+        self.sliderAlphaPow.setRange(0,100)
+        self.sliderAlphaPow.setTickInterval(1)
+        self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderAlphaPow.setTracking(True)
+        self.sliderAlphaPow.setValue(100)
+        self.sliderAlphaPow.valueChanged.connect(self.alphaPowChanged)
+
+        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),7,0)
+        gridBox.addWidget(self.sliderAlphaPow,7,1)
+  
         vbox.addLayout(gridBox)
 
 
@@ -256,6 +269,11 @@ class SettingsPanel(QtGui.QWidget):
         bounds = [s.value()/100. for s in self.sliderBounds]
         self._boundsChanged.emit(*bounds)
 
+
+    def alphaPowChanged(self):
+        alphaPow = 100.*(self.sliderAlphaPow.value()/100.)**3
+        self._alphaPowChanged.emit(alphaPow)
+        
     def stackUnitsChanged(self):
         try:
             stackUnits = [float(e.text()) for e in self.stackEdits]
