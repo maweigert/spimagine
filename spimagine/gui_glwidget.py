@@ -95,18 +95,21 @@ void main()
 
 fragShaderTex = """
 uniform sampler2D texture;
+uniform sampler2D texture_alpha;
 uniform sampler2D texture_LUT;
 varying vec2 mytexcoord;
 
 void main()
 {
   vec4 col = texture2D(texture,mytexcoord);
+  vec4 alph = texture2D(texture_alpha,mytexcoord);
 
   vec4 lut = texture2D(texture_LUT,col.xy);
 
   gl_FragColor = vec4(lut.xyz,col.x);
 
-//  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+  gl_FragColor.w = 1.0*length(col.xyz);
+  gl_FragColor.w = 1.0*alph.x;
 
 
 }
@@ -140,12 +143,8 @@ void main()
  gl_FragColor = vec4(lut.xyz,1.);
 
   gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+  gl_FragColor.w = 1.0;
 
-  //gl_FragColor = vec4(1.,1.,1.,1.);;
-//gl_FragColor = mytexcoord.y*vec4(1.,1.,1.,1.);
-
-//gl_FragColor =texture2D(texture,mytexcoord);
-  //gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
 
 
 }
@@ -169,8 +168,8 @@ uniform vec4 color;
 
 void main()
 {
-  gl_FragColor = vec4(1.,1.,1.,.6);
-  gl_FragColor = color;
+  gl_FragColor = vec4(1.,1.,1.,.3);
+//  gl_FragColor = color;
 }
 """
 
@@ -202,12 +201,15 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((800,800))
+        self.renderer = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
+
         self.renderer.dev.printInfo()
         self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.outputAlpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+
         self.sliceOutput = zeros((100,100),dtype = np.float32)
 
         self.setTransform(TransformModel())
@@ -324,6 +326,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClearColor(0,0,0,1.)
 
         self.texture = None
+        self.textureAlpha = None
         self.textureSlice = None
 
         self.quadCoord = np.array([[-1.,-1.,0.],
@@ -421,7 +424,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.resized = False
 
 
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
 
         if self.dataModel:
             modelView = self.transform.getModelView()
@@ -460,8 +465,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                              [1.,1.],[0.,1.],[0.,0.]]
 
 
-
-                print amin(self.sliceOutput),amax(self.sliceOutput)
 
                 self.programSlice.setAttributeArray("position", coords)
                 self.programSlice.setAttributeArray("texcoord", texcoords)
@@ -502,7 +505,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.texture = fillTexture2d(self.output,self.texture)
 
+            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
+            # print self.output
+
+            # print self.output_alpha
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
@@ -517,8 +524,12 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.programTex.setUniformValue("texture",0)
 
             glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+            self.programTex.setUniformValue("texture_alpha",1)
+
+            glActiveTexture(GL_TEXTURE2)
             glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",1)
+            self.programTex.setUniformValue("texture_LUT",2)
 
 
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
@@ -537,7 +548,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
             self.renderer.set_alpha_pow(self.transform.alphaPow)
-            self.output = self.renderer.render()
+            self.output, self.output_alpha = self.renderer.render(return_alpha = True)
+
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
@@ -638,9 +650,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             x, y = self.posToVec2(event.x(),event.y())
 
             dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
-            self.transform.translate[0] += dx
-            self.transform.translate[1] += dy
 
+            self.transform.addTranslate(dx,dy,foo)
             self._x0,self._y0 = x,y
 
         self.refresh()

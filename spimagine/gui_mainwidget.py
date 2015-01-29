@@ -30,6 +30,8 @@ from spimagine import egg3d
 
 from spimagine.gui_slice_view import SliceWidget
 
+from spimagine.floatslider import FloatSlider
+
 from spimagine.transform_model import TransformModel
 
 from spimagine.gui_utils import *
@@ -66,7 +68,6 @@ class MainWidget(QtGui.QWidget):
     N_SCALE_MIN_EXP = -16
     N_SCALE_MAX_EXP = 16
     N_SCALE_SLIDER = 500
-    N_GAMMA_SLIDER = 200
 
     def __init__(self, parent = None):
         super(QtGui.QWidget,self).__init__(parent)
@@ -107,11 +108,13 @@ class MainWidget(QtGui.QWidget):
 
 
 
-        self.centerButton = createStandardButton(self, fName = absPath("images/icon_center.png"),
-                                                 method = self.center, tooltip = "center view")
+        self.centerButton = createStandardButton(self,
+                        fName = absPath("images/icon_center.png"),
+                        method = self.center, tooltip = "center view")
 
-        self.rotateButton = createStandardButton(self, fName = absPath("images/icon_rotate.png"),
-                                                 method = self.rotate, tooltip = "spin current view")
+        self.rotateButton = createStandardButton(self,
+                        fName = absPath("images/icon_rotate.png"),
+                        method = self.rotate, tooltip = "spin current view")
 
         self.screenshotButton = createStandardButton(self, fName = absPath("images/icon_camera.png"),
                                                 method = self.screenShot, tooltip = "save as png")
@@ -150,18 +153,14 @@ class MainWidget(QtGui.QWidget):
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.scaleSlider.setToolTip("value scale")
 
-        self.gammaSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-        self.gammaSlider.setRange(0, self.N_GAMMA_SLIDER)
+
+        self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
+        self.gammaSlider.setRange(.25,2.)
+
         self.gammaSlider.setToolTip("value gamma")
-
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.gammaSlider.setValue(1.)
 
-        self.gammaSlider.setValue(50)
-
-        # self.scaleSlider.valueChanged.connect(
-        #     lambda x: self.transform.setValueScale(0,x**2))
-        # self.transform._maxChanged.connect(
-        #     lambda x: self.scaleSlider.setValue(int(np.sqrt(x))))
 
         def func_from_n(n):
             return 2**(self.N_SCALE_MIN_EXP+(self.N_SCALE_MAX_EXP-self.N_SCALE_MIN_EXP)*(n-1.)/(self.N_SCALE_SLIDER-1))
@@ -180,13 +179,8 @@ class MainWidget(QtGui.QWidget):
         self.scaleSlider.valueChanged.connect(lambda x: self.transform.setValueScale(0,func_from_n(x)))
         self.transform._maxChanged.connect(lambda x: self.scaleSlider.setValue(func_to_n(x)))
 
-
-        gammaMin, gammaMax = .25, 2.
-        self.gammaSlider.valueChanged.connect(
-            lambda x: self.transform.setGamma(gammaMin+x/200.*(gammaMax-gammaMin)))
-        self.transform._gammaChanged.connect(
-            lambda gam: self.gammaSlider.setValue(200*(gam-gammaMin)/(gammaMax-gammaMin)))
-
+        self.gammaSlider.floatValueChanged.connect(self.transform.setGamma)
+        self.transform._gammaChanged.connect(self.gammaSlider.setValue)
 
         # self.keyframes = KeyFrameList()
         self.keyPanel = KeyFramePanel(self.glWidget)
@@ -204,7 +198,7 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.scaleSlider)
         hbox0.addWidget(self.gammaSlider)
 
-        hbox0.addWidget(self.glWidget,stretch =1)
+        hbox0.addWidget(self.glWidget,stretch = 3)
 
         hbox0.addWidget(self.sliceWidget,stretch =1)
 

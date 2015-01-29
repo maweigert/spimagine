@@ -277,7 +277,7 @@ max_project_exp(__global float *d_output,
 
 
 __kernel void
-max_project_test(__global float *d_output, 
+max_project_test(__global float *d_output, __global float *d_alpha_output, 
 				 uint Nx, uint Ny,
 				 float boxMin_x,
 				 float boxMax_x,
@@ -341,6 +341,8 @@ max_project_test(__global float *d_output,
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
+	  d_alpha_output[x+Nx*y] = 0.f;
+
   	}
   	return;
   }
@@ -383,15 +385,19 @@ max_project_test(__global float *d_output,
   }
 
 
-  // if ((x==300 & y==300))
-  // 	printf("kern:  %.4f  %.4f\n",colVal,alphaVal);
-
-  // colVal = (maxVal == 0)?colVal:colVal/maxVal;
   colVal = pow(colVal,gamma);
 
+  colVal = clamp(colVal,0.f,1.f);
 
-  if ((x < Nx) && (y < Ny))
+  alphaVal = clamp(alphaVal,0.f,1.f);
+
+  if ((x < Nx) && (y < Ny)){
 	d_output[x+Nx*y] = colVal;
+	
+  	d_alpha_output[x+Nx*y] = alphaVal*alphaVal+(1-alphaVal)*colVal;
+	d_alpha_output[x+Nx*y] = colVal+(1.-colVal)*exp(-alpha_pow);
+
+  }
 
   // if ((x == Nx/2) && (y == Ny/2))
   // 	printf4((float4)(tnear,tfar,0,0));

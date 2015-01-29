@@ -16,18 +16,27 @@ import spimagine
 
 
 class TransformData(object):
-    def __init__(self,quatRot = Quaternion(), zoom = 1, dataPos = 0, bounds = [-1,1,-1,1,-1,1]):
-        self.setData(quatRot,zoom,dataPos,bounds)
+    def __init__(self,quatRot = Quaternion(),
+                 zoom = 1,
+                 dataPos = 0,
+                 translate = [0,0,0],
+                 bounds = [-1,1,-1,1,-1,1],
+                 isBox = False,
+                 alphaPow = 1.):
+        self.setData(quatRot,zoom,dataPos,translate,bounds,isBox,alphaPow)
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s: "%(str(self.quatRot),self.zoom,self.dataPos, self.bounds)
+        return "TransformData:\n%s \t %s \t %s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos, self.bounds,self.isBox,self.alphaPow)
 
-    def setData(self,quatRot,zoom, dataPos, bounds):
+    def setData(self,quatRot,zoom, dataPos, translate, bounds,isBox,alphaPow):
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
         self.dataPos = dataPos
         self.bounds  = np.array(bounds)
+        self.isBox = isBox
+        self.alphaPow = alphaPow
+        self.translate = np.array(translate)
 
     @classmethod
     def interp(cls,x1,x2,t):
@@ -35,8 +44,14 @@ class TransformData(object):
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
         newPos = int((1.-t)*x1.dataPos + t*x2.dataPos)
         newBounds = (1.-t)*x1.bounds + t*x2.bounds
+        newBox = ((1.-t)*x1.isBox + t*x2.isBox)>.5
+        newAlphaPow = (1.-t)*x1.alphaPow + t*x2.alphaPow
+        newTranslate = (1.-t)*x1.translate + t*x2.translate
+
         return TransformData(quatRot = newQuat,zoom = newZoom,
-                             dataPos= newPos, bounds= newBounds)
+                             dataPos= newPos, translate = newTranslate,
+                             bounds= newBounds,
+                             isBox = newBox, alphaPow = newAlphaPow)
 
 
 
@@ -44,6 +59,7 @@ class KeyFrame(object):
     def __init__(self,tFrame = 0, transformData = TransformData()):
         self.tFrame = tFrame
         self.transformData = transformData
+
 
     def __repr__(self):
         return "t = %.3f \t %s"%(self.tFrame,self.transformData)
@@ -109,11 +125,30 @@ class KeyFrameList(QtCore.QObject):
     def _IDToN(self,ID):
         return bisect.bisect_left(self.tFrames,[self.keyDict[ID].tFrame,ID])
 
+    def update_tFrame(self,myID, newTime):
+        # print myID,self._IDToN(myID)
+        # print self.tFrames
+        # print self.tFrames[self._IDToN(myID)][0]
+        #hACK!!!  please improve
+        for i,t in enumerate(self.tFrames):
+            if t[1] == myID:
+                self.tFrames[i][0] = newTime
+
+        self[myID].tFrame = newTime
+
 
     def getTransform(self,tFrame):
         logger.debug("getTransform")
-        ind = bisect.bisect(self.tFrames,[tFrame,-1])
 
+        ind  = len(self.tFrames)
+        for i,t in enumerate(self.tFrames):
+            if t[0]>=tFrame:
+                ind = i
+                break
+
+        # ind = bisect.bisect(self.tFrames,[tFrame,-1])
+
+        # print ind
         # clamping
         left = max(ind-1,0)
         right = min(ind,len(self.tFrames)-1)
@@ -127,6 +162,9 @@ class KeyFrameList(QtCore.QObject):
         else:
             lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
 
+        # print lam, self.tFrames, self.keyDict
+        # print frameLeft
+        # print  frameRight
         #transforms:
 
         newTrans = TransformData.interp(frameLeft.transformData,frameRight.transformData,lam)
@@ -179,7 +217,8 @@ class KeyFrameDecoder(json.JSONDecoder):
 
         elif classname == "transformData":
             t =  TransformData()
-            t.__dict__ = s
+            t.__dict__.update(s)
+
             t.quatRot = Quaternion(*t.quatRot)
             t.bounds = np.array(t.bounds)
             return t
@@ -216,5 +255,6 @@ if __name__ == '__main__':
 
     k2 = KeyFrameList._from_JSON(open("test.json").read())
 
+    print k2
     # for t in np.linspace(0,1,6):
     #     print t, k2.getTransform(t)

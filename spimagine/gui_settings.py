@@ -8,6 +8,9 @@ import os
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
+
+from spimagine.floatslider import FloatSlider
+
 import numpy as np
 
 from gui_utils import *
@@ -146,8 +149,12 @@ class SettingsPanel(QtGui.QWidget):
 
 
 
-        self.sliderAlphaPow = QtGui.QSlider(QtCore.Qt.Horizontal) 
-        self.sliderAlphaPow.setRange(0,100)
+
+        # self.sliderAlphaPow = QtGui.QSlider(QtCore.Qt.Horizontal)
+        # self.sliderAlphaPow.setRange(0,100)
+
+        self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderAlphaPow.setRange(0,99.)
         self.sliderAlphaPow.setTickInterval(1)
         self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderAlphaPow.setTracking(True)
@@ -156,7 +163,7 @@ class SettingsPanel(QtGui.QWidget):
 
         gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),7,0)
         gridBox.addWidget(self.sliderAlphaPow,7,1)
-  
+
         vbox.addLayout(gridBox)
 
 
@@ -273,7 +280,7 @@ class SettingsPanel(QtGui.QWidget):
     def alphaPowChanged(self):
         alphaPow = 100.*(self.sliderAlphaPow.value()/100.)**3
         self._alphaPowChanged.emit(alphaPow)
-        
+
     def stackUnitsChanged(self):
         try:
             stackUnits = [float(e.text()) for e in self.stackEdits]
