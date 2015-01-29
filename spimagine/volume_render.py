@@ -97,6 +97,9 @@ class VolumeRenderer:
         self.memMax = .4*self.dev.device.get_info(getattr(
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
+        self.memMax = 2.*self.dev.device.get_info(getattr(
+            cl.device_info,"MAX_MEM_ALLOC_SIZE"))
+
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
@@ -145,6 +148,7 @@ class VolumeRenderer:
 
     def reset_buffer(self):
         self.buf = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
+        self.bufAlpha = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
 
     def _get_downsampled_data_slices(self,data):
         """in case data is bigger then gpu texture memory, we should downsample it
@@ -169,7 +173,7 @@ class VolumeRenderer:
 
     def set_alpha_pow(self,alphaPow = 10.):
         self.alphaPow = alphaPow
-        
+
 
     def set_data(self,data, autoConvert = True, copyData = False):
         if not autoConvert and not data.dtype in self.dtypes:
@@ -248,7 +252,7 @@ class VolumeRenderer:
     def render(self,data = None, stackUnits = None,
                maxVal = None, gamma = None,
                modelView = None, projection = None,
-               boxBounds = None):
+               boxBounds = None, return_alpha = False):
 
         if data is not None:
             self.set_data(data)
@@ -270,11 +274,18 @@ class VolumeRenderer:
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+            if return_alpha:
+                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height), self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+            else:
+                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+
 
         if not modelView and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+            if return_alpha:
+                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height), self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+            else:
+                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
         mScale = self._stack_scale_mat()
 
@@ -307,7 +318,7 @@ class VolumeRenderer:
         self.proc.runKernel("max_project_test",
                             (self.width,self.height),
                             None,
-                            self.buf,
+                            self.buf,self.bufAlpha,
                             np.int32(self.width),np.int32(self.height),
                             np.float32(self.boxBounds[0]),
                             np.float32(self.boxBounds[1]),
@@ -324,8 +335,11 @@ class VolumeRenderer:
                             np.int32(self.dtype == np.uint16)
                             )
 
+        if return_alpha:
+            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height),  self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+        else:
+            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
-        return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):

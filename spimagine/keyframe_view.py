@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 from numpy import *
+import numpy as np
 import os
 import functools
 import math
@@ -186,7 +187,10 @@ class KeyNode(QGraphicsItem):
             x1, x2 = sceneRect.x(),sceneRect.x()+sceneRect.width()
             pos = QPointF(clip(x,x1,x2),0)
             tFrame = clip(1.*pos.x()/KeyFrameScene.WIDTH,0.,1.)
-            self.keyList[self.ID].tFrame = tFrame
+            # self.keyList[self.ID].tFrame = tFrame
+
+            self.keyList.update_tFrame(self.ID, tFrame)
+
             self.setPos(pos)
             for edge in self.edgeList:
                 edge.adjust()
@@ -216,6 +220,7 @@ class KeyNode(QGraphicsItem):
     def delete(self):
         self.keyList.removeItem(self.ID)
         # self.graph.scene.removeItem(self)
+
 
     def updateTransformData(self):
         self.keyList[self.ID].transformData = self.transformModel.toTransformData()
@@ -331,7 +336,7 @@ class KeyListView(QGraphicsView):
 
     def itemMoved(self):
         pass
-
+    
     def keyPressEvent(self, event):
         key = event.key()
 
@@ -385,7 +390,7 @@ class KeyListView(QGraphicsView):
                 print "not a valid keyframe json file: %s"%fName
 
     def dropEvent(self, event):
-        logger.debug("droping...")
+        logger.debug("dropping...")
         for url in event.mimeData().urls():
             event.accept()
             path = url.toLocalFile().toLocal8Bit().data()
@@ -414,6 +419,9 @@ class RecordThread(QThread):
             sleep(0.1)
 
 class KeyFramePanel(QWidget):
+    _keyTimeChanged = pyqtSignal(float)
+
+
     def __init__(self, glWidget):
         super(KeyFramePanel,self).__init__()
         self.glWidget = glWidget
@@ -475,6 +483,14 @@ class KeyFramePanel(QWidget):
         # self.recordThread = RecordThread(self.glWidget,self.keyView)
         # self.recordThread.notifyProgress.connect(self.onRecordProgress)
 
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setTickPosition(QSlider.TicksBothSides)
+        self.slider.setTickInterval(1)
+        self.slider.setFocusPolicy(Qt.ClickFocus)
+        self.slider.setTracking(True)
+
+        self.slider.setRange(0,100)
+        self.slider.setStyleSheet("height: 12px; border = 0px;")
 
 
         hbox = QHBoxLayout()
@@ -484,14 +500,18 @@ class KeyFramePanel(QWidget):
         hbox.addWidget(self.recordButton)
         hbox.addWidget(self.saveButton)
         hbox.addWidget(self.trashButton)
+        hbox.addWidget(self.keyView)
 
         vbox = QVBoxLayout()
-        vbox.addWidget(self.keyView)
+        # vbox.addWidget(self.keyView)
         # vbox.addWidget(self.progressBar)
+        vbox.addLayout(hbox)
+        vbox.addWidget(self.slider)
 
-        hbox.addLayout(vbox)
+        # self._keyTimeChanged.connect(lambda x:self.slider.setValue(int(100*x)))
+        self.slider.valueChanged.connect(lambda x:self.setKeyTime(x/100.))
 
-        self.setLayout(hbox)
+        self.setLayout(vbox)
         self.setFrameNumber(100)
 
         self.setDirName("./")
@@ -548,13 +568,27 @@ class KeyFramePanel(QWidget):
         self.progressBar.setValue(100*self.recordPos/self.nFrames)
 
 
+
+    def setKeyTime(self,newTime):
+        self.t = np.clip(newTime,0,1.)
+        logger.debug("set key time to %s"%self.t)
+
+        self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
+
+        self._keyTimeChanged.emit(self.t)
+
+
     def onPlayTimer(self):
-        self.t = (self.t+0.01)%1.
+        print self.t
+        self.setKeyTime((self.t+0.01)%1.)
 
-        trans = self.keyView.keyList.getTransform(self.t)
-        # print self.t,trans
 
-        self.keyView.transformModel.fromTransformData(trans)
+        # self.t = (self.t+0.01)%1.
+
+        # trans = self.keyView.keyList.getTransform(self.t)
+        # # print self.t,trans
+
+        # self.keyView.transformModel.fromTransformData(trans)
 
 
         # print "TIME to set ", time()-self.a
@@ -690,9 +724,9 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
-    # win = MainWindow()
+    win = MainWindow()
 
-    win = MainWindowEmpty()
+    # win = MainWindowEmpty()
 
     win.show()
     win.raise_()

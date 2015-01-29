@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 global __OPENCLDEVICE__
 global __DEFAULTCOLORMAP__
-
+global __DEFAULTWIDTH__
 global __COLORMAPDICT__
 
 import ConfigParser, StringIO
@@ -35,23 +35,34 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         try:
             text = open(fName).read()
         except IOError:
-            raise IOError()
+            print "could not open %s"%fName
         else:
             file = StringIO.StringIO("[%s]\n%s"%(self.dummySection,text))
             self.readfp(file, fName)
 
-    def get(self,varStr):
-        return ConfigParser.ConfigParser.get(self,self.dummySection,varStr)
+    def get(self,key, defaultVal):
+        try:
+            return ConfigParser.ConfigParser.get(self,self.dummySection,key)
+        except:
+            return defaultVal
 
 
-try:
-    __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
-    __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
-    __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
-except:
-    __OPENCLDEVICE__ = 0
-    __DEFAULTCOLORMAP__ = "coolwarm"
 
+# try:
+#     __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+#     __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
+#     __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
+# except:
+#     __OPENCLDEVICE__ = 0
+#     __DEFAULTCOLORMAP__ = "coolwarm"
+
+__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
+__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","coolwarm")
+__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
+
+
+print __DEFAULTWIDTH__
 
 
 from spimagine.gui_utils import arrayFromImage
