@@ -208,7 +208,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-        self.outputAlpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_alpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
         self.sliceOutput = zeros((100,100),dtype = np.float32)
 

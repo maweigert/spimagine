@@ -74,7 +74,8 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
       e.g.
 
-         volshow( randint(0,10,(10, 20,30,40) )
+
+volshow( randint(0,10,(10, 20,30,40) )
 
 
 
@@ -82,20 +83,20 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
       e.g.
 
-        from spimagine.data_model import GenericData
+from spimagine.data_model import GenericData
 
-        class myData(GenericData):
-            def __getitem__(self,i):
-                return (100*i+3)*ones((100,100,100)
-            def size(self):
-                return (4,100,100,100)
+class myData(GenericData):
+    def __getitem__(self,i):
+        return (100*i+3)*ones((100,100,100)
+    def size(self):
+        return (4,100,100,100)
 
-        volshow(myData())
+volshow(myData())
 
         or
-        from spimagine.data_model import DataModel
+from spimagine.data_model import DataModel
 
-        volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
+volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
 
 
@@ -177,9 +178,9 @@ if __name__ == '__main__':
     # d = np.ones((512,)*3)
 
 
-    # volshow(DemoData(10),blocking = False)
+    volshow(DemoData(100),blocking = False)
     
-    volshow(DemoData(),blocking = True, cmap = "coolwarm")
+    # volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 
     # N = 128

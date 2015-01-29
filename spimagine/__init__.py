@@ -10,8 +10,6 @@ logger.setLevel(logging.INFO)
 
 
 
-
-
 global __OPENCLDEVICE__
 global __DEFAULTCOLORMAP__
 global __DEFAULTWIDTH__
@@ -56,16 +54,18 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
 #     __OPENCLDEVICE__ = 0
 #     __DEFAULTCOLORMAP__ = "coolwarm"
 
-__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"hot","width":800})
 __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
-__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","coolwarm")
+__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","hot")
 __DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
 
 
-print __DEFAULTWIDTH__
-
-
 from spimagine.gui_utils import arrayFromImage
+
+# try:
+#     print os.listdir(sys._MEIPASS)
+# except:
+#     pass
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -74,7 +74,7 @@ def absPath(myPath):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-        print "found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath))
+        logger.DEBUG("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
 
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
@@ -86,7 +86,12 @@ import re
 def _load_colormaps():
     global __COLORMAPDICT__
     __COLORMAPDICT__ = {}
-    basePath = absPath("colormaps/")
+
+    try:
+        basePath = sys._MEIPASS
+    except:
+        basePath = absPath("colormaps/")
+
     reg = re.compile("cmap_(.*)\.png")
     for fName in os.listdir(basePath):
         match = reg.match(fName)
