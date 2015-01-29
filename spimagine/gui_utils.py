@@ -126,13 +126,23 @@ def fillTexture2d(data,tex = None):
     return tex
 
 def arrayFromImage(fName):
-    """converts png image to float32 array"""
-    img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
-    Nx, Ny = img.width(),img.height()
-    tmp = img.bits().asstring(img.numBytes())
-    arr = np.frombuffer(tmp, np.uint8).reshape((Ny,Nx,4))
-    arr = arr.astype(np.float32)/np.amax(arr)
-    return arr[:,:,:-1][:,:,::-1]
+    """converts png image to float32 array
+    returns an array of shape [w,h,3]
+    """
+    try:
+        img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
+
+
+        Nx, Ny = img.width(),img.height()
+        tmp = img.bits().asstring(img.numBytes())
+        arr = np.frombuffer(tmp, np.uint8).reshape((Ny,Nx,4))
+        arr = arr.astype(np.float32)/np.amax(arr)
+        return arr[:,:,:-1][:,:,::-1]
+    except Exception as e:
+        print e
+        print "could not load image %s"%fName
+        return np.zeros((10,100,3),np.float32)
+
 
 
 
