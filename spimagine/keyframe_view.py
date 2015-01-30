@@ -201,7 +201,7 @@ class KeyNode(QGraphicsItem):
 
 
         elif change == QGraphicsItem.ItemSelectedChange:
-            logger.debug("selected")
+            logger.debug("keynode selected")
 
         return super(KeyNode, self).itemChange(change, value)
 

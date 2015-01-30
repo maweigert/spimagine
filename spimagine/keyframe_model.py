@@ -21,8 +21,8 @@ class TransformData(object):
                  dataPos = 0,
                  translate = [0,0,0],
                  bounds = [-1,1,-1,1,-1,1],
-                 isBox = False,
-                 alphaPow = 1.):
+                 isBox = True,
+                 alphaPow = 100.):
         self.setData(quatRot,zoom,dataPos,translate,bounds,isBox,alphaPow)
 
 
