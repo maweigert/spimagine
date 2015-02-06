@@ -28,13 +28,19 @@ class FloatSlider(QtGui.QSlider):
         return self.minVal+1.*(self.maxVal-self.minVal)*n/self.steps
 
     def setValue(self,val):
+        self.floatValue = val
         super(FloatSlider,self).setValue(self._from_float(val))
 
     def value(self):
-        return self._from_int(super(FloatSlider,self).value())
+        return self.floatValue
+        # return self._from_int(super(FloatSlider,self).value())
 
     def onChanged(self,ind):
-        self.floatValueChanged.emit(self._from_int(ind))
+        self.floatValue = self._from_int(ind)
+
+        self.floatValueChanged.emit(self.floatValue)
+
+        # self.floatValueChanged.emit(self._from_int(ind))
 
 
 
@@ -44,7 +50,7 @@ class MainWindow(QtGui.QWidget):
         super(MainWindow,self).__init__()
 
         self.slide = FloatSlider(QtCore.Qt.Horizontal)
-        self.slide.setRange(1.,6.)
+        self.slide.setRange(-1.,6.)
         self.slide.valueChanged.connect(self.onSlide)
         self.slide.floatValueChanged.connect(self.onSlideFloat)
 
@@ -53,9 +59,19 @@ class MainWindow(QtGui.QWidget):
         self.setWindowTitle("Key Frame View")
 
 
+        self.edit = QtGui.QLineEdit("1.")
+        self.edit.setValidator(QtGui.QDoubleValidator(bottom=1))
+        self.edit.returnPressed.connect(lambda: self.slide.setValue(float(self.edit.text())))
+
+
+        self.slide.floatValueChanged.connect(lambda x: self.edit.setText(str(x)))
+
+
+
         self.resize(500,200)
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.slide)
+        hbox.addWidget(self.edit)
 
         self.setLayout(hbox)
 

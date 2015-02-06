@@ -109,7 +109,9 @@ void main()
   gl_FragColor = vec4(lut.xyz,col.x);
 
   gl_FragColor.w = 1.0*length(col.xyz);
-  gl_FragColor.w = 1.0*alph.x;
+
+
+//  gl_FragColor = alph.x>0.01?gl_FragColor:vec4(0,0,0,1.);
 
 
 }
@@ -140,7 +142,7 @@ void main()
 
    vec4 lut = texture2D(texture_LUT,col.xy);
 
- gl_FragColor = vec4(lut.xyz,1.);
+  gl_FragColor = vec4(lut.xyz,1.);
 
   gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
   gl_FragColor.w = 1.0;
@@ -154,25 +156,76 @@ vertShaderCube ="""
 attribute vec3 position;
 uniform mat4 mvpMatrix;
 
+varying float zPos;
+varying vec2 texcoord;
 void main()
 {
   vec3 pos = position;
   gl_Position = mvpMatrix *vec4(pos, 1.0);
 
+  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
+  zPos = 0.04+gl_Position.z;
 }
 """
 
 fragShaderCube = """
 
 uniform vec4 color;
-
+uniform sampler2D texture_alpha;
+varying float zPos;
+varying vec2 texcoord;
 void main()
 {
+
+  // float tnear = texture2D(texture_alpha,mytexcoord.xy).x;
+
+
   gl_FragColor = vec4(1.,1.,1.,.3);
-//  gl_FragColor = color;
+
+
+  float tnear = texture2D(texture_alpha,texcoord).x;
+
+  float att = exp(-.5*(zPos-tnear));
+
+  gl_FragColor = vec4(att,att,att,.3);
+
 }
 """
 
+
+vertShaderOverlay ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+varying float zPos;
+varying vec2 texcoord;
+
+void main()
+{
+  gl_Position = mvpMatrix *vec4(position, 1.0);
+
+  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
+  zPos = 0.04+gl_Position.z;
+}
+"""
+
+fragShaderOverlay = """
+varying float zPos;
+varying vec2 texcoord;
+uniform sampler2D texture_alpha;
+
+void main()
+{
+
+  gl_FragColor = vec4(1.,1.,1.,.3);
+
+  float tnear = texture2D(texture_alpha,texcoord).x;
+  float att = exp(-1.*(zPos-tnear));
+
+  att = tnear<0.000001?1.:att;
+  gl_FragColor = vec4(att,att,att,.3);
+
+}
+"""
 
 
 def absPath(myPath):
@@ -321,9 +374,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programSlice.bind()
         logger.debug("GLSL programCube log:%s",self.programSlice.log())
 
+        self.programOverlay = QtOpenGL.QGLShaderProgram()
+        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderOverlay)
+        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderOverlay)
+        self.programOverlay.link()
+        self.programOverlay.bind()
+        logger.debug("GLSL programOverlay log:%s",self.programOverlay.log())
 
 
         glClearColor(0,0,0,1.)
+
 
         self.texture = None
         self.textureAlpha = None
@@ -354,6 +414,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glLineWidth(2.0);
         # glBlendFunc(GL_ONE,GL_ONE)
 
+        glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
 
 
@@ -435,6 +496,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.finalMat = dot(proj,modelView)
 
+
+            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
+
+
             if self.transform.isBox:
                 # Draw the cube
                 self.programCube.bind()
@@ -444,12 +509,36 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
                 self.programCube.setAttributeArray("position", self.cubeCoords)
 
+
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+                self.programCube.setUniformValue("texture_alpha",0)
+
+                glEnable(GL_DEPTH_TEST)
                 glDrawArrays(GL_LINES,0,len(self.cubeCoords))
 
-                # self.programCube.setAttributeArray("position", .99*self.cubeFaceCoord)
-                # self.programCube.setUniformValue("color",QtGui.QVector4D(0,0,0,.6))
 
-                # glDrawArrays(GL_TRIANGLES,0,len(self.cubeFaceCoord))
+                glDisable(GL_DEPTH_TEST)
+
+
+            if False:
+                # Draw the cube
+                self.programOverlay.bind()
+                self.programOverlay.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+                self.programOverlay.enableAttributeArray("position")
+
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+                self.programOverlay.setUniformValue("texture_alpha",0)
+
+                foo = create_sphere_coords(.5,20,20)
+
+                print self.transform.zoom
+                foo[:,0] += 2. * (self.transform.zoom-1.)
+
+                self.programOverlay.setAttributeArray("position", foo)
+
+                glDrawArrays(GL_TRIANGLES,0,len(foo))
 
             if self.transform.isSlice and self.sliceOutput is not None:
                 #draw the slice
@@ -505,11 +594,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.texture = fillTexture2d(self.output,self.texture)
 
-            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
-
-            # print self.output
-
-            # print self.output_alpha
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
@@ -548,7 +632,13 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
             self.renderer.set_alpha_pow(self.transform.alphaPow)
-            self.output, self.output_alpha = self.renderer.render(return_alpha = True)
+
+            if self.transform.isIso:
+                renderMethod = "iso_surface"
+            else:
+                renderMethod = "max_project"
+
+            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True)
 
 
             if self.transform.isSlice:
@@ -656,7 +746,46 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.refresh()
 
-if __name__ == '__main__':
+
+
+def test_sphere():
+    from data_model import DataModel, NumpyData, SpimData, TiffData
+
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(500,500))
+
+
+    x = np.linspace(-1,1,128)
+    Z,Y,X = np.meshgrid(x,x,x)
+    # R = sqrt(Z**2+Y**2+(X-.35)**2)
+    # R2 = sqrt(Z**2+Y**2+(X+.35)**2)
+
+    # d = 100.*exp(-10*R**2)+.0*np.random.normal(0,1.,X.shape)
+
+    # d += 100.*exp(-10*R2**2)+.0*np.random.normal(0,1.,X.shape)
+
+    Ns = 5
+    r = .6
+    phi = linspace(0,2*pi,Ns+1)[:-1]
+    d = zeros_like(X)
+    for p in phi:
+        d += 100.*exp(-10*(Z**2+(Y-r*sin(p))**2+(X-r*cos(p))**2))
+
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.transform.setValueScale(0,40)
+
+
+    win.show()
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
+def test_demo():
+
     from data_model import DataModel, DemoData, SpimData, TiffData
 
     app = QtGui.QApplication(sys.argv)
@@ -664,17 +793,24 @@ if __name__ == '__main__':
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    win.setModel(DataModel(DemoData(10)))
-    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
 
-    # win.transform.setStackUnits(1.,1.,5.)
+    win.setModel(DataModel(DemoData(50)))
 
 
-    # win.transform.setBox()
-    # win.transform.setPerspective(True)
+    win.transform.setValueScale(0,1000000)
+    # win.transform.setBox(False)
 
     win.show()
+
 
     win.raise_()
 
     sys.exit(app.exec_())
+
+
+
+if __name__ == '__main__':
+
+    # test_sphere()
+
+    test_demo()

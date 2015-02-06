@@ -49,7 +49,7 @@ class GenericData():
     """abstract base class for 4d data
 
     if you wanna sublass it, just overwrite self.size() and self.__getitem__()
-    
+
     """
     dataFileError = Exception("not a valid file")
     def __init__(self, name = ""):
@@ -231,14 +231,14 @@ class DemoData(GenericData):
                 for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
 
             u2 = np.exp(-7*R2**2)
-            self.data = (10000*(u + 2*u2)).astype(np.uint16)
+            self.data = (10000*(u + 2*u2)).astype(np.float32)
 
 
     def sizeT(self):
         return self.nT
 
     def __getitem__(self,pos):
-        return (self.data*np.exp(-.3*pos)).astype(np.uint16)
+        return (self.data*np.exp(-.3*pos)).astype(np.float32)
 
 
 class EmptyData(GenericData):

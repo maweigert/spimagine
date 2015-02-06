@@ -25,7 +25,7 @@ from spimagine.keyframe_model import KeyFrameList
 
 from spimagine.keyframe_view import KeyFramePanel
 from spimagine.gui_settings import SettingsPanel
-from spimagine.data_model import DataModel, DemoData, SpimData, TiffData
+from spimagine.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 from spimagine import egg3d
 
 from spimagine.gui_slice_view import SliceWidget
@@ -85,7 +85,6 @@ class MainWidget(QtGui.QWidget):
         self.transform = TransformModel()
 
         self.initActions()
-        # self.initMenus()
 
         self.glWidget = GLWidget(self)
         self.glWidget.setTransform(self.transform)
@@ -119,13 +118,28 @@ class MainWidget(QtGui.QWidget):
         self.screenshotButton = createStandardButton(self, fName = absPath("images/icon_camera.png"),
                                                 method = self.screenShot, tooltip = "save as png")
 
+        self.fileOpenButton = createStandardButton(self,
+                        fName = absPath("images/icon_open.png"),
+                        method = self.openFile, tooltip = "open file")
 
-        self.checkSettings = createStandardCheckbox(self,absPath("images/settings.png"),
-                                                    absPath("images/settings_inactive.png"), tooltip="settings")
+        self.checkSettings = createStandardCheckbox(self,
+                absPath("images/settings.png"),
+                absPath("images/settings_inactive.png"), tooltip="settings")
+
+
         self.checkKey = createStandardCheckbox(self,absPath("images/video.png"),absPath("images/video_inactive.png"), tooltip="keyframe editor")
 
-        self.checkSliceView = createStandardCheckbox(self,absPath("images/icon_slice.png"),
-                                                     absPath("images/icon_slice_inactive.png"), tooltip="slice view")
+        self.checkIsoView = createStandardCheckbox(self,
+            absPath("images/icon_method_vol.png"),
+            absPath("images/icon_method_iso.png"),
+            tooltip="iso surface")
+
+
+
+        self.checkSliceView = createStandardCheckbox(
+            self,
+            absPath("images/icon_slice.png"),
+            absPath("images/icon_slice_inactive.png"), tooltip="slice view")
 
 
         self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -147,9 +161,15 @@ class MainWidget(QtGui.QWidget):
         self.spinTime.valueChanged.connect(self.sliderTime.setValue)
 
 
-        self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
+        # self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
 
-        self.scaleSlider.setRange(1, self.N_SCALE_SLIDER)
+        # self.scaleSlider.setRange(1, self.N_SCALE_SLIDER)
+        # self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+        # self.scaleSlider.setToolTip("value scale")
+
+        self.scaleSlider = FloatSlider(QtCore.Qt.Vertical)
+
+        self.scaleSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.scaleSlider.setToolTip("value scale")
 
@@ -162,22 +182,32 @@ class MainWidget(QtGui.QWidget):
         self.gammaSlider.setValue(1.)
 
 
-        def func_from_n(n):
-            return 2**(self.N_SCALE_MIN_EXP+(self.N_SCALE_MAX_EXP-self.N_SCALE_MIN_EXP)*(n-1.)/(self.N_SCALE_SLIDER-1))
+        # def func_from_n(n):
+        #     return 2**(self.N_SCALE_MIN_EXP+(self.N_SCALE_MAX_EXP-self.N_SCALE_MIN_EXP)*(n-1.)/(self.N_SCALE_SLIDER-1))
 
 
-        def func_to_n(x):
-            if x<2**self.N_SCALE_MIN_EXP:
-                print "gg", x
-                return 1
-            elif x>2**self.N_SCALE_MAX_EXP:
-                return self.N_SCALE_SLIDER
+        # def func_to_n(x):
+        #     if x<2**self.N_SCALE_MIN_EXP:
+        #         print "gg", x
+        #         return 1
+        #     elif x>2**self.N_SCALE_MAX_EXP:
+        #         return self.N_SCALE_SLIDER
 
-            return int(round(1.+(self.N_SCALE_SLIDER-1.)*(np.log2(x)-self.N_SCALE_MIN_EXP)/(self.N_SCALE_MAX_EXP-1.*self.N_SCALE_MIN_EXP)))
+        #     return int(round(1.+(self.N_SCALE_SLIDER-1.)*(np.log2(x)-self.N_SCALE_MIN_EXP)/(self.N_SCALE_MAX_EXP-1.*self.N_SCALE_MIN_EXP)))
 
 
-        self.scaleSlider.valueChanged.connect(lambda x: self.transform.setValueScale(0,func_from_n(x)))
-        self.transform._maxChanged.connect(lambda x: self.scaleSlider.setValue(func_to_n(x)))
+        # self.scaleSlider.valueChanged.connect(lambda x: self.transform.setValueScale(0,func_from_n(x)))
+        # self.transform._maxChanged.connect(lambda x: self.scaleSlider.setValue(func_to_n(x)))
+
+
+        def func1(x):
+            return 2**x
+
+        def func2(x):
+            return np.log2(x)
+
+        self.scaleSlider.floatValueChanged.connect(lambda x: self.transform.setValueScale(0,func1(x)))
+        self.transform._maxChanged.connect(lambda x:self.scaleSlider.setValue(func2(x)))
 
         self.gammaSlider.floatValueChanged.connect(self.transform.setGamma)
         self.transform._gammaChanged.connect(self.gammaSlider.setValue)
@@ -219,8 +249,10 @@ class MainWidget(QtGui.QWidget):
 
         hbox.addWidget(self.checkKey)
         hbox.addWidget(self.screenshotButton)
+        hbox.addWidget(self.fileOpenButton)
 
         hbox.addSpacing(50)
+        hbox.addWidget(self.checkIsoView)
         hbox.addWidget(self.checkSliceView)
 
         hbox.addWidget(self.checkSettings)
@@ -259,14 +291,26 @@ class MainWidget(QtGui.QWidget):
 
         self.playDir = 1
 
+        # a decorator as checkboxe state is  2 if checked
+        def stateToBool(objFunc):
+            def _foo(x):
+                return objFunc(x!=0)
+            return _foo
+
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+
+        self.checkIsoView.stateChanged.connect(stateToBool(self.glWidget.transform.setIso))
+
+        self.transform._isoChanged.connect(self.checkIsoView.setChecked)
 
 
         self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)
 
         self.settingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
 
-        self.settingsView._alphaPowChanged.connect(self.glWidget.transform.setAlphaPow)
+        self.settingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
+
+        self.glWidget.transform._alphaPowChanged.connect(self.settingsView.sliderAlphaPow.setValue)
 
         self.glWidget.transform._boundsChanged.connect(self.settingsView.setBounds)
 
@@ -307,6 +351,8 @@ class MainWidget(QtGui.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
+
+
 
     def onColormapChanged(self,index):
         self.glWidget.set_colormap(self.settingsView.colormaps[index])
@@ -455,6 +501,18 @@ class MainWidget(QtGui.QWidget):
         self.playTimer.setInterval(val)
 
 
+    def openFile(self,e):
+        path = QtGui.QFileDialog.getOpenFileName(self, 'Open Tif File',
+                                                     '.', selectedFilter='*.tif')
+
+        path = str(path)
+        if path:
+            if self.glWidget.dataModel:
+                self.glWidget.dataModel.loadFromPath(path,
+                    prefetchSize = self.glWidget.N_PREFETCH)
+            else:
+                self.glWidget.setModel(DataModel.fromPath(path,
+                    prefetchSize = self.glWidget.N_PREFETCH))
 
 
     def onPlayTimer(self):
@@ -540,20 +598,58 @@ class MainWidget(QtGui.QWidget):
         self.isFullScreen = not self.isFullScreen
 
 
+def test_sphere():
+    from data_model import DataModel, NumpyData
 
+    x = np.linspace(-1,1,128)
+    Z,Y,X = np.meshgrid(x,x,x)
+    # R = sqrt(Z**2+Y**2+(X-.35)**2)
+    # R2 = sqrt(Z**2+Y**2+(X+.35)**2)
 
-if __name__ == '__main__':
-    import argparse
+    # d = 100.*exp(-10*R**2)+.0*np.random.normal(0,1.,X.shape)
+
+    # d += 100.*exp(-10*R2**2)+.0*np.random.normal(0,1.,X.shape)
+
+    Ns = 5
+    r = .6
+    phi = np.linspace(0,2*np.pi,Ns+1)[:-1]
+    d = np.zeros_like(X)
+    for p in phi:
+        d += 100.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
+
 
     app = QtGui.QApplication(sys.argv)
 
     win = MainWidget()
 
-    win.setModel(DataModel(DemoData()))
+    win.setModel(DataModel(NumpyData(d)))
 
-    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/droso_test.tif")))
-
+    win.glWidget.transform.setIso(True)
+    win.glWidget.transform.setValueScale(0,40)
     win.show()
+
     win.raise_()
 
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    # import argparse
+
+    # app = QtGui.QApplication(sys.argv)
+
+    # win = MainWidget()
+
+    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/synthetics/blobs256.tif")))
+
+    # win.glWidget.transform.setIso(True)
+    # win.glWidget.tranbsform.setValueScale(0,30)
+
+
+
+    # win.show()
+    # win.raise_()
+
+    # sys.exit(app.exec_())
+
+
+    test_sphere()

@@ -14,7 +14,7 @@ def generic_setter(varName, signal_to_emit = None):
         self.__dict__[varName] = val
         if signal_to_emit is not None:
             signal_to_emit.emit(val)
-            
+
     return set
 
 
@@ -51,7 +51,6 @@ class Foo(QObject):
         self._vec = array(x)
 
 
-    x = pyqtProperty(tuple,getter("_x"),setter("_x"))
 
 def genGetFunc(myVar):
     def get():
@@ -59,7 +58,53 @@ def genGetFunc(myVar):
     return get
 
 
+class bar(object):
+    x = 10
+    @staticmethod
+    def foo():
+        print "foo"
+    @classmethod
+    def baz(cls):
+        print "baz"
+
+
+class KeyableParameter(object):
+    val_dict = {}
+    @classmethod
+    def register_value(cls,name, default = 0.):
+        cls.val_dict[name] = default
+    @classmethod
+    def __getattr__(cls,name):
+        return cls.val_dict[name]
+
+
+KeyableParameter.register_value("name","bernd")
+
+from PyQt4 import QtCore
+
+class MetaClass(QtCore.pyqtWrapperType):
+    val_dict = {}
+    
+
+    def register_value(cls,name, default = 0.):
+        cls.val_dict[name] = default
+    def __getattr__(cls,name):
+        return cls.val_dict[name]
+    def __setattr__(cls,name,val):
+        if cls.val_dict.has_key(name):
+            cls.val_dict[name] = val
+        else:
+            super(MetaClass,cls).__setattr__(name,val)
+
+class TransformAttributes:
+    __metaclass__ = MetaClass
+
+TransformAttributes.register_value("gamma",1.)
+TransformAttributes.register_value("alphaPow",1.)
+
 if __name__ == '__main__':
 
 
-    sys.argv
+    bar.foo()
+
+    bar.baz()
