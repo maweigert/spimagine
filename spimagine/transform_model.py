@@ -22,6 +22,9 @@ class TransformModel(QtCore.QObject):
     _maxChanged = QtCore.pyqtSignal(float)
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
+
+    _isoChanged = QtCore.pyqtSignal(bool)
+
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
     _rotationChanged = QtCore.pyqtSignal()
@@ -50,11 +53,12 @@ class TransformModel(QtCore.QObject):
         self.slicePos = 0
         self.sliceDim = 0
         self.zoom = 1.
+        self.setIso(False)
         self.isPerspective = True
         self.setPerspective()
         self.setValueScale(0,maxVal)
         self.setGamma(1.)
-        self.setAlphaPow(100.)
+        self.setAlphaPow(0)
         self.setBox(True)
 
         if not hasattr(self,"isSlice"):
@@ -65,6 +69,12 @@ class TransformModel(QtCore.QObject):
         self.setStackUnits(*stackUnits)
         self.center()
 
+
+    def setIso(self,isIso):
+        logger.debug("setting Iso %s"%isIso)
+        self.isIso = isIso
+        self._isoChanged.emit(isIso)
+        self._transformChanged.emit()
 
     def center(self):
         self.quatRot = Quaternion()
@@ -132,8 +142,9 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
     def setValueScale(self,minVal,maxVal):
-        self.minVal, self.maxVal = minVal, maxVal
         logger.debug("set scale to %s,%s"%(minVal, maxVal))
+
+        self.minVal, self.maxVal = minVal, maxVal
         self._maxChanged.emit(self.maxVal)
 
         self._transformChanged.emit()
@@ -227,11 +238,21 @@ class TransformModel(QtCore.QObject):
         self.setPos(transformData.dataPos)
         self.setBounds(*transformData.bounds)
         self.setBox(transformData.isBox)
+        self.setIso(transformData.isIso)
+
         self.setAlphaPow(transformData.alphaPow)
         self.setTranslate(*transformData.translate)
+        self.setValueScale(0,transformData.maxVal)
+        self.setGamma(transformData.gamma)
+
 
     def toTransformData(self):
         return TransformData(quatRot = self.quatRot, zoom = self.zoom,
-                             dataPos = self.dataPos, translate = self.translate,
+                             dataPos = self.dataPos,
+                             maxVal = self.maxVal,
+                             gamma= self.gamma,
+                             translate = self.translate,
                              bounds = self.bounds,
-                             isBox = self.isBox, alphaPow = self.alphaPow)
+                             isBox = self.isBox,
+                             isIso = self.isIso,
+                             alphaPow = self.alphaPow)

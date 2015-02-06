@@ -100,7 +100,8 @@ class VolumeRenderer:
         self.memMax = 2.*self.dev.device.get_info(getattr(
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
-        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"))
+        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
+                                 "-cl-fast-relaxed-math")
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
         self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
@@ -252,7 +253,7 @@ class VolumeRenderer:
     def render(self,data = None, stackUnits = None,
                maxVal = None, gamma = None,
                modelView = None, projection = None,
-               boxBounds = None, return_alpha = False):
+               boxBounds = None, return_alpha = False, method="max_project"):
 
         if data is not None:
             self.set_data(data)
@@ -295,27 +296,8 @@ class VolumeRenderer:
         invP = inv(self.projection)
         self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
-
-        # self.proc.runKernel("max_project",
-        #                     (self.width,self.height),
-        #                     None,
-        #                     self.buf,
-        #                     np.int32(self.width),np.int32(self.height),
-        #                     np.float32(self.boxBounds[0]),
-        #                     np.float32(self.boxBounds[1]),
-        #                     np.float32(self.boxBounds[2]),
-        #                     np.float32(self.boxBounds[3]),
-        #                     np.float32(self.boxBounds[4]),
-        #                     np.float32(self.boxBounds[5]),
-        #                     np.float32(self.maxVal),
-        #                     np.float32(self.gamma),
-        #                     self.invPBuf,
-        #                     self.invMBuf,
-        #                     self.dataImg,
-        #                     np.int32(self.dtype == np.uint16)
-        #                     )
-
-        self.proc.runKernel("max_project_test",
+        if method=="max_project":
+            self.proc.runKernel("max_project",
                             (self.width,self.height),
                             None,
                             self.buf,self.bufAlpha,
@@ -329,6 +311,26 @@ class VolumeRenderer:
                             np.float32(self.maxVal),
                             np.float32(self.gamma),
                             np.float32(self.alphaPow),
+                            self.invPBuf,
+                            self.invMBuf,
+                            self.dataImg,
+                            np.int32(self.dtype == np.uint16)
+                            )
+
+        if method=="iso_surface":
+            self.proc.runKernel("iso_surface",
+                            (self.width,self.height),
+                            None,
+                            self.buf,self.bufAlpha,
+                            np.int32(self.width),np.int32(self.height),
+                            np.float32(self.boxBounds[0]),
+                            np.float32(self.boxBounds[1]),
+                            np.float32(self.boxBounds[2]),
+                            np.float32(self.boxBounds[3]),
+                            np.float32(self.boxBounds[4]),
+                            np.float32(self.boxBounds[5]),
+                            np.float32(self.maxVal/2),
+                            np.float32(self.gamma),
                             self.invPBuf,
                             self.invMBuf,
                             self.dataImg,
@@ -430,7 +432,12 @@ def test_simple2():
 
     N = 256
 
-    d = linspace(0,100.,N**3).reshape((N,)*3).astype(np.float32)
+    x = np.linspace(-1,1,N)
+    Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
+    R = np.sqrt(X**2+Y**2+Z**2)
+
+    # d = np.linspace(0,10000.,N**3).reshape((N,)*3).astype(np.float32)
+    d = 10000*np.exp(-10*R**2)
 
     rend = VolumeRenderer((600,600))
 
@@ -480,5 +487,5 @@ def test_real():
 
 
 if __name__ == "__main__":
-    # test_simple()
-    d, rend, out = test_real()
+    d, rend, out = test_simple2()
+    # d, rend, out = test_real()

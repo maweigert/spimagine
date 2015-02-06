@@ -185,18 +185,30 @@ def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
                      [x2, y1, z2], [x2, y1, z1],
                      ])
 
-    # return np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0],
-    #                  [-1.0,  1.0,  1.0], [-1.0, -1.0,  1.0],
-    #                  [-1.0, -1.0,  1.0], [ 1.0, -1.0,  1.0],
-    #                  [1.0,  -1.0,  1.0], [ 1.0,  1.0,  1.0],
 
-    #                  [1.0,   1.0,  -1.0], [-1.0,  1.0,  -1.0],
-    #                  [-1.0,  1.0,  -1.0], [-1.0, -1.0,  -1.0],
-    #                  [-1.0, -1.0,  -1.0], [ 1.0, -1.0,  -1.0],
-    #                  [1.0,  -1.0,  -1.0], [ 1.0,  1.0,  -1.0],
 
-    #                  [1.0,   1.0,  1.0], [1.0,  1.0,  -1.0],
-    #                  [-1.0,  1.0,  1.0], [-1.0, 1.0,  -1.0],
-    #                  [-1.0, -1.0,  1.0], [-1.0,-1.0,  -1.0],
-    #                  [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
-    #                  ])
+def create_sphere_coords(r,Nphi=10,Ntheta=10):
+    ts = np.arccos(np.linspace(-1.,1.,Ntheta+1))
+    ps = np.linspace(0,2.*np.pi,Nphi+1)
+
+    T,P = np.meshgrid(ts,ps)
+
+    xs = r*np.array([np.cos(P)*np.sin(T),np.sin(P)*np.sin(T),np.cos(T)])
+
+    coords = []
+    for i in range(Ntheta):
+        for j in range(Nphi):
+            coords.append(xs[:,i,j])
+            coords.append(xs[:,i+1,j])
+            coords.append(xs[:,i+1,j+1])
+            coords.append(xs[:,i,j])
+            coords.append(xs[:,i,j+1])
+            coords.append(xs[:,i+1,j+1])
+
+    return np.array(coords)
+
+
+
+if __name__ == '__main__':
+    c =  create_sphere_coords(.8,10,10)
+    

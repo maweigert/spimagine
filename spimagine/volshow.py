@@ -78,7 +78,6 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 volshow( randint(0,10,(10, 20,30,40) )
 
 
-
     - an instance of a class derived from the abstract bass class GenericData
 
       e.g.
@@ -128,7 +127,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window = volfig(num)
 
-
+    data = np.array(data)
     # print "volfig: ", time()-t
     # t = time()
 
@@ -141,7 +140,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:
                 ma +=1.
-            data = 16000.*(data-mi)/(ma-mi)
+            data = 1000.*(data-mi)/(ma-mi)
 
         m = DataModel(NumpyData(data.astype(np.float32)))
 
@@ -173,13 +172,30 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
         return window
 
 
+class TimeData(GenericData):
+    def __init__(self,func, dshape):
+        """ func(i) returns the volume
+        dshape is [Nt,Nz,Nx,Ny]
+        """
+        self.func = func
+        self.dshape = dshape
+
+        GenericData.__init__(self)
+
+    def __getitem__(self,i):
+        return self.func(i)
+
+    def size(self):
+        return self.dshape
+
+
 if __name__ == '__main__':
 
     # d = np.ones((512,)*3)
 
 
     volshow(DemoData(100),blocking = False)
-    
+
     # volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 

@@ -39,7 +39,7 @@ class KeyableParameter(object):
 
 
 
-
+    
 class TransformData(object):
     def __init__(self,quatRot = Quaternion(),
                  zoom = 1,
@@ -49,7 +49,6 @@ class TransformData(object):
                  translate = [0,0,0],
                  bounds = [-1,1,-1,1,-1,1],
                  isBox = True,
-                 isIso = False,
                  alphaPow = 100.):
         self.setData(quatRot=quatRot,
                      zoom = zoom,
@@ -59,15 +58,14 @@ class TransformData(object):
                      translate = translate,
                      bounds = bounds,
                      isBox = isBox,
-                     isIso = isIso,
                      alphaPow = alphaPow)
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.maxVal, self.gamma, self.bounds,self.isBox,self.alphaPow)
 
     def setData(self,quatRot,zoom, dataPos, maxVal,
-                gamma, translate, bounds,isBox,isIso, alphaPow):
+                gamma, translate, bounds,isBox,alphaPow):
 
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
@@ -76,7 +74,6 @@ class TransformData(object):
         self.gamma = gamma
         self.bounds  = np.array(bounds)
         self.isBox = isBox
-        self.isIso = isIso
         self.alphaPow = alphaPow
         self.translate = np.array(translate)
 
@@ -91,8 +88,6 @@ class TransformData(object):
 
         newBounds = (1.-t)*x1.bounds + t*x2.bounds
         newBox = ((1.-t)*x1.isBox + t*x2.isBox)>.5
-        newIso = ((1.-t)*x1.isIso + t*x2.isIso)>.5
-
         newAlphaPow = (1.-t)*x1.alphaPow + t*x2.alphaPow
         newTranslate = (1.-t)*x1.translate + t*x2.translate
 
@@ -102,9 +97,7 @@ class TransformData(object):
                              gamma= newGamma,
                              translate = newTranslate,
                              bounds= newBounds,
-                             isBox = newBox,
-                             isIso = newIso,
-                             alphaPow = newAlphaPow)
+                             isBox = newBox, alphaPow = newAlphaPow)
 
 
 

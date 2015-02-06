@@ -114,7 +114,7 @@ def setOpenCLDevice(num):
 
 # from spimagine.volume_render import VolumeRenderer
 
-from volshow import volshow, volfig
+from volshow import volshow, volfig, TimeData
 
 from data_model import SpimData, TiffData, NumpyData
 

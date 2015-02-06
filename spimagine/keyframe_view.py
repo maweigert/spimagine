@@ -579,7 +579,6 @@ class KeyFramePanel(QWidget):
 
 
     def onPlayTimer(self):
-        print self.t
         self.setKeyTime((self.t+0.01)%1.)
 
 
@@ -613,17 +612,17 @@ class KeyFramePanel(QWidget):
     def onTrash(self):
         self.keyView.setKeyListModel(KeyFrameList())
 
-    # def save_to_JSON(self,fName):
-    #     with open(fName,"w") as f:
-    #         f.write(self.keyView.keyList._to_JSON())
+    def save_to_JSON(self,fName):
+        with open(fName,"w") as f:
+            f.write(self.keyView.keyList._to_JSON())
 
-    # def load_from_JSON(self,fName):
-    #     with open(fName,"r") as f:
-    #         try:
-    #             newKeyList = KeyFrameList._from_JSON(f.read())
-    #             self.keyView.setKeyListModel(newKeyList)
-    #         except:
-    #             print "not a valid keyframe json file: %s"%fName
+    def load_from_JSON(self,fName):
+        with open(fName,"r") as f:
+            try:
+                newKeyList = KeyFrameList._from_JSON(f.read())
+                self.keyView.setKeyListModel(newKeyList)
+            except:
+                print "not a valid keyframe json file: %s"%fName
 
 
     # def dragEnterEvent(self, event):
