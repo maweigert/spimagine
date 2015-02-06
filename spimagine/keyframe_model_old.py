@@ -11,7 +11,6 @@ import bisect
 from PyQt4 import QtCore
 from spimagine.quaternion import *
 import json
-import sortedcontainers
 
 import spimagine
 
@@ -51,7 +50,7 @@ class TransformData(object):
                  bounds = [-1,1,-1,1,-1,1],
                  isBox = True,
                  isIso = False,
-                 alphaPow = 0.):
+                 alphaPow = 100.):
         self.setData(quatRot=quatRot,
                      zoom = zoom,
                      dataPos= dataPos,
@@ -62,9 +61,6 @@ class TransformData(object):
                      isBox = isBox,
                      isIso = isIso,
                      alphaPow = alphaPow)
-        
-
-
 
 
     def __repr__(self):
@@ -113,13 +109,17 @@ class TransformData(object):
 
 
 class KeyFrame(object):
-    def __init__(self,pos = 0, transformData = TransformData()):
-        self.pos = pos
+    def __init__(self,tFrame = 0, transformData = TransformData()):
+        self.tFrame = tFrame
         self.transformData = transformData
 
 
     def __repr__(self):
-        return "t = %.3f \t %s"%(self.pos,self.transformData)
+        return "t = %.3f \t %s"%(self.tFrame,self.transformData)
+
+    def __cmp__(self,rhs):
+        return cmp(self.tFrame,rhs.tFrame)
+
 
 
 """ the keyframe model """
@@ -132,107 +132,93 @@ class KeyFrameList(QtCore.QObject):
     def __init__(self):
         super(KeyFrameList,self).__init__()
         self._countID = 0
-        self.posdict = sortedcontainers.SortedDict()
-        self.items = dict()
-        # self.addItem(KeyFrame(0.))
-        # self.addItem(KeyFrame(1.))
+        self.keyDict = dict()
+        self.tFrames = list()
+        self.addItem(KeyFrame(0),)
+        self.addItem(KeyFrame(1))
         self._modelChanged.emit()
 
-
     def __repr__(self):
-        s = "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
-        s += "\n%s\n%s\n"%(str(self.posdict),str(self.items.keys()))
-        return s
+        return "\n".join("%s \t %s"%(self.keyDict[k[1]],k[1]) for k in self.tFrames)
+
 
     def dump_to_file(self,fName):
         print json.dumps(self._to_dict)
 
-    def addItem(self, frame = KeyFrame()):
-        logger.debug("KeyFrameList.addItem: %s"%frame)
-
-        # print "ADD\nBEFORE"
-        # print self
-
+    def addItem(self, keyFrame = KeyFrame()):
+        logger.debug("KeyFrameList.addItem: %s",keyFrame)
         newID = self._getNewID()
-        if newID in self.items:
-            raise KeyError()
-
-        if newID in self.posdict.values():
-            raise KeyError()
-
-        self.items[newID] = frame
-        self.posdict[frame.pos] = newID
-
-        # print "AFTER"
-        # print self
-
+        self.keyDict[newID] = keyFrame
+        bisect.insort(self.tFrames,[keyFrame.tFrame, newID])
         self._modelChanged.emit()
+        # self._itemChanged.emit(newID)
 
     def removeItem(self, ID):
-        logger.debug("KeyFrameList.removeItem: %s"%ID)
-        # print "REMOVE\nBEFORE"
-        # print self
-
-        self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
-        self.items.pop(ID)
-
-        # print "AFTER"
-        # print self
-
+        self.tFrames = [t for t in self.tFrames if t[1]!=ID]
+        self.keyDict.pop(ID)
         self._modelChanged.emit()
+        # self._itemChanged.emit(ID)
 
-    def __getitem__(self, ID):
-        return self.items[ID]
+    def __getitem__(self,myID):
+        return self.keyDict[myID]
+
+    # def interpolate(self,x,y, lam):
+    #     return  (1.-lam)*x.transformData.data + lam*y.transformData.dat,(1.-lam)*x.transformData.data + lam*y.transformData.data
 
     def _getNewID(self):
-        newID = self._countID
         self._countID += 1
-        return newID
+        return self._countID
 
-    def item_at(self, index):
-        """"returns keyframe in order 0...len(items)"""
-        return self.items[self.item_id_at(index)]
+    def _NToID(self,index):
+        if index<0 or index >len(self.tFrames):
+            raise IndexError()
 
-    def item_id_at(self, index):
-        """"returns keyframe id in order 0...len(items)"""
-        return self.posdict.values()[index]
+        return self.tFrames[index][1]
 
-    def pos_at(self, index):
-        return self.posdict.keys()[index]
+    def _IDToN(self,ID):
+        return bisect.bisect_left(self.tFrames,[self.keyDict[ID].tFrame,ID])
 
-    def pos_at_id(self, ID):
-        return self.posdict.keys()[self.posdict.values().index(ID)]
+    def update_tFrame(self,myID, newTime):
+        # print myID,self._IDToN(myID)
+        # print self.tFrames
+        # print self.tFrames[self._IDToN(myID)][0]
+        #hACK!!!  please improve
+        for i,t in enumerate(self.tFrames):
+            if t[1] == myID:
+                self.tFrames[i][0] = newTime
 
-    def update_pos(self,ID, pos):
-        if pos in self.posdict.keys():
-            print "pos already there:", pos
-            return
-        frame = self.items[ID]
-
-        self.posdict.pop(self.pos_at_id(ID))
-        frame.pos = pos
-        self.posdict[pos] = ID
+        self[myID].tFrame = newTime
 
 
-    def getTransform(self,pos):
+    def getTransform(self,tFrame):
         logger.debug("getTransform")
 
-        if pos<self.pos_at(0):
-            return self.item_at(0).transformData
-        if pos>self.pos_at(-1):
-            return self.item_at(-1).transformData
+        ind  = len(self.tFrames)
+        for i,t in enumerate(self.tFrames):
+            if t[0]>=tFrame:
+                ind = i
+                break
 
-        if self.posdict.has_key(pos):
-            return self.items[self.posdict[pos]].transformData
+        # ind = bisect.bisect(self.tFrames,[tFrame,-1])
 
-        ind = self.posdict.bisect(pos)
-        frameLeft, frameRight = self.item_at(ind-1),self.item_at(ind)
+        # print ind
+        # clamping
+        left = max(ind-1,0)
+        right = min(ind,len(self.tFrames)-1)
+
+        leftID, rightID = self._NToID(left),self._NToID(right)
 
         # linear interpolating
-        if np.abs(frameRight.pos-frameLeft.pos)<1.e-7:
+        frameLeft, frameRight = self.keyDict[leftID], self.keyDict[rightID]
+        if np.abs(frameRight.tFrame-frameLeft.tFrame)<1.e-7:
             lam = 0.
         else:
-            lam = (1.*pos-frameLeft.pos)/(frameRight.pos-frameLeft.pos)
+            lam = (1.*tFrame-frameLeft.tFrame)/(frameRight.tFrame-frameLeft.tFrame)
+
+        # print lam, self.tFrames, self.keyDict
+        # print frameLeft
+        # print  frameRight
+        #transforms:
 
         newTrans = TransformData.interp(frameLeft.transformData,frameRight.transformData,lam)
 
@@ -307,33 +293,23 @@ if __name__ == '__main__':
 
     k = KeyFrameList()
 
-    k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
-
+    k.addItem(KeyFrame(.5,TransformData(zoom=.4,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
     # print k
-    # for t in np.linspace(-.1,1.2,11):
-    #     print t, k.getTransform(t).zoom
 
-    np.random.seed(0)
+    # for t in np.linspace(0,1,6):
+    #     print t, k.getTransform(t)
 
-    def rand_ID(k):
-        #just pick from within the border...
-        return k.item_id_at(np.random.randint(1,len(k.items)-1))
 
-    #adding some
-    for i in range(4):
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
 
-    print k
-    #shuffle them
-    for i in range(100):
-        print "+++++++++++++++++"
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
+    s = k._to_JSON()
 
-        ID = rand_ID(k)
-        print "moving %s"%ID
-        k.update_pos(ID,np.random.uniform(0,1.))
+    print "\n\n\n"
 
-        ID = rand_ID(k)
-        print "removing %s"%ID
-        k.removeItem(ID)
+    # k2 = json.loads(s,cls = KeyFrameDecoder)
+
+    k2 = KeyFrameList._from_JSON(open("test.json").read())
+
+    print k2
+    # for t in np.linspace(0,1,6):
+    #     print t, k2.getTransform(t)

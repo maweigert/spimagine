@@ -21,7 +21,7 @@ from PyQt4 import QtGui
 from spimagine.quaternion import Quaternion
 from spimagine.gui_glwidget import GLWidget
 
-from spimagine.keyframe_model import KeyFrameList
+from spimagine.keyframe_model import KeyFrameList, KeyFrame
 
 from spimagine.keyframe_view import KeyFramePanel
 from spimagine.gui_settings import SettingsPanel
@@ -29,6 +29,9 @@ from spimagine.data_model import DataModel, DemoData, SpimData, TiffData, NumpyD
 from spimagine import egg3d
 
 from spimagine.gui_slice_view import SliceWidget
+
+from spimagine.imageprocessor_view import ImageProcessorListView
+from spimagine.imageprocessor import *
 
 from spimagine.floatslider import FloatSlider
 
@@ -216,6 +219,14 @@ class MainWidget(QtGui.QWidget):
         self.keyPanel = KeyFramePanel(self.glWidget)
         self.keyPanel.hide()
 
+        self.impListView = ImageProcessorListView([BlurProcessor(),
+                                                   NoiseProcessor(),
+                                                   FFTProcessor(),
+                                                   LucyRichProcessor()])
+
+        # self.impView.hide()
+
+
         self.settingsView = SettingsPanel()
         self.settingsView.hide()
 
@@ -231,6 +242,10 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.glWidget,stretch = 3)
 
         hbox0.addWidget(self.sliceWidget,stretch =1)
+
+
+        hbox0.addWidget(self.impListView)
+
 
         hbox0.addWidget(self.settingsView)
 
@@ -336,6 +351,8 @@ class MainWidget(QtGui.QWidget):
         self.settingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
 
 
+        self.impListView._stateChanged.connect(self.impStateChanged)
+
         self.settingsView._dirNameChanged.connect(self.keyPanel.setDirName)
         # dataModel._dataSourceChanged.connect(self.dataSourceChanged)
         # dataModel._dataPosChanged.connect(self.sliderTime.setValue)
@@ -353,6 +370,15 @@ class MainWidget(QtGui.QWidget):
         # self.keyPanel.keyView.setModel(self.keyframes)
 
 
+    def impStateChanged(self):
+        data = self.transform.dataModel[self.transform.dataPos]
+        for imp in self.impListView.impViews:
+            if imp.is_active():
+                data = imp.proc.apply(data)
+
+        print data.shape, data.dtype
+        self.glWidget.renderer.update_data(data)
+        self.glWidget.refresh()
 
     def onColormapChanged(self,index):
         self.glWidget.set_colormap(self.settingsView.colormaps[index])
@@ -435,7 +461,12 @@ class MainWidget(QtGui.QWidget):
         dataModel._dataPosChanged.connect(self.sliderTime.setValue)
         self.sliderTime.valueChanged.connect(self.transform.setPos)
 
-        self.keyPanel.resetModels(self.transform, KeyFrameList())
+        kvList = KeyFrameList()
+        kvList.addItem(KeyFrame(0.))
+        kvList.addItem(KeyFrame(1.))
+
+        self.keyPanel.connect_to_transform(self.transform)
+        self.keyPanel.setModel(kvList)
 
         self.dataSourceChanged()
 
@@ -451,12 +482,13 @@ class MainWidget(QtGui.QWidget):
         else:
             self.setWindowTitle(self.glWidget.dataModel.name())
 
-        self.keyPanel.resetModels(self.transform, KeyFrameList())
+        self.keyPanel.connect_to_transform(self.transform)
 
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
         minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
         self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
+
 
 
 
@@ -615,7 +647,7 @@ def test_sphere():
     phi = np.linspace(0,2*np.pi,Ns+1)[:-1]
     d = np.zeros_like(X)
     for p in phi:
-        d += 100.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
+        d += 200.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
 
 
     app = QtGui.QApplication(sys.argv)
@@ -624,8 +656,8 @@ def test_sphere():
 
     win.setModel(DataModel(NumpyData(d)))
 
-    win.glWidget.transform.setIso(True)
-    win.glWidget.transform.setValueScale(0,40)
+    # win.glWidget.transform.setIso(True)
+    # win.glWidget.transform.setValueScale(0,40)
     win.show()
 
     win.raise_()
