@@ -160,7 +160,6 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox.addLayout(gridBox)
 
-
         vbox.addStretch()
         line =  QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
@@ -211,7 +210,7 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox.addLayout(hbox)
 
-
+        
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("number frames:\t"))
         frameEdit = QtGui.QLineEdit("100")

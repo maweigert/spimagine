@@ -13,7 +13,8 @@ import math
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from keyframe_model import KeyFrame, KeyFrameList
+# from keyframe_model import KeyFrame, KeyFrameList
+from test2 import KeyFrame, KeyFrameList
 
 
 
@@ -67,7 +68,6 @@ class KeyEdge(QGraphicsItem):
         self.source.addKeyEdge(self)
         self.dest.addKeyEdge(self)
         self.adjust()
-
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -147,7 +147,6 @@ class KeyNode(QGraphicsItem):
         else:
             self.setZValue(1)
         self.setToolTip("Keynode")
-        # self.updateTransformData()
 
     def addKeyEdge(self, edge):
         self.edgeList.append(edge)
@@ -182,10 +181,7 @@ class KeyNode(QGraphicsItem):
         painter.setPen(QPen(Qt.transparent, 0))
 
         # painter.drawEllipse(*self.shapeSize)
-        rect = QRect(*self.shapeSize)
-        # painter.drawRect(rect)
-        painter.drawRoundedRect(rect,70.,70.,mode=Qt.RelativeSize)
-
+        painter.drawRect(*self.shapeSize)
         # painter.drawPie(*(list(self.shapeSize)+[0,180*16]))
 
     def itemChange(self, change, value):
@@ -227,16 +223,11 @@ class KeyNode(QGraphicsItem):
 
     def delete(self):
         self.keyList.removeItem(self.ID)
-        # self.graph.resetScene()
-
-
+        # self.graph.scene.removeItem(self)
 
 
     def updateTransformData(self):
-        if self.transformModel is None:
-            self.keyList[self.ID].transformData = TransformData()
-        else:
-            self.keyList[self.ID].transformData = self.transformModel.toTransformData()
+        self.keyList[self.ID].transformData = self.transformModel.toTransformData()
 
     def setTransformData(self):
         self.transformModel.fromTransformData(self.keyList[self.ID].transformData)
@@ -305,55 +296,31 @@ class KeyListView(QGraphicsView):
         self.relativeAspect = 1.
         self.isListening = True
 
-        self.connect_to_transform(None)
-        self.setModel(KeyFrameList())
+        # self.setTransformModel(TransformModel())
 
-    def connect_to_transform(self,transformModel):
-        self.transformModel = transformModel
+        # self.setKeyListModel(KeyFrameList())
 
-    # def reset(self,transformModel):
-    #     self.keyList = KeyFrameList()
+        self.resetModels(TransformModel(),KeyFrameList())
 
-    #     self.keyList.addItem(KeyFrame(0.))
-    #     self.keyList.addItem(KeyFrame(1.))
-
-    #     print self.keyList
-
-    #     logger.debug("reset, : keyList = %s"%self.keyList)
-    #     self.transformModel = transformModel
-    #     self.resetScene()
-    #     self.keyList._modelChanged.connect(self.modelChanged)
-
-
-    # def resetModels(self,transformModel,keyList= KeyFrameList):
-    #     self.keyList = keyList
-    #     logger.debug("resetModels, : keyList = %s"%self.keyList)
-    #     self.transformModel = transformModel
-    #     self.resetScene()
-    #     self.keyList._modelChanged.connect(self.modelChanged)
-
-    def setModel(self,keyList = KeyFrameList()):
-        logger.debug("setModel: %s",keyList)
-
+    def resetModels(self,transformModel,keyList= KeyFrameList):
         self.keyList = keyList
+        logger.debug("resetModels, : keyList = %s"%self.keyList)
+        self.transformModel = transformModel
         self.resetScene()
-        for it in self.scene.items():
-            it.updateTransformData()
-
         self.keyList._modelChanged.connect(self.modelChanged)
 
-    # def setKeyListModel(self,keyList):
-    #     self.keyList = keyList
-    #     self.resetScene()
-    #     self.keyList._modelChanged.connect(self.modelChanged)
+
+    def setKeyListModel(self,keyList):
+        self.keyList = keyList
+        self.resetScene()
+        self.keyList._modelChanged.connect(self.modelChanged)
         # self.keyList._itemChanged.connect(self.itemChanged)
 
-
-    # def setTransformModel(self,transformModel):
-    #     self.transformModel = transformModel
-    #     self.resetScene()
-    #     # self.keyList._modelChanged.connect(self.modelChanged)
-    #     # self.keyList._itemChanged.connect(self.itemChanged)
+    def setTransformModel(self,transformModel):
+        self.transformModel = transformModel
+        self.resetScene()
+        # self.keyList._modelChanged.connect(self.modelChanged)
+        # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
         logger.debug("resetScene: %s",self.keyList)
@@ -364,7 +331,6 @@ class KeyListView(QGraphicsView):
 
 
     def modelChanged(self):
-        logger.debug("model Changed")
         self.resetScene()
 
 
@@ -373,7 +339,7 @@ class KeyListView(QGraphicsView):
 
     def itemMoved(self):
         pass
-
+    
     def keyPressEvent(self, event):
         key = event.key()
 
@@ -555,22 +521,15 @@ class KeyFramePanel(QWidget):
         self.t = 0
 
 
-    def connect_to_transform(self, transform = TransformModel() ):
-        logger.debug("keyPanel.connect_to_transform\n")
-        self.keyView.connect_to_transform(transform)
 
-    def setModel(self,keyList=KeyFrameList()):
-        logger.debug("keyPanel.setModel: keyList = %s\n"%keyList)
-        self.keyView.setModel(keyList)
+    def resetModels(self,transformModel,keyList=KeyFrameList()):
+        logger.debug("keyPanel.resetModel: keyList = %s\n"%keyList)
+        self.transformModel = transformModel
+        self.keyView.resetModels(transformModel,keyList)
 
-    # def resetModels(self,transformModel,keyList=KeyFrameList()):
-    #     logger.debug("keyPanel.resetModel: keyList = %s\n"%keyList)
-    #     self.transformModel = transformModel
-    #     self.keyView.resetModels(transformModel,keyList)
-
-    # def reset(self,transformModel):
-    #     self.transformModel = transformModel
-    #     self.keyView.reset(transformModel)
+    def setTransformModel(self,transformModel):
+        self.transformModel = transformModel
+        self.keyView.setTransformModel(transformModel)
 
     def onPlay(self,evt):
         if self.playTimer.isActive():
@@ -617,11 +576,7 @@ class KeyFramePanel(QWidget):
         self.t = np.clip(newTime,0,1.)
         logger.debug("set key time to %s"%self.t)
 
-        if self.keyView.transformModel:
-            self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
-
-
-
+        self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
 
         self._keyTimeChanged.emit(self.t)
 
@@ -707,16 +662,18 @@ class MainWindow(QMainWindow):
         transModel = TransformModel()
         transModel.setModel(dataModel)
 
-        transModel.setValueScale(0,200)
         dataModel.setPos(2)
-        self.keyPanel.connect_to_transform(transModel)
 
+        self.keyPanel.keyView.setTransformModel(transModel)
 
         k = KeyFrameList()
-        k.addItem(KeyFrame(0.1))
-        k.addItem(KeyFrame(0.9))
+        k.addItem(KeyFrame(0.4))
+        # k.addItem(KeyFrame(0.9))
 
-        self.keyPanel.setModel(k)
+
+
+        self.keyPanel.keyView.setKeyListModel(k)
+
 
         self.setCentralWidget(self.keyPanel)
 
@@ -727,7 +684,6 @@ class MainWindow(QMainWindow):
     #     newSize = event.size()
     #     newSize.setHeight(10)
     #     self.resize(newSize)
-
 
 
 class FooWidget(QWidget):

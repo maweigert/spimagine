@@ -245,7 +245,6 @@ class TransformModel(QtCore.QObject):
         self.setValueScale(0,transformData.maxVal)
         self.setGamma(transformData.gamma)
 
-
     def toTransformData(self):
         return TransformData(quatRot = self.quatRot, zoom = self.zoom,
                              dataPos = self.dataPos,

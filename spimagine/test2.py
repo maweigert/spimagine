@@ -51,7 +51,7 @@ class TransformData(object):
                  bounds = [-1,1,-1,1,-1,1],
                  isBox = True,
                  isIso = False,
-                 alphaPow = 0.):
+                 alphaPow = 100.):
         self.setData(quatRot=quatRot,
                      zoom = zoom,
                      dataPos= dataPos,
@@ -62,9 +62,6 @@ class TransformData(object):
                      isBox = isBox,
                      isIso = isIso,
                      alphaPow = alphaPow)
-        
-
-
 
 
     def __repr__(self):
@@ -134,50 +131,30 @@ class KeyFrameList(QtCore.QObject):
         self._countID = 0
         self.posdict = sortedcontainers.SortedDict()
         self.items = dict()
-        # self.addItem(KeyFrame(0.))
-        # self.addItem(KeyFrame(1.))
+        self.addItem(KeyFrame(0.))
+        self.addItem(KeyFrame(1.))
         self._modelChanged.emit()
 
-
     def __repr__(self):
-        s = "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
-        s += "\n%s\n%s\n"%(str(self.posdict),str(self.items.keys()))
-        return s
+        return "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
+
 
     def dump_to_file(self,fName):
         print json.dumps(self._to_dict)
 
     def addItem(self, frame = KeyFrame()):
-        logger.debug("KeyFrameList.addItem: %s"%frame)
-
-        # print "ADD\nBEFORE"
-        # print self
-
+        logger.debug("KeyFrameList.addItem: %s",frame)
         newID = self._getNewID()
         if newID in self.items:
             raise KeyError()
 
-        if newID in self.posdict.values():
-            raise KeyError()
-
         self.items[newID] = frame
         self.posdict[frame.pos] = newID
-
-        # print "AFTER"
-        # print self
-
         self._modelChanged.emit()
 
     def removeItem(self, ID):
-        logger.debug("KeyFrameList.removeItem: %s"%ID)
-        # print "REMOVE\nBEFORE"
-        # print self
-
         self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
         self.items.pop(ID)
-
-        # print "AFTER"
-        # print self
 
         self._modelChanged.emit()
 
@@ -185,9 +162,8 @@ class KeyFrameList(QtCore.QObject):
         return self.items[ID]
 
     def _getNewID(self):
-        newID = self._countID
         self._countID += 1
-        return newID
+        return self._countID
 
     def item_at(self, index):
         """"returns keyframe in order 0...len(items)"""
@@ -199,17 +175,11 @@ class KeyFrameList(QtCore.QObject):
 
     def pos_at(self, index):
         return self.posdict.keys()[index]
-
-    def pos_at_id(self, ID):
-        return self.posdict.keys()[self.posdict.values().index(ID)]
-
+    
     def update_pos(self,ID, pos):
-        if pos in self.posdict.keys():
-            print "pos already there:", pos
-            return
         frame = self.items[ID]
 
-        self.posdict.pop(self.pos_at_id(ID))
+        self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
         frame.pos = pos
         self.posdict[pos] = ID
 
@@ -309,31 +279,9 @@ if __name__ == '__main__':
 
     k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
-
-    # print k
-    # for t in np.linspace(-.1,1.2,11):
-    #     print t, k.getTransform(t).zoom
-
-    np.random.seed(0)
-
-    def rand_ID(k):
-        #just pick from within the border...
-        return k.item_id_at(np.random.randint(1,len(k.items)-1))
-
-    #adding some
-    for i in range(4):
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
-
+    k.removeItem(k.item_id_at(2))
     print k
-    #shuffle them
-    for i in range(100):
-        print "+++++++++++++++++"
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
 
-        ID = rand_ID(k)
-        print "moving %s"%ID
-        k.update_pos(ID,np.random.uniform(0,1.))
 
-        ID = rand_ID(k)
-        print "removing %s"%ID
-        k.removeItem(ID)
+    for t in np.linspace(-.1,1.2,11):
+        print t, k.getTransform(t).zoom
