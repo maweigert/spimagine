@@ -10,8 +10,28 @@
 #define maxSteps 200
 #define tstep 0.01f
 
+
+
+inline
+float random(uint x, uint y)
+{   
+    uint a = 4421 +(1+x)*(1+y) +x +y;
+
+    for(int i=0; i < 10; i++)
+    {
+        a = (1664525 * a + 1013904223) % 79197919;
+    }
+
+    float rnd = (a*1.0f)/(79197919);
+    
+    return rnd;
+}
+
+
 // intersect ray with a box
 // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
+
+
 
 int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tnear, float *tfar)
 {
@@ -158,21 +178,22 @@ max_project_old(__global float *d_output,
 
 __kernel void
 max_project(__global float *d_output, __global float *d_alpha_output, 
-				 uint Nx, uint Ny,
-				 float boxMin_x,
-				 float boxMax_x,
-				 float boxMin_y,
-				 float boxMax_y,
-				 float boxMin_z,
-				 float boxMax_z,
-				 float maxVal,
-				 float gamma,
-				 float alpha_pow,
+			uint Nx, uint Ny,
+			float boxMin_x,
+			float boxMax_x,
+			float boxMin_y,
+			float boxMax_y,
+			float boxMin_z,
+			float boxMax_z,
+			float minVal,
 
-				 __constant float* invP,
-				 __constant float* invM,
-				 __read_only image3d_t volume,
-				 int isShortType)
+			float maxVal,
+			float gamma,
+			float alpha_pow,
+			__constant float* invP,
+			__constant float* invM,
+			__read_only image3d_t volume,
+			int isShortType)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
@@ -239,6 +260,13 @@ max_project(__global float *d_output, __global float *d_alpha_output,
   float dt = (tfar-tnear)/maxSteps;
 
   float tmax = tnear;
+
+
+  //dither the original
+
+  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  orig += dt*random(entropy+x,entropy+y)*direc;
+	
   // dt = tstep;
   
   for(i=0; i<=maxSteps; i++) {		
@@ -279,7 +307,7 @@ max_project(__global float *d_output, __global float *d_alpha_output,
 
   }
 
-  colVal = (maxVal == 0)?colVal:colVal/maxVal;
+  colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
   
   alphaVal = colVal;
 
@@ -427,7 +455,11 @@ __kernel void iso_surface(
   // if ((x == Nx/2) && (y == Ny/2))
   // 	printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
 
+  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  orig += dt*random(entropy+x,entropy+y)*direc;
 
+
+  
   // dt = tstep;
   for(i=1; i<maxSteps; i++) {		
   	pos = orig + t*direc;
@@ -522,3 +554,173 @@ __kernel void iso_surface(
 }
 
 
+__kernel void
+max_project_part(__global float *d_output, __global float *d_alpha_output, 
+				 uint Nx, uint Ny,
+				 float boxMin_x,
+				 float boxMax_x,
+				 float boxMin_y,
+				 float boxMax_y,
+				 float boxMin_z,
+				 float boxMax_z,
+				 float minVal,
+				 float maxVal,
+				 float gamma,
+				 float alpha_pow,
+				 int numParts,
+				 int currentPart,
+				 __constant float* invP,
+				 __constant float* invM,
+				 __read_only image3d_t volume,
+				 int isShortType)
+{
+  const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
+	CLK_ADDRESS_CLAMP_TO_EDGE |
+	// CLK_FILTER_NEAREST ;
+	CLK_FILTER_LINEAR ;
+  
+  uint x = get_global_id(0);
+  uint y = get_global_id(1);
+
+  float u = (x / (float) Nx)*2.0f-1.0f;
+  float v = (y / (float) Ny)*2.0f-1.0f;
+
+  float4 boxMin = (float4)(boxMin_x,boxMin_y,boxMin_z,1.f);
+  float4 boxMax = (float4)(boxMax_x,boxMax_y,boxMax_z,1.f);
+
+
+  // calculate eye ray in world space
+  float4 orig0, orig;
+  float4 direc0, direc;
+  float4 temp;
+  float4 back,front;
+
+
+  front = (float4)(u,v,-1,1);
+  back = (float4)(u,v,1,1);
+  
+
+  orig0 = mult(invP,front);  
+  orig0 *= 1.f/orig0.w;
+
+
+  orig = mult(invM,orig0);
+  orig *= 1.f/orig.w;
+  
+  temp = mult(invP,back);
+
+  temp *= 1.f/temp.w;
+
+  direc = mult(invM,normalize(temp-orig0));
+  direc.w = 0.0f;
+  
+
+  // find intersection with box
+  float tnear, tfar;
+  int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
+  if (!hit) {
+  	if ((x < Nx) && (y < Ny)) {
+  	  d_output[x+Nx*y] = 0.f;
+	  d_alpha_output[x+Nx*y] = 0.f;
+
+  	}
+  	return;
+  }
+  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
+
+  float colVal = 0;
+  float alphaVal = 0;
+  
+
+  float4 pos;
+  uint i;
+
+
+  float dt = (tfar-tnear)/maxSteps*numParts;
+  float t = tnear + dt*currentPart/numParts;
+
+  //dither the original
+
+  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  orig += dt*random(entropy+x,entropy+y)*direc;
+	
+  // dt = tstep;
+  
+  for(i=0; i<=maxSteps; i++) {		
+  	pos = orig + t*direc;
+	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
+
+  	// read from 3D texture
+	float newVal;
+	if (isShortType)
+	  newVal = 1.f*read_imageui(volume, volumeSampler, pos).x;
+	else
+	  newVal = read_imagef(volume, volumeSampler, pos).x;
+
+
+	// // this ist still slow as hell...
+
+	// newVal = (maxVal == 0)?newVal:newVal/maxVal;
+	// colVal = max(colVal, newVal*(1-alphaVal));
+
+  	// alphaVal += (1.f-alphaVal)*pow(newVal,alpha_pow);
+
+	// // this ist still slow as hell...
+	// alphaVal += maxSteps*dt*(1.f-alphaVal)*pow(newVal,alpha_pow);
+
+	if (alpha_pow>.02)
+	  newVal *= 1./(1+alpha_pow*i);
+
+	  
+	colVal = max(colVal, newVal);
+
+	t += dt;
+
+  	// if ((t > tfar) || (alphaVal >=1.f))
+	//   break;
+
+	if (t > tfar)
+	  break;
+
+  }
+
+  colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+  
+  alphaVal = colVal;
+
+  
+  // alphaVal = .3f*(tfar-tnear);
+
+
+  // if ((x == Nx/2) && (y == Ny/2))
+  // 	printf("start:  %.2f %.2f %.2f %.2f\n",tnear,tfar,tmax,alphaVal);
+
+  colVal = pow(colVal,gamma);	
+
+  colVal = clamp(colVal,0.f,1.f);
+
+  alphaVal = clamp(alphaVal,0.f,1.f);
+
+  // for depth test...
+  alphaVal = tnear;
+
+
+  // if ((x == Nx/2) && (y == Ny/2))
+  // 	printf("%.5f %.5f\n",tnear,tfar);
+  
+
+  
+  if ((x < Nx) && (y < Ny)){
+	if (currentPart==0){
+	  d_output[x+Nx*y] = colVal;
+	  d_alpha_output[x+Nx*y] = alphaVal;
+	}
+	else{
+	  d_output[x+Nx*y] = max(colVal,d_output[x+Nx*y]);
+	  d_alpha_output[x+Nx*y] = max(alphaVal,d_alpha_output[x+Nx*y]);
+	}
+	
+  }
+
+
+}

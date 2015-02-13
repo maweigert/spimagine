@@ -45,6 +45,7 @@ class TransformData(object):
     def __init__(self,quatRot = Quaternion(),
                  zoom = 1,
                  dataPos = 0,
+                 minVal = 0.,
                  maxVal = 100.,
                  gamma = 1.,
                  translate = [0,0,0],
@@ -55,6 +56,7 @@ class TransformData(object):
         self.setData(quatRot=quatRot,
                      zoom = zoom,
                      dataPos= dataPos,
+                     minVal = minVal,
                      maxVal = maxVal,
                      gamma= gamma,
                      translate = translate,
@@ -68,14 +70,16 @@ class TransformData(object):
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
 
-    def setData(self,quatRot,zoom, dataPos, maxVal,
+    def setData(self,quatRot,zoom, dataPos, minVal, maxVal,
                 gamma, translate, bounds,isBox,isIso, alphaPow):
 
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
         self.dataPos = dataPos
+        self.minVal = minVal
+
         self.maxVal = maxVal
         self.gamma = gamma
         self.bounds  = np.array(bounds)
@@ -90,6 +94,8 @@ class TransformData(object):
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
         newPos = int((1.-t)*x1.dataPos + t*x2.dataPos)
+        newMinVal = (1.-t)*x1.minVal + t*x2.minVal
+
         newMaxVal = (1.-t)*x1.maxVal + t*x2.maxVal
         newGamma = (1.-t)*x1.gamma + t*x2.gamma
 
@@ -102,6 +108,8 @@ class TransformData(object):
 
         return TransformData(quatRot = newQuat,zoom = newZoom,
                              dataPos= newPos,
+                             minVal = newMinVal,
+
                              maxVal = newMaxVal,
                              gamma= newGamma,
                              translate = newTranslate,

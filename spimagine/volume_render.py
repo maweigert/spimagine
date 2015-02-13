@@ -101,7 +101,7 @@ class VolumeRenderer:
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
-                                 "-cl-fast-relaxed-math")
+                                 "-cl-fast-relaxed-math -cl-unsafe-math-optimizations -cl-mad-enable")
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
         self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
@@ -119,6 +119,7 @@ class VolumeRenderer:
         self.set_dtype()
         self.set_gamma()
         self.set_max_val()
+        self.set_min_val()
 
         self.set_alpha_pow()
         self.set_box_boundaries()
@@ -169,6 +170,9 @@ class VolumeRenderer:
     def set_max_val(self,maxVal = 0.):
         self.maxVal = maxVal
 
+    def set_min_val(self,minVal = 0.):
+        self.minVal = minVal
+        
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
 
@@ -251,15 +255,19 @@ class VolumeRenderer:
 
 
     def render(self,data = None, stackUnits = None,
-               maxVal = None, gamma = None,
+               minVal = None, maxVal = None, gamma = None,
                modelView = None, projection = None,
-               boxBounds = None, return_alpha = False, method="max_project"):
+               boxBounds = None, return_alpha = False, method="max_project",
+               numParts = 1, currentPart = 0):
 
         if data is not None:
             self.set_data(data)
 
         if maxVal is not None:
             self.set_max_val(maxVal)
+
+        if minVal is not None:
+            self.set_min_val(minVal)
 
         if gamma is not None:
             self.set_gamma(gamma)
@@ -308,6 +316,7 @@ class VolumeRenderer:
                             np.float32(self.boxBounds[3]),
                             np.float32(self.boxBounds[4]),
                             np.float32(self.boxBounds[5]),
+                            np.float32(self.minVal),                                
                             np.float32(self.maxVal),
                             np.float32(self.gamma),
                             np.float32(self.alphaPow),
@@ -317,7 +326,33 @@ class VolumeRenderer:
                             np.int32(self.dtype == np.uint16)
                             )
 
+
+        if method=="max_project_part":
+            self.proc.runKernel("max_project_part",
+                            (self.width,self.height),
+                            None,
+                            self.buf,self.bufAlpha,
+                            np.int32(self.width),np.int32(self.height),
+                            np.float32(self.boxBounds[0]),
+                            np.float32(self.boxBounds[1]),
+                            np.float32(self.boxBounds[2]),
+                            np.float32(self.boxBounds[3]),
+                            np.float32(self.boxBounds[4]),
+                            np.float32(self.boxBounds[5]),
+                            np.float32(self.minVal),                                
+                            np.float32(self.maxVal),
+                            np.float32(self.gamma),
+                            np.float32(self.alphaPow),
+                            np.int32(numParts),
+                            np.int32(currentPart),
+                            self.invPBuf,
+                            self.invMBuf,
+                            self.dataImg,
+                            np.int32(self.dtype == np.uint16)
+                            )
+    
         if method=="iso_surface":
+            print "ISSSOOOOOO"
             self.proc.runKernel("iso_surface",
                             (self.width,self.height),
                             None,
