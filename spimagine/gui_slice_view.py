@@ -219,13 +219,13 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+            self.transform.reset(amin(self.dataModel[0])-1,amax(self.dataModel[0])+1,self.dataModel.stackUnits())
 
             self.refresh()
 
 
     def dataSourceChanged(self):
-        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+        self.transform.reset(amin(self.dataModel[0])-1,amax(self.dataModel[0])+1,self.dataModel.stackUnits())
         self.refresh()
 
 

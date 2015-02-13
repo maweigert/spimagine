@@ -185,7 +185,7 @@ void main()
 
   float tnear = texture2D(texture_alpha,texcoord).x;
 
-  float att = exp(-.5*(zPos-tnear));
+  float att = exp(-.4*(zPos-tnear));
 
   gl_FragColor = vec4(att,att,att,.3);
 
@@ -268,9 +268,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(20)
+        self.renderTimer.setInterval(50)
         self.renderTimer.timeout.connect(self.onRenderTimer)
         self.renderTimer.start()
+        self.renderedSteps = 0
 
         self.N_PREFETCH = N_PREFETCH
 
@@ -428,7 +429,9 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dataModelChanged(self):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
-            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+            self.transform.reset(minVal = amin(self.dataModel[0])-1,
+                                 maxVal = amax(self.dataModel[0])+1,
+                                 stackUnits= self.dataModel.stackUnits())
 
             self.refresh()
 
@@ -436,7 +439,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
-        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+        self.transform.reset(minVal = amin(self.dataModel[0])-1,
+                             maxVal = amax(self.dataModel[0])+1,
+                             stackUnits= self.dataModel.stackUnits())
         self.refresh()
 
 
@@ -458,6 +463,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # if self.parentWidget() and self.dataModel:
         #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
         self.renderUpdate = True
+        self.renderedSteps = 0
 
     def resizeGL(self, width, height):
 
@@ -629,16 +635,19 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
+            self.renderer.set_min_val(self.transform.minVal)
+
             self.renderer.set_max_val(self.transform.maxVal)
             self.renderer.set_gamma(self.transform.gamma)
             self.renderer.set_alpha_pow(self.transform.alphaPow)
 
             if self.transform.isIso:
                 renderMethod = "iso_surface"
+                
             else:
-                renderMethod = "max_project"
+                renderMethod = "max_project_part"
 
-            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True)
+            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = 1, currentPart = self.renderedSteps)
 
 
             if self.transform.isSlice:
@@ -664,10 +673,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.grabFrameBuffer().save(fName)
 
 
+        
     def onRenderTimer(self):
-        if self.renderUpdate:
+        # if self.renderUpdate:
+        #     self.render()
+        #     self.renderUpdate = False
+        #     self.updateGL()
+        print "rendertimer", self.renderedSteps
+        if self.renderedSteps<1:
             self.render()
-            self.renderUpdate = False
+            self.renderedSteps += 1
             self.updateGL()
 
 
@@ -786,18 +801,21 @@ def test_sphere():
 
 def test_demo():
 
-    from data_model import DataModel, DemoData, SpimData, TiffData
+    from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 
     app = QtGui.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(500,500))
+    win = GLWidget(size=QtCore.QSize(800,800))
 
 
+    d = np.linspace(0,100.,512**3,np.float32).reshape((512,)*3).astype(np.float32)
 
-    win.setModel(DataModel(DemoData(50)))
+    win.setModel(DataModel(NumpyData(d)))
+    
+    # win.setModel(DataModel(DemoData()))
 
 
-    win.transform.setValueScale(0,1000000)
+    # win.transform.setValueScale(0,10000.)
     # win.transform.setBox(False)
 
     win.show()

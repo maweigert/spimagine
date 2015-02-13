@@ -31,6 +31,7 @@ class ImageFlow(QtCore.QObject):
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
+    import os
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
@@ -84,8 +85,8 @@ class ImageProcessorView(QtGui.QWidget):
         gridBox = QtGui.QGridLayout()
 
         self.checkActive = gui_utils.createStandardCheckbox(self,
-            gui_utils.absPath("images/icon_processor_active"),
-            gui_utils.absPath("images/icon_processor_inactive"))
+            absPath("images/icon_processor_active"),
+            absPath("images/icon_processor_inactive"))
 
 
         label = QtGui.QLabel(self.proc.name)
@@ -93,13 +94,21 @@ class ImageProcessorView(QtGui.QWidget):
         gridBox.addWidget(self.checkActive,0,0)
 
         gridBox.addWidget(label,0,1)
+
         for i, (key, val)  in enumerate(self.proc.kwargs.iteritems()):
             dtype = type(val)
-            edit = QtGui.QLineEdit(str(val))
-            edit.setValidator(QtGui.QDoubleValidator())
-            edit.returnPressed.connect(self.set_proc_attr(edit,key,dtype))
-            gridBox.addWidget(QtGui.QLabel(key),i+1,0)
-            gridBox.addWidget(edit,i+1,1)
+            if dtype == bool:
+                check = QtGui.QCheckBox("",self)
+                check.stateChanged.connect(self.set_proc_attr_check(check,key,val))
+                gridBox.addWidget(QtGui.QLabel(key),i+1,0)
+                gridBox.addWidget(check,i+1,1)
+
+            elif dtype in (int,float,np.int,np.float):
+                edit = QtGui.QLineEdit(str(val))
+                edit.setValidator(QtGui.QDoubleValidator())
+                edit.returnPressed.connect(self.set_proc_attr_edit(edit,key,dtype))
+                gridBox.addWidget(QtGui.QLabel(key),i+1,0)
+                gridBox.addWidget(edit,i+1,1)
 
         vbox.addLayout(gridBox)
         vbox.addStretch()
@@ -112,20 +121,24 @@ class ImageProcessorView(QtGui.QWidget):
         }
         """)
 
-
-
         self.checkActive.stateChanged.connect(lambda x:self._stateChanged.emit(x!=0))
         # self._stateChanged.connect(self.foo)
 
 
 
-    def set_proc_attr(self,obj, key , dtype):
+    def set_proc_attr_edit(self,obj, key , dtype):
         def func():
             print "setting", key , obj.text()
             setattr(self.proc,key, dtype(obj.text()))
             self._stateChanged.emit(-1)
         return func
 
+    def set_proc_attr_check(self,obj, key , dtype):
+        def func():
+            print "setting", key , obj.checkState() !=0
+            setattr(self.proc,key, obj.checkState() !=0)
+            self._stateChanged.emit(-1)
+        return func
 
     def is_active(self):
         return self.checkActive.checkState() != 0
@@ -134,18 +147,19 @@ class ImageProcessorView(QtGui.QWidget):
 
 class ImageProcessorListView(QtGui.QWidget):
     _stateChanged = QtCore.pyqtSignal()
-    def __init__(self, procs = []):
+    def __init__(self, imps = []):
         super(QtGui.QWidget,self).__init__()
 
-        vbox = QtGui.QVBoxLayout()
-        self.impViews = [ImageProcessorView(p) for p in procs]
+        self.impViews = [ImageProcessorView(p) for p in imps]
 
-        for imp in self.impViews:
-            vbox.addWidget(imp)
-            imp._stateChanged.connect(self.stateChanged)
-            line =  QtGui.QFrame()
-            line.setFrameShape(QtGui.QFrame.HLine)
-            vbox.addWidget(line)
+        vbox = QtGui.QVBoxLayout()
+        self.gridBox = QtGui.QGridLayout()
+
+
+        for impView in self.impViews:
+            self._include_imp_view(impView)
+
+        vbox.addLayout(self.gridBox)
 
         vbox.addStretch()
 
@@ -157,7 +171,22 @@ class ImageProcessorListView(QtGui.QWidget):
         }
         """)
 
-        
+    def _include_imp_view(self,impView):
+        impView._stateChanged.connect(self.stateChanged)
+        print self.gridBox.rowCount()
+        self.gridBox.addWidget(impView,self.gridBox.rowCount(),0)
+        # line =  QtGui.QFrame()
+        # line.setFrameShape(QtGui.QFrame.HLine)
+        # self.mainBox.addWidget(line)
+
+
+    def add_image_processor(self, imp):
+        impView = ImageProcessorView(imp)
+        self.impViews.append(impView)
+        self._include_imp_view(impView)
+        self._stateChanged.emit()
+
+
     def stateChanged(self):
         self._stateChanged.emit()
 
@@ -173,6 +202,7 @@ class MainWindow(QtGui.QMainWindow):
 
         foo  = ImageProcessorListView([BlurProcessor(),FFTProcessor()])
 
+        foo.add_image_processor(BlurProcessor())
         self.setCentralWidget(foo)
         self.setStyleSheet("background-color:black;")
 

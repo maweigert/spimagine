@@ -43,7 +43,7 @@ from spimagine.gui_utils import *
 import logging
 logger = logging.getLogger(__name__)
 
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 
@@ -137,6 +137,10 @@ class MainWidget(QtGui.QWidget):
             absPath("images/icon_method_iso.png"),
             tooltip="iso surface")
 
+        self.checkProcView = createStandardCheckbox(self,
+            absPath("images/icon_process_active.png"),
+            absPath("images/icon_process_inactive.png"),
+            tooltip="image processors")
 
 
         self.checkSliceView = createStandardCheckbox(
@@ -176,7 +180,12 @@ class MainWidget(QtGui.QWidget):
         self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.scaleSlider.setToolTip("value scale")
 
+        self.minSlider = FloatSlider(QtCore.Qt.Vertical)
+        self.minSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
+        self.minSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.minSlider.setToolTip("min scale")
 
+        
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(.25,2.)
 
@@ -209,9 +218,14 @@ class MainWidget(QtGui.QWidget):
         def func2(x):
             return np.log2(x)
 
-        self.scaleSlider.floatValueChanged.connect(lambda x: self.transform.setValueScale(0,func1(x)))
+        self.scaleSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
         self.transform._maxChanged.connect(lambda x:self.scaleSlider.setValue(func2(x)))
 
+
+        self.minSlider.floatValueChanged.connect(lambda x: self.transform.setMin(func1(x)))
+        self.transform._minChanged.connect(lambda x:self.minSlider.setValue(func2(x)))
+
+        
         self.gammaSlider.floatValueChanged.connect(self.transform.setGamma)
         self.transform._gammaChanged.connect(self.gammaSlider.setValue)
 
@@ -224,7 +238,7 @@ class MainWidget(QtGui.QWidget):
                                                    FFTProcessor(),
                                                    LucyRichProcessor()])
 
-        # self.impView.hide()
+        self.impListView.hide()
 
 
         self.settingsView = SettingsPanel()
@@ -236,6 +250,8 @@ class MainWidget(QtGui.QWidget):
         """)
 
         hbox0 = QtGui.QHBoxLayout()
+        hbox0.addWidget(self.minSlider)
+
         hbox0.addWidget(self.scaleSlider)
         hbox0.addWidget(self.gammaSlider)
 
@@ -269,6 +285,10 @@ class MainWidget(QtGui.QWidget):
         hbox.addSpacing(50)
         hbox.addWidget(self.checkIsoView)
         hbox.addWidget(self.checkSliceView)
+
+        hbox.addSpacing(10)
+        hbox.addWidget(self.checkProcView)
+        hbox.addSpacing(10)
 
         hbox.addWidget(self.checkSettings)
 
@@ -341,6 +361,8 @@ class MainWidget(QtGui.QWidget):
         self.checkSliceView.stateChanged.connect(self.sliceWidget.setVisible)
         self.checkSliceView.stateChanged.connect(self.transform.setShowSlice)
 
+        self.checkProcView.stateChanged.connect(self.impListView.setVisible)
+
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
         self.settingsView._stackUnitsChanged.connect(self.transform.setStackUnits)
@@ -349,7 +371,6 @@ class MainWidget(QtGui.QWidget):
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
         self.settingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
-
 
         self.impListView._stateChanged.connect(self.impStateChanged)
 
@@ -374,6 +395,7 @@ class MainWidget(QtGui.QWidget):
         data = self.transform.dataModel[self.transform.dataPos]
         for imp in self.impListView.impViews:
             if imp.is_active():
+                print "active: ", imp.proc.name
                 data = imp.proc.apply(data)
 
         print data.shape, data.dtype

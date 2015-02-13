@@ -20,6 +20,8 @@ from spimagine.keyframe_model import TransformData
 
 class TransformModel(QtCore.QObject):
     _maxChanged = QtCore.pyqtSignal(float)
+    _minChanged = QtCore.pyqtSignal(float)
+    
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
 
@@ -46,7 +48,7 @@ class TransformModel(QtCore.QObject):
     def setModel(self,dataModel):
         self.dataModel = dataModel
 
-    def reset(self,maxVal = 256.,stackUnits=None):
+    def reset(self,minVal = 0., maxVal = 256.,stackUnits=None):
         logger.debug("reset")
 
         self.dataPos = 0
@@ -56,7 +58,7 @@ class TransformModel(QtCore.QObject):
         self.setIso(False)
         self.isPerspective = True
         self.setPerspective()
-        self.setValueScale(0,maxVal)
+        self.setValueScale(minVal,maxVal)
         self.setGamma(1.)
         self.setAlphaPow(0)
         self.setBox(True)
@@ -144,11 +146,23 @@ class TransformModel(QtCore.QObject):
     def setValueScale(self,minVal,maxVal):
         logger.debug("set scale to %s,%s"%(minVal, maxVal))
 
-        self.minVal, self.maxVal = minVal, maxVal
-        self._maxChanged.emit(self.maxVal)
+        self.setMin(minVal)
+        self.setMax(maxVal)
 
+    def setMin(self,minVal):
+        self.minVal = max(1.e-6,minVal)
+        logger.debug("set min to %s"%(self.minVal))
+
+        self._minChanged.emit(self.minVal)
         self._transformChanged.emit()
 
+    def setMax(self,maxVal):
+        self.maxVal = maxVal
+        
+        logger.debug("set max to %s"%(self.maxVal))
+
+        self._maxChanged.emit(self.maxVal)
+        self._transformChanged.emit()
 
     def setStackUnits(self,px,py,pz):
         self.stackUnits = px,py,pz
@@ -242,12 +256,13 @@ class TransformModel(QtCore.QObject):
 
         self.setAlphaPow(transformData.alphaPow)
         self.setTranslate(*transformData.translate)
-        self.setValueScale(0,transformData.maxVal)
-        self.setGamma(transformData.gamma)
+        self.setValueScale(transformData.minVal,transformData.maxVal)
+        # self.setGamma(transformData.gamma)
 
     def toTransformData(self):
         return TransformData(quatRot = self.quatRot, zoom = self.zoom,
                              dataPos = self.dataPos,
+                             minVal = self.minVal,
                              maxVal = self.maxVal,
                              gamma= self.gamma,
                              translate = self.translate,
