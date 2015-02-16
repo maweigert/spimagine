@@ -74,9 +74,9 @@ class VolumeRenderer:
 
         try:
             # simulate GPU fail...
-            # raise Exception()
+            raise Exception()
 
-            self.dev = OCLDevice(useGPU = True,
+            self.dev = OCLDevice(useGPU = True, 
                                  useDevice = spimagine.__OPENCLDEVICE__)
 
             self.isGPU = True
@@ -234,9 +234,19 @@ class VolumeRenderer:
 
     def set_projection(self,projection = mat4_identity()):
         self.projection = projection
+        self.update_matrices()
 
     def set_modelView(self, modelView = mat4_identity()):
         self.modelView = 1.*modelView
+        self.update_matrices()
+
+    def update_matrices(self):
+        if hasattr(self,"dataImg"):
+            mScale = self._stack_scale_mat()
+            invM = inv(np.dot(self.modelView,mScale))
+            self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
+            invP = inv(self.projection)
+            self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
     # def _get_user_coords(self,x,y,z):
     #     p = array([x,y,z,1])
@@ -296,16 +306,20 @@ class VolumeRenderer:
             else:
                 return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
-        mScale = self._stack_scale_mat()
+        # mScale = self._stack_scale_mat()
+        # invM = inv(np.dot(self.modelView,mScale))
+        # self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
 
-        invM = inv(np.dot(self.modelView,mScale))
-        self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
-
-        invP = inv(self.projection)
-        self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
+        # invP = inv(self.projection)
+        # self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
         if method=="max_project":
-            self.proc.runKernel("max_project",
+            if self.dtype == np.uint16:
+                method = "max_project_short"
+            else:
+                method = "max_project_float"
+                
+            self.proc.runKernel(method,
                             (self.width,self.height),
                             None,
                             self.buf,self.bufAlpha,
@@ -322,13 +336,16 @@ class VolumeRenderer:
                             np.float32(self.alphaPow),
                             self.invPBuf,
                             self.invMBuf,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+                            self.dataImg)
 
 
         if method=="max_project_part":
-            self.proc.runKernel("max_project_part",
+            if self.dtype == np.uint16:
+                method = "max_project_part_short"
+            else:
+                method = "max_project_part_float"
+
+            self.proc.runKernel(method,
                             (self.width,self.height),
                             None,
                             self.buf,self.bufAlpha,
@@ -347,12 +364,9 @@ class VolumeRenderer:
                             np.int32(currentPart),
                             self.invPBuf,
                             self.invMBuf,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+                            self.dataImg)
     
         if method=="iso_surface":
-            print "ISSSOOOOOO"
             self.proc.runKernel("iso_surface",
                             (self.width,self.height),
                             None,
@@ -481,11 +495,15 @@ def test_simple2():
     # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
     t1 = time.time()
 
+    rend.dev.queue.finish()
     rend.set_data(d, autoConvert = True)
+    rend.dev.queue.finish()
 
     t2 = time.time()
 
+    rend.dev.queue.finish()
     out = rend.render(maxVal = 200.)
+    rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
 
@@ -520,7 +538,44 @@ def test_real():
     return d, rend, out
 
 
+def test_speed(N=128,renderWidth = 400, numParts = 1):
+    import time
+
+    d = np.ones((N,)*3,dtype=np.float32)
+    rend = VolumeRenderer((renderWidth,)*2)
+
+
+    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
+    t1 = time.time()
+
+    rend.dev.queue.finish()
+    rend.set_data(d, autoConvert = True)
+    rend.dev.queue.finish()
+
+    rend.set_modelView(mat4_rotation(.5,0,1.,0))
+
+    t2 = time.time()
+    rend.dev.queue.finish()
+    for i in range(10):
+        out = rend.render(method = "max_project_part", maxVal = 200.,
+                          currentPart=0,numParts=numParts)
+    rend.dev.queue.finish()
+
+    t3 = time.time()
+
+    print "time to set data %s^3:\t %.2f ms"%(N,1000.*(t2-t1))
+
+    print "time to render %s^3:\t %.2f ms"%(N,1000./10.*(t3-t2))
+
+    return 1000./10.*(t3-t2)
 
 if __name__ == "__main__":
-    d, rend, out = test_simple2()
+    # d, rend, out = test_simple2()
     # d, rend, out = test_real()
+
+
+    ws = range(100,1500,100)
+    nums = range(1,2)
+    ts = [[test_speed(128,w,n) for w in ws] for n in nums]
+
+    

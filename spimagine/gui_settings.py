@@ -49,6 +49,8 @@ def createImgCheckBox(fName_active,fName_inactive):
 class SettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _playIntervalChanged = QtCore.pyqtSignal(int)
+    _substepsChanged = QtCore.pyqtSignal(int)
+
     _dirNameChanged =  QtCore.pyqtSignal(str)
     _frameNumberChanged = QtCore.pyqtSignal(int)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
@@ -133,19 +135,24 @@ class SettingsPanel(QtGui.QWidget):
         gridBox.addWidget(self.colorCombo,3,1)
 
 
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),4,0)
-        gridBox.addWidget(self.checkLoopBounce,4,1)
+        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"))
+        gridBox.addWidget(self.checkLoopBounce)
 
 
         gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
-
         self.playInterval = QtGui.QLineEdit("50")
         self.playInterval.setValidator(QtGui.QIntValidator(bottom=10))
         self.playInterval.returnPressed.connect(self.playIntervalChanged)
         gridBox.addWidget(self.playInterval)
 
-        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),6,0)
-        gridBox.addWidget(self.checkEgg,6,1)
+        gridBox.addWidget(QtGui.QLabel("subrender steps:\t"))
+        self.editSubsteps = QtGui.QLineEdit("1")
+        self.editSubsteps.setValidator(QtGui.QIntValidator(bottom=1))
+        self.editSubsteps.returnPressed.connect(self.substepsChanged)
+        gridBox.addWidget(self.editSubsteps)
+
+        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"))
+        gridBox.addWidget(self.checkEgg)
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
@@ -155,8 +162,8 @@ class SettingsPanel(QtGui.QWidget):
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
-        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),7,0)
-        gridBox.addWidget(self.sliderAlphaPow,7,1)
+        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"))
+        gridBox.addWidget(self.sliderAlphaPow)
 
         vbox.addLayout(gridBox)
 
@@ -285,6 +292,10 @@ class SettingsPanel(QtGui.QWidget):
     def playIntervalChanged(self):
         self._playIntervalChanged.emit(int(self.playInterval.text()))
 
+    def substepsChanged(self):
+        print "changed substeps to ", int(self.editSubsteps.text())
+        self._substepsChanged.emit(int(self.editSubsteps.text()))
+        
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, ):

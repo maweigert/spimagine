@@ -42,7 +42,10 @@ def _read3dTiff_libtiff(fName):
     import libtiff
     tif = libtiff.TIFFfile(fName)
     data = tif.get_samples()[0][0]
-    return data
+    if data.dtype == ">u2":
+        return data.astype(np.uint16)
+    else:
+        return data
 
 def read3dTiff(fName):
     if _LIBTIFF_SUPPORT:

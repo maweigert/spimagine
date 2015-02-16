@@ -227,6 +227,12 @@ void main()
 }
 """
 
+def _next_golden(n):
+    res = round((sqrt(5)-1.)/2.*n)
+    print n, res
+    return int(round((sqrt(5)-1.)/2.*n))
+
+
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -243,7 +249,7 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-
+    
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -268,18 +274,22 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(50)
+        self.renderTimer.setInterval(1)
         self.renderTimer.timeout.connect(self.onRenderTimer)
         self.renderTimer.start()
         self.renderedSteps = 0
 
         self.N_PREFETCH = N_PREFETCH
 
+        self.NSubrenderSteps = 1
+
+
         self.dataModel = None
 
         # self.setMouseTracking(True)
 
         self.refresh()
+
 
 
 
@@ -345,7 +355,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         self.refresh()
 
-
+    
     def initializeGL(self):
 
         self.resized = True
@@ -647,7 +657,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             else:
                 renderMethod = "max_project_part"
 
-            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = 1, currentPart = self.renderedSteps)
+            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
 
             if self.transform.isSlice:
@@ -672,17 +682,18 @@ class GLWidget(QtOpenGL.QGLWidget):
         glFlush()
         self.grabFrameBuffer().save(fName)
 
-
         
     def onRenderTimer(self):
         # if self.renderUpdate:
         #     self.render()
         #     self.renderUpdate = False
         #     self.updateGL()
-        print "rendertimer", self.renderedSteps
-        if self.renderedSteps<1:
+        if self.renderedSteps<self.NSubrenderSteps:
+            # print ((self.renderedSteps*7)%self.NSubrenderSteps)
+            s = time.time()
             self.render()
-            self.renderedSteps += 1
+            logger.debug("time to render:  %.2f"%(1000.*(time.time()-s)))
+            self.renderedSteps +=1 
             self.updateGL()
 
 
@@ -802,14 +813,19 @@ def test_sphere():
 def test_demo():
 
     from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-
+    import imgtools
+    
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800,800))
 
+    N = 256
 
-    d = np.linspace(0,100.,512**3,np.float32).reshape((512,)*3).astype(np.float32)
-
+    d = imgtools.ZYX(N)[0]
+    
+    d = 100*exp(-100*d**2)
+    win.NSubrenderSteps = 1
+    
     win.setModel(DataModel(NumpyData(d)))
     
     # win.setModel(DataModel(DemoData()))
