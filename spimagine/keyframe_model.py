@@ -40,7 +40,6 @@ class KeyableParameter(object):
 
 
 
-
 class TransformData(object):
     def __init__(self,quatRot = Quaternion(),
                  zoom = 1,
@@ -64,9 +63,6 @@ class TransformData(object):
                      isBox = isBox,
                      isIso = isIso,
                      alphaPow = alphaPow)
-        
-
-
 
 
     def __repr__(self):
@@ -157,9 +153,6 @@ class KeyFrameList(QtCore.QObject):
 
     def addItem(self, frame = KeyFrame()):
         logger.debug("KeyFrameList.addItem: %s"%frame)
-
-        # print "ADD\nBEFORE"
-        # print self
 
         newID = self._getNewID()
         if newID in self.items:

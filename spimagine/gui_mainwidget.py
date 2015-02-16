@@ -334,6 +334,8 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
 
+        self.settingsView._substepsChanged.connect(self.substepsChanged)
+
         self.checkIsoView.stateChanged.connect(stateToBool(self.glWidget.transform.setIso))
 
         self.transform._isoChanged.connect(self.checkIsoView.setChecked)
@@ -393,6 +395,7 @@ class MainWidget(QtGui.QWidget):
 
     def impStateChanged(self):
         data = self.transform.dataModel[self.transform.dataPos]
+
         for imp in self.impListView.impViews:
             if imp.is_active():
                 print "active: ", imp.proc.name
@@ -554,6 +557,9 @@ class MainWidget(QtGui.QWidget):
             self.playTimer.stop()
         self.playTimer.setInterval(val)
 
+    def substepsChanged(self,val):
+        self.glWidget.NSubrenderSteps = val
+        self.glWidget.refresh()
 
     def openFile(self,e):
         path = QtGui.QFileDialog.getOpenFileName(self, 'Open Tif File',

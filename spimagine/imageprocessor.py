@@ -45,6 +45,7 @@ class BlurProcessor(ImageProcessor):
         x = np.linspace(-1.,1.,self.size)
         h = np.exp(-4.*x**2)
         h *= 1./sum(h)
+        print "datatype: ",data.dtype
         return imgtools.convolve_sep3(data, h, h, h)
 
 class NoiseProcessor(ImageProcessor):
@@ -65,7 +66,7 @@ class FFTProcessor(ImageProcessor):
         #normalized fft
         res = 1./np.sqrt(data.size)*np.fft.fftshift(abs(imgtools.ocl_fft(imgtools.pad_to_power2(data,mode="wrap"))))
         res = imgtools.pad_to_shape(res,data.shape)
-        
+
         if self.log:
             return np.log2(0.001+res)
         else:
