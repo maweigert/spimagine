@@ -39,6 +39,7 @@ from spimagine.transform_model import TransformModel
 
 from spimagine.gui_utils import *
 
+from spimagine.jack_plugin import JackPlugin
 
 import logging
 logger = logging.getLogger(__name__)
@@ -95,7 +96,10 @@ class MainWidget(QtGui.QWidget):
         self.sliceWidget = SliceWidget(self)
         self.sliceWidget.hide()
 
+        # self.jack = JackPlugin(self.transform)
+        # self.jack.start()
 
+        
         self.sliceWidget.setTransform(self.transform)
 
         self.fwdButton = createStandardButton(self,
@@ -373,7 +377,7 @@ class MainWidget(QtGui.QWidget):
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
         self.settingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
-
+        self.settingsView._rgbColorChanged.connect(self.onRgbColorChanged)
         self.impListView._stateChanged.connect(self.impStateChanged)
 
         self.settingsView._dirNameChanged.connect(self.keyPanel.setDirName)
@@ -413,6 +417,14 @@ class MainWidget(QtGui.QWidget):
         self.sliceWidget.glSliceWidget.refresh()
 
 
+    def onRgbColorChanged(self,r,g,b):
+        print r,g,b
+        self.glWidget.set_colormap_rgb([r,g,b])
+        
+        self.glWidget.refresh()
+
+        self.sliceWidget.glSliceWidget.set_colormap_rgb([r,g,b])
+        self.sliceWidget.glSliceWidget.refresh()
 
     def onCheckEgg(self,state):
         if state == QtCore.Qt.Checked:

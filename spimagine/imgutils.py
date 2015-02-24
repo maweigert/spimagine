@@ -38,10 +38,16 @@ def _read3dTiff_PIL(fName):
     return np.array(data)
 
 
+
 def _read3dTiff_libtiff(fName):
     import libtiff
     tif = libtiff.TIFFfile(fName)
-    data = tif.get_samples()[0][0]
+    try:
+        data = tif.get_samples()[0][0]
+    except Exception as e:
+        print e
+        data = _read3dTiff_PIL(fName)
+        
     if data.dtype == ">u2":
         return data.astype(np.uint16)
     else:

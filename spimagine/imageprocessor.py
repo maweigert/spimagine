@@ -103,24 +103,18 @@ class FuncProcessor(ImageProcessor):
     def apply(self,data):
         return self.func(data,**self.kwargs)
 
+
+    
 if __name__ == '__main__':
     from numpy import *
 
 
-    p = LucyRichProcessor()
+    # p = LucyRichProcessor()
 
-    p2 = FFTProcessor()
+    # p2 = FFTProcessor()
 
-    print p.name
+    # print p.name
 
-    print p2.name
-
-
-    # Z,Y,X = imgtools.ZYX(128)
-
-    # u = 100*exp(-100*(X**2+Y**2+Z**2))
-
-    # # u += 10.*np.random.normal(0,1.,u.shape)
+    # print p2.name
 
 
-    # y = p.apply(u)

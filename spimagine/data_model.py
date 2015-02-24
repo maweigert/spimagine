@@ -479,8 +479,20 @@ def test_speed():
         t.append(time.time())
 
 
+def test_data_sets():
+    fNames = ["test_data/Drosophila_Single",
+              "test_data/HisStack_uint16_0000.tif",
+              "test_data/HisStack_uint8_0000.tif"]
+    for fName in fNames:
+        d = DataModel.fromPath(fName)
+        print fName, d[0].shape
+
+    
+        
+
 if __name__ == '__main__':
 
+    test_data_sets()
     # test_spimdata()
 
     # test_tiffdata()
@@ -493,10 +505,3 @@ if __name__ == '__main__':
 
     # d = Img2dData("/Users/mweigert/Data/test_images/actin.jpg")
 
-    m = DataModel.fromPath("/Users/mweigert/Data/test_images/actin.jpg")
-
-
-    print m.size()
-
-
-    print m[0].shape

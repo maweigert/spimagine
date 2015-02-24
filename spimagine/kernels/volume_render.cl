@@ -449,7 +449,7 @@ __kernel void iso_surface(
 
   
   float dt = (tfar-tnear)/maxSteps;
-
+  
   float newVal = read_image(volume, volumeSampler, pos*0.5f+0.5f, isShortType);
   bool isGreater = newVal>isoVal;
   bool hitIso = false;
@@ -463,9 +463,8 @@ __kernel void iso_surface(
 
 
   
-  // dt = tstep;
   for(i=1; i<maxSteps; i++) {		
-  	pos = orig + t*direc;
+  	pos = orig + (t+dt*i)*direc;
 	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
 
 	// newVal = read_imagef(volume, volumeSampler, pos).x;
@@ -478,18 +477,14 @@ __kernel void iso_surface(
 	  hitIso = true;
 	  break;
 	}
-
-	
-  	t += dt;
-  	if (t > tfar)
-	  break;
-	
   }
 
   // find real intersection point
-  float oldVal = read_image(volume, volumeSampler, pos-tstep*direc, isShortType);
-  float lam = (newVal - isoVal)/(newVal-oldVal);
-  pos = pos- tstep*(1-lam)*direc;
+  // still broken
+  // float oldVal = read_image(volume, volumeSampler, .5f*(orig + (t+dt*(i-1))*direc)+.5f, isShortType);
+  // float lam = (newVal - isoVal)/(newVal-oldVal);
+  // pos = .5f*(orig + (t+dt*((i-1)*(1-lam)+i*lam) )*direc)+.5f;
+
 
   // now phong shading
 
@@ -876,10 +871,14 @@ max_project_part_float(__global float *d_output, __global float *d_alpha_output,
 
   uint i;
 
+  float cumsum = 1;
+  float newVal;
+  
   for(i=0; i<=maxSteps/numParts; i++) {
-
-
-	colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*delta_pos).x);
+	newVal = read_imagef(volume, volumeSampler, pos+i*delta_pos).x;
+	// colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*delta_pos).x);
+	colVal = max(colVal,cumsum*newVal);
+	cumsum *= (1.f-.001f*alpha_pow*newVal);
   }
 
   colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
