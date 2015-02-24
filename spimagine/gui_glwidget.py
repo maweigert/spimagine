@@ -274,7 +274,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(1)
+        self.renderTimer.setInterval(10)
         self.renderTimer.timeout.connect(self.onRenderTimer)
         self.renderTimer.start()
         self.renderedSteps = 0

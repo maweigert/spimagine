@@ -161,35 +161,8 @@ def test_spimLoader():
 
 
 
-
+    
 if __name__ == '__main__':
-
-    # fName = "../../Data/DrosophilaDeadPan/example/SPC0_TM0606_CM0_CM1_CHN00_CHN01.fusedStack.tif"
-
-    # # data = read3dTiff(fName)
-
-    # data = TiffData()
-
-
-    # data.load(fName)
-
-    # d = data[0]
-
-
-    fName = "../../Data/Drosophila_Full"
-
-    # data = DataLoader(fName,prefetchSize = 10)
-
-    # d = data[0]
-
-    # time.sleep(1)
-    # t = time.time()
-
-    # for i in range(10):
-    #     d = data[i]
-    #     print d[10,10,10]
-
-    # print time.time()-t
 
 
     fName = "/Users/mweigert/Data/SIM/DarkTest"

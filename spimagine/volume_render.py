@@ -74,7 +74,7 @@ class VolumeRenderer:
 
         try:
             # simulate GPU fail...
-            raise Exception()
+            # raise Exception()
 
             self.dev = OCLDevice(useGPU = True, 
                                  useDevice = spimagine.__OPENCLDEVICE__)
@@ -569,13 +569,15 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     return 1000./10.*(t3-t2)
 
+    
 if __name__ == "__main__":
+    pass
     # d, rend, out = test_simple2()
     # d, rend, out = test_real()
 
 
-    ws = range(100,1500,100)
-    nums = range(1,2)
-    ts = [[test_speed(128,w,n) for w in ws] for n in nums]
+    # ws = range(100,1500,100)
+    # nums = range(1,2)
+    # ts = [[test_speed(128,w,n) for w in ws] for n in nums]
 
     

@@ -55,7 +55,9 @@ class SettingsPanel(QtGui.QWidget):
     _frameNumberChanged = QtCore.pyqtSignal(int)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
     _alphaPowChanged = QtCore.pyqtSignal(float)
+    _rgbColorChanged = QtCore.pyqtSignal(float, float,float)
 
+    
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
 
@@ -111,6 +113,11 @@ class SettingsPanel(QtGui.QWidget):
                                                     absPath("images/egg_inactive.png"),
                                                     tooltip="toggle egg control")
 
+
+        self.butColor = createStandardButton(self,absPath("images/icon_colors.png"),
+                                             method = self.onButtonColor,
+                                                    tooltip="color")
+
         gridBox = QtGui.QGridLayout()
 
         gridBox.addWidget(QtGui.QLabel("projection:\t"),1,0)
@@ -134,9 +141,11 @@ class SettingsPanel(QtGui.QWidget):
 
         gridBox.addWidget(self.colorCombo,3,1)
 
+        gridBox.addWidget(self.butColor,4,0)
 
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"))
-        gridBox.addWidget(self.checkLoopBounce)
+
+        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),5,0)
+        gridBox.addWidget(self.checkLoopBounce,5,1)
 
 
         gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
@@ -260,6 +269,12 @@ class SettingsPanel(QtGui.QWidget):
         if dirName:
             self.setDirName(dirName)
 
+    def onButtonColor(self):
+        col = QtGui.QColorDialog.getColor()
+
+        if col.isValid():
+            color = 1./255*np.array(col.getRgb()[:3])
+            self._rgbColorChanged.emit(*color)
 
     def setStackUnits(self,px,py,pz):
         for e,p in zip(self.stackEdits,[px,py,pz]):

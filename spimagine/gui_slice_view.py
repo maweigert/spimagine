@@ -173,7 +173,18 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             print "could not load colormap %s"%name
 
 
+    def set_colormap_rgb(self,color=[1.,1.,1.]):
+        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
 
+    def _set_colormap_array(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+
+
+        self.makeCurrent()
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        self.refresh()
+
+        
     def initializeGL(self):
 
         self.resized = True
