@@ -28,7 +28,6 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if fName:
             self.read(fName)
 
-
     def read(self, fName):
         try:
             text = open(fName).read()
@@ -43,6 +42,8 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
             return ConfigParser.ConfigParser.get(self,self.dummySection,key)
         except:
             return defaultVal
+
+    
 
 
 

@@ -39,7 +39,9 @@ from spimagine.transform_model import TransformModel
 
 from spimagine.gui_utils import *
 
-from spimagine.jack_plugin import JackPlugin
+from spimagine.imgutils import write3dTiff
+
+# from spimagine.jack_plugin import JackPlugin
 
 import logging
 logger = logging.getLogger(__name__)
@@ -129,6 +131,10 @@ class MainWidget(QtGui.QWidget):
                         fName = absPath("images/icon_open.png"),
                         method = self.openFile, tooltip = "open file")
 
+        self.fileSaveButton = createStandardButton(self,
+                        fName = absPath("images/icon_filesave.png"),
+                        method = self.saveFile, tooltip = "save file as tif")
+        
         self.checkSettings = createStandardCheckbox(self,
                 absPath("images/settings.png"),
                 absPath("images/settings_inactive.png"), tooltip="settings")
@@ -285,6 +291,7 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.checkKey)
         hbox.addWidget(self.screenshotButton)
         hbox.addWidget(self.fileOpenButton)
+        hbox.addWidget(self.fileSaveButton)
 
         hbox.addSpacing(50)
         hbox.addWidget(self.checkIsoView)
@@ -586,6 +593,15 @@ class MainWidget(QtGui.QWidget):
                 self.glWidget.setModel(DataModel.fromPath(path,
                     prefetchSize = self.glWidget.N_PREFETCH))
 
+    def saveFile(self,e):
+        path = QtGui.QFileDialog.getSaveFileName(self, 'Save as Tif File',
+                                                     '.', selectedFilter='*.tif')
+
+        path = str(path)
+        
+        if path:
+            if self.glWidget.dataModel:
+                write3dTiff(self.glWidget.dataModel[self.transform.dataPos].astype(np.float32),path)
 
     def onPlayTimer(self):
 
@@ -698,6 +714,8 @@ def test_sphere():
 
     # win.glWidget.transform.setIso(True)
     # win.glWidget.transform.setValueScale(0,40)
+
+    # win.saveFile(None)
     win.show()
 
     win.raise_()
@@ -705,23 +723,4 @@ def test_sphere():
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    # import argparse
-
-    # app = QtGui.QApplication(sys.argv)
-
-    # win = MainWidget()
-
-    # win.setModel(DataModel(TiffData("/Users/mweigert/Data/synthetics/blobs256.tif")))
-
-    # win.glWidget.transform.setIso(True)
-    # win.glWidget.tranbsform.setValueScale(0,30)
-
-
-
-    # win.show()
-    # win.raise_()
-
-    # sys.exit(app.exec_())
-
-
     test_sphere()

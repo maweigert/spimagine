@@ -334,11 +334,10 @@ class KeyListView(QGraphicsView):
 
     def setModel(self,keyList = KeyFrameList()):
         logger.debug("setModel: %s",keyList)
-
         self.keyList = keyList
         self.resetScene()
-        for it in self.scene.items():
-            it.updateTransformData()
+        # for it in self.scene.items():
+        #     it.updateTransformData()
 
         self.keyList._modelChanged.connect(self.modelChanged)
 
@@ -421,10 +420,13 @@ class KeyListView(QGraphicsView):
     def load_from_JSON(self,fName):
         with open(fName,"r") as f:
             try:
-                newKeyList = KeyFrameList._from_JSON(f.read())
-                self.setKeyListModel(newKeyList)
-            except:
+                k = KeyFrameList._from_JSON(f.read())
+                self.setModel(k)
+                
+            except Exception as e:
+                print e
                 print "not a valid keyframe json file: %s"%fName
+                
 
     def dropEvent(self, event):
         logger.debug("dropping...")
@@ -620,6 +622,8 @@ class KeyFramePanel(QWidget):
         if self.keyView.transformModel:
             self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
 
+            print self.keyView.keyList.getTransform(newTime)
+
 
 
 
@@ -629,28 +633,6 @@ class KeyFramePanel(QWidget):
     def onPlayTimer(self):
         self.setKeyTime((self.t+0.01)%1.)
 
-
-        # self.t = (self.t+0.01)%1.
-
-        # trans = self.keyView.keyList.getTransform(self.t)
-        # # print self.t,trans
-
-        # self.keyView.transformModel.fromTransformData(trans)
-
-
-        # print "TIME to set ", time()-self.a
-
-        # self.a = time()
-
-        # if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
-        #     self.playDir = 1-2*self.loopBounce
-        # if self.glWidget.dataModel.pos == 0:
-        #     self.playDir = 1
-
-        # newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
-        # self.glWidget.transform.setPos(newpos)
-        # self.glWidget.dataModel.setPos(newpos)
-
     def onSave(self):
         fName = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
         if fName:
@@ -658,38 +640,15 @@ class KeyFramePanel(QWidget):
 
 
     def onTrash(self):
-        self.keyView.setKeyListModel(KeyFrameList())
+        self.keyView.setModel(KeyFrameList())
 
     def save_to_JSON(self,fName):
         with open(fName,"w") as f:
             f.write(self.keyView.keyList._to_JSON())
 
     def load_from_JSON(self,fName):
-        with open(fName,"r") as f:
-            try:
-                newKeyList = KeyFrameList._from_JSON(f.read())
-                self.keyView.setKeyListModel(newKeyList)
-            except:
-                print "not a valid keyframe json file: %s"%fName
-
-
-    # def dragEnterEvent(self, event):
-    #     if event.mimeData().hasUrls():
-    #         event.accept()
-    #     else:
-    #         event.ignore()
-
-
-    # def dropEvent(self, event):
-
-    #     for url in event.mimeData().urls():
-    #         event.accept()
-    #         path = url.toLocalFile().toLocal8Bit().data()
-
-    #         if _SYSTEM_DARWIN_14:
-    #             path = spimagine._parseFileNameFix(path)
-
-    #         self.load_from_JSON(path)
+        self.keyView.load_from_JSON(fName)
+            
 
 class MainWindow(QMainWindow):
 
@@ -716,7 +675,13 @@ class MainWindow(QMainWindow):
         k.addItem(KeyFrame(0.1))
         k.addItem(KeyFrame(0.9))
 
-        self.keyPanel.setModel(k)
+        # k = KeyFrameList._from_JSON(open("test.json").read())
+
+        # print k
+
+        # self.keyPanel.setModel(k)
+
+        self.keyPanel.load_from_JSON("test.json")
 
         self.setCentralWidget(self.keyPanel)
 

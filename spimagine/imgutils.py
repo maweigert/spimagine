@@ -59,7 +59,13 @@ def read3dTiff(fName):
     else:
         return _read3dTiff_PIL(fName)
 
+def write3dTiff(data,fName):
+    if _LIBTIFF_SUPPORT:
+        tiff = libtiff.TIFFimage(data, description='')
+        tiff.write_file(fName, compression='none')
 
+
+        
 def getTiffSize(fName):
     img = Image.open(fName, 'r')
     depth = 0

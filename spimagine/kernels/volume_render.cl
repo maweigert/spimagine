@@ -875,13 +875,15 @@ max_project_part_float(__global float *d_output, __global float *d_alpha_output,
   float newVal;
   
   for(i=0; i<=maxSteps/numParts; i++) {
-	newVal = read_imagef(volume, volumeSampler, pos+i*delta_pos).x;
 	// colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*delta_pos).x);
+	newVal = read_imagef(volume, volumeSampler, pos+i*delta_pos).x;
+	newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
 	colVal = max(colVal,cumsum*newVal);
-	cumsum *= (1.f-.001f*alpha_pow*newVal);
+	cumsum *= (1.f-.1f*alpha_pow*newVal);
+
   }
 
-  colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+  // colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
   
   alphaVal = colVal;
 
@@ -1008,11 +1010,20 @@ max_project_part_short(__global float *d_output, __global float *d_alpha_output,
 
   uint i;
 
+  float newVal;
+  float cumsum = 1.f;
+
   for(i=0; i<=maxSteps/numParts; i++) {
-	colVal = max(colVal, 1.f*read_imageui(volume, volumeSampler, pos+i*dpos).x);
+	// colVal = max(colVal, 1.f*read_imageui(volume, volumeSampler, pos+i*dpos).x);
+	newVal = 1.f*read_imageui(volume, volumeSampler, pos+i*dpos).x;
+	newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
+	colVal = max(colVal,cumsum*newVal);
+	cumsum *= (1.f-.1f*alpha_pow*newVal);
+
+	
   }
 
-  colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+  // colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
   
   alphaVal = colVal;
 

@@ -394,6 +394,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
         glClearColor(0,0,0,1.)
+        # glClearColor(1,1,1,.1)
 
 
         self.texture = None
@@ -439,8 +440,8 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dataModelChanged(self):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
-            self.transform.reset(minVal = amin(self.dataModel[0])-1,
-                                 maxVal = amax(self.dataModel[0])+1,
+            self.transform.reset(minVal = amin(self.dataModel[0]),
+                                 maxVal = amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
 
             self.refresh()
@@ -449,8 +450,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
-        self.transform.reset(minVal = amin(self.dataModel[0])-1,
-                             maxVal = amax(self.dataModel[0])+1,
+        self.transform.reset(minVal = amin(self.dataModel[0]),
+                             maxVal = amax(self.dataModel[0]),
                              stackUnits= self.dataModel.stackUnits())
         self.refresh()
 
