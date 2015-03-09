@@ -80,29 +80,29 @@ app = BUNDLE(exe,
              icon=None)
 
 
-b = Analysis(['../spimagine/spim_render.py'],
-             pathex=['/Users/mweigert/python/spimagine/spimagine'],
-             hiddenimports=[],
-             hookspath=None,
-             runtime_hooks=None)
-pyz = PYZ(b.pure)
+# b = Analysis(['../spimagine/spim_render.py'],
+#              pathex=['/Users/mweigert/python/spimagine/spimagine'],
+#              hiddenimports=[],
+#              hookspath=None,
+#              runtime_hooks=None)
+# pyz = PYZ(b.pure)
 
 
-b.datas += addAll("../spimagine/kernels")
+# b.datas += addAll("../spimagine/kernels")
 
-b.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
+# b.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
 
-b.binaries += [("libtiff.5.dylib","/usr/local/lib/libtiff.5.dylib","BINARY")]
+# b.binaries += [("libtiff.5.dylib","/usr/local/lib/libtiff.5.dylib","BINARY")]
 
 
-pyz = PYZ(b.pure)
-exe = EXE(pyz,
-          b.scripts,
-          b.binaries,
-          b.zipfiles,
-          b.datas,
-          name='spimagine_render',
-          debug=True,
-          strip=None,
-          upx=True,
-          console=True)
+# pyz = PYZ(b.pure)
+# exe = EXE(pyz,
+#           b.scripts,
+#           b.binaries,
+#           b.zipfiles,
+#           b.datas,
+#           name='spimagine_render',
+#           debug=True,
+#           strip=None,
+#           upx=True,
+#           console=True)

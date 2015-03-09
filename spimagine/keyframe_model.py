@@ -66,7 +66,7 @@ class TransformData(object):
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s \t%s\t%s\t%s"%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
 
     def setData(self,quatRot,zoom, dataPos, minVal, maxVal,
                 gamma, translate, bounds,isBox,isIso, alphaPow):
@@ -218,6 +218,8 @@ class KeyFrameList(QtCore.QObject):
     def getTransform(self,pos):
         logger.debug("getTransform")
 
+        print pos
+
         if pos<self.pos_at(0):
             return self.item_at(0).transformData
         if pos>self.pos_at(-1):
@@ -259,6 +261,9 @@ class KeyFrameEncoder(json.JSONEncoder):
         elif isinstance(obj, Quaternion):
             return obj.data.tolist()
 
+        elif isinstance(obj, sortedcontainers.SortedDict):
+            return dict(obj)
+
         elif isinstance(obj, (
                 KeyFrame,
                 KeyFrameList,
@@ -269,6 +274,19 @@ class KeyFrameEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+
+"""
+OLD
+
+    {"keyDict": {"1": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1]}, "tFrame": 0}, "2": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "isBox":true,"zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1]}, "tFrame": 1}}, "_countID": 2, "tFrames": [[0, 1], [1, 2]]}
+
+
+NEW
+
+{"items": {"0": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "maxVal": 100.0, "isIso": false, "minVal": 0.0, "zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1], "isBox": true, "alphaPow": 0.0, "translate": [0, 0, 0], "gamma": 1.0}, "pos": 0}}, "_countID": 1, "posdict": {"0": 0}}
+"""
+
+
 class KeyFrameDecoder(json.JSONDecoder):
     def decode(self, s, classname = ""):
         # print classname," XXXX\n" ,s
@@ -277,11 +295,15 @@ class KeyFrameDecoder(json.JSONDecoder):
             dec = json.JSONDecoder.decode(self,s)
             ret = KeyFrameList()
             ret._countID = dec["_countID"]
-            ret.tFrames = dec["tFrames"]
-            ret.keyDict = self.decode(dec["keyDict"],"keyDict")
+            ret.posdict = self.decode(dec["posdict"],"posdict")
+            ret.items = self.decode(dec["items"],"items")
             return ret
-        elif classname == "keyDict":
-            return dict((int(k),KeyFrame(v["tFrame"],self.decode(v["transformData"],"transformData"))) for k,v in s.iteritems())
+
+        elif classname == "posdict":
+            return sortedcontainers.SortedDict((float(k),int(v)) for k,v in s.iteritems())
+
+        elif classname == "items":
+            return dict((int(k),KeyFrame(v["pos"],self.decode(v["transformData"],"transformData"))) for k,v in s.iteritems())
 
         elif classname == "transformData":
             t =  TransformData()
@@ -296,16 +318,13 @@ class KeyFrameDecoder(json.JSONDecoder):
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,0,TransformData(quatRot=Quaternion(.71,.71,0,0))))
+    k.addItem(KeyFrame(.5,TransformData(quatRot=Quaternion(.71,.71,0,0))))
 
     for t in np.linspace(0,1,10):
         print t, k.getTransform(t)
 
 
-
-if __name__ == '__main__':
-
-
+def test_shuffle():
     k = KeyFrameList()
 
     k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
@@ -338,3 +357,25 @@ if __name__ == '__main__':
         ID = rand_ID(k)
         print "removing %s"%ID
         k.removeItem(ID)
+
+if __name__ == '__main__':
+
+    k = KeyFrameList()
+
+    k.addItem(KeyFrame(0,TransformData()))
+
+    k.addItem(KeyFrame(1.,TransformData()))
+
+    k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
+
+
+    s = k._to_JSON()
+
+
+    k2 = KeyFrameList._from_JSON(s)
+
+
+    print k2.getTransform(.1)
+    
+
+    k3 = KeyFrameList._from_JSON(open("test.json","r").read())

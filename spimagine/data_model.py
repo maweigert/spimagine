@@ -20,9 +20,15 @@ import numpy as np
 from PyQt4 import QtCore
 import time
 import re
-from collections import defaultdict
 
+
+# import h5py
+
+
+from collections import defaultdict
 import imgutils
+
+from spimagine.lib.czifile import CziFile
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -257,6 +263,53 @@ class EmptyData(GenericData):
         return self.data
 
 
+# class HDF5Data(GenericData):
+#     """loads hdf5 data files
+#     """
+
+#     def __init__(self,fName = None, key = None ):
+#         GenericData.__init__(self, fName)
+#         self.load(fName, key)
+
+#     def load(self,fName, key = None, stackUnits = [1.,1.,1.]):
+#         if fName:
+#             with h5py.File(fName,"r") as f:
+#                 if len(f.keys())==0 :
+#                     raise KeyError("no valid key found in file %s"%fName)
+#                 if key is None:
+#                     key = f.keys()[0]
+#                 self.data = np.asarray(f[key][:]).copy()
+#                 self.stackSize = (1,)+ self.data.shape
+#                 self.stackUnits = stackUnits
+#                 self.fName = fName
+        
+#     def __getitem__(self,pos):
+#         return self.data
+
+class CZIData(GenericData):
+    """loads czi data files
+    """
+
+    def __init__(self,fName = None):
+        GenericData.__init__(self, fName)
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            with CziFile(fName)  as f:
+                try:
+                    self.data = np.squeeze(f.asarray())
+                    assert(self.data.ndim == 3)
+                    self.stackSize = (1,)+ self.data.shape
+                    self.stackUnits = stackUnits
+                    self.fName = fName
+                except Excpetion as e:
+                    print e
+        
+    def __getitem__(self,pos):
+        return self.data
+
+
 
 ############################################################################
 """
@@ -418,6 +471,11 @@ class DataModel(QtCore.QObject):
             self.setContainer(TiffData(fName),prefetchSize = 0)
         elif re.match(".*\.(png|jpg|bmp)",fName):
             self.setContainer(Img2dData(fName),prefetchSize = 0)
+        # elif re.match(".*\.h5",fName):
+        #     self.setContainer(HDF5Data(fName),prefetchSize = 0)
+        elif re.match(".*\.czi",fName):
+            self.setContainer(CZIData(fName),prefetchSize = 0)
+            
         else:
             self.setContainer(SpimData(fName),prefetchSize)
 
@@ -482,7 +540,12 @@ def test_speed():
 def test_data_sets():
     fNames = ["test_data/Drosophila_Single",
               "test_data/HisStack_uint16_0000.tif",
-              "test_data/HisStack_uint8_0000.tif"]
+              "test_data/HisStack_uint8_0000.tif",
+              "test_data/meep.h5",
+              "test_data/retina.czi"
+          ]
+
+    
     for fName in fNames:
         d = DataModel.fromPath(fName)
         print fName, d[0].shape
