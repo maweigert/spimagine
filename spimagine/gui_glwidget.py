@@ -260,18 +260,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
+        self.reset_render_objects()
 
-        self.renderer.dev.printInfo()
-        self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
-        # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
-
-        self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-        self.output_alpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-
-        self.sliceOutput = zeros((100,100),dtype = np.float32)
-
-        self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
         self.renderTimer.setInterval(10)
@@ -287,9 +277,23 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.dataModel = None
 
         # self.setMouseTracking(True)
+        self.setTransform(TransformModel())
 
         self.refresh()
 
+    def reset_render_objects(self,nchannels=1):
+        self.renderers = []
+        self.outputs = []
+        self.outputs_alpha = []
+        self.outputs_slice = []
+        
+        for i in range(nchannels):
+            rend = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
+            rend.set_projection(mat4_perspective(60,1.,.1,100))
+            self.renderers.append(rend)
+            self.outputs.append(np.zeros([rend.height,rend.width],dtype = np.float32))
+            self.outputs_alpha.append(np.zeros([rend.height,rend.width],dtype = np.float32))
+            self.outputs_slice.append(np.zeros((100,100),dtype = np.float32))
 
 
 
@@ -299,13 +303,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.dataModel = dataModel
 
         if self.dataModel:
+            self.reset_render_objects(self.dataModel.sizeC())
             self.transform.setModel(dataModel)
 
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.connect(self.dataModelChanged)
             self._dataModelChanged.emit()
-
+            
 
 
     def dragEnterEvent(self, event):
@@ -415,7 +420,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                            [0,1.],
                            [0,0]])
 
-        # self.cubeCoords = create_cube_coords([-1,1,-1,1,-1,1])
+        self.cubeCoords = create_cube_coords([-1,1,-1,1,-1,1])
 
         self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
 
@@ -439,7 +444,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.renderer.set_data(self.dataModel[0], autoConvert = True)
+            for i,r in enumerate(self.renderers):
+                r.set_data(self.dataModel[0][i,...], autoConvert = True)
+
             self.transform.reset(minVal = amin(self.dataModel[0]),
                                  maxVal = amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
@@ -449,7 +456,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataSourceChanged(self):
-        self.renderer.set_data(self.dataModel[0],autoConvert = True)
+        self.reset_render_objects(self.dataModel.sizeC())
+        for i,r in enumerate(self.renderers):
+            r.set_data(self.dataModel[0][i,...], autoConvert = True)
+
         self.transform.reset(minVal = amin(self.dataModel[0]),
                              maxVal = amax(self.dataModel[0]),
                              stackUnits= self.dataModel.stackUnits())
@@ -458,15 +468,19 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def setBounds(self,x1,x2,y1,y2,z1,z2):
         self.cubeCoords = create_cube_coords([x1,x2,y1,y2,z1,z2])
-        self.renderer.set_box_boundaries([x1,x2,y1,y2,z1,z2])
+        for r in self.renderers:
+            r.set_box_boundaries([x1,x2,y1,y2,z1,z2])
 
     def setStackUnits(self,px,py,pz):
         logger.debug("setStackUnits to %s"%[px,py,pz])
-        self.renderer.set_units([px,py,pz])
+        for r in self.renderers:
+            r.set_units([px,py,pz])
 
 
     def dataPosChanged(self,pos):
-        self.renderer.update_data(self.dataModel[pos])
+        for i,r in enumerate(self.renderers):
+            r.update_data(self.dataModel[pos][i,...])
+            
         self.refresh()
 
 
@@ -505,16 +519,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-
+        self.textureAlpha = fillTexture2d(self.outputs_alpha[0],self.textureAlpha)
+        
         if self.dataModel:
             modelView = self.transform.getModelView()
 
             proj = self.transform.getProjection()
 
             self.finalMat = dot(proj,modelView)
-
-
-            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
 
             if self.transform.isBox:
@@ -537,103 +549,70 @@ class GLWidget(QtOpenGL.QGLWidget):
 
                 glDisable(GL_DEPTH_TEST)
 
+            # if self.transform.isSlice and self.sliceOutput is not None:
+            #     #draw the slice
+            #     self.programSlice.bind()
+            #     self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+            #     self.programSlice.enableAttributeArray("position")
 
-            if False:
-                # Draw the cube
-                self.programOverlay.bind()
-                self.programOverlay.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programOverlay.enableAttributeArray("position")
+            #     pos, dim = self.transform.slicePos,self.transform.sliceDim
 
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-                self.programOverlay.setUniformValue("texture_alpha",0)
+            #     coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
 
-                foo = create_sphere_coords(.5,20,20)
-
-                print self.transform.zoom
-                foo[:,0] += 2. * (self.transform.zoom-1.)
-
-                self.programOverlay.setAttributeArray("position", foo)
-
-                glDrawArrays(GL_TRIANGLES,0,len(foo))
-
-            if self.transform.isSlice and self.sliceOutput is not None:
-                #draw the slice
-                self.programSlice.bind()
-                self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programSlice.enableAttributeArray("position")
-
-                pos, dim = self.transform.slicePos,self.transform.sliceDim
-
-                coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-
-                texcoords = [[0.,0.],[1,0.],[1.,1.],
-                             [1.,1.],[0.,1.],[0.,0.]]
+            #     texcoords = [[0.,0.],[1,0.],[1.,1.],
+            #                  [1.,1.],[0.,1.],[0.,0.]]
 
 
 
-                self.programSlice.setAttributeArray("position", coords)
-                self.programSlice.setAttributeArray("texcoord", texcoords)
+            #     self.programSlice.setAttributeArray("position", coords)
+            #     self.programSlice.setAttributeArray("texcoord", texcoords)
 
-                self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
-
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureSlice)
-                self.programSlice.setUniformValue("texture",0)
+            #     self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
 
 
-                glActiveTexture(GL_TEXTURE1)
-                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-                self.programSlice.setUniformValue("texture_LUT",1)
+            #     glActiveTexture(GL_TEXTURE0)
+            #     glBindTexture(GL_TEXTURE_2D, self.textureSlice)
+            #     self.programSlice.setUniformValue("texture",0)
 
 
-                glDrawArrays(GL_TRIANGLES,0,len(coords))
-
-                # OLD
-                # draw the slice
-                # self.programCube.bind()
-                # self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                # self.programCube.enableAttributeArray("position")
-
-                # self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+            #     glActiveTexture(GL_TEXTURE1)
+            #     glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+            #     self.programSlice.setUniformValue("texture_LUT",1)
 
 
-                # pos, dim = self.transform.slicePos,self.transform.sliceDim
-
-                # coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-                # self.programCube.setAttributeArray("position", coords)
-                # glDrawArrays(GL_TRIANGLES,0,len(coords))
-
+            #     glDrawArrays(GL_TRIANGLES,0,len(coords))
 
             # Draw the render texture
             self.programTex.bind()
 
-            self.texture = fillTexture2d(self.output,self.texture)
+            for output,output_alpha in zip(self.outputs,self.outputs_alpha):
 
-            glEnable(GL_TEXTURE_2D)
-            glDisable(GL_DEPTH_TEST)
+                self.texture = fillTexture2d(output,self.texture)
+                self.textureAlpha = fillTexture2d(output_alpha,self.textureAlpha)
 
-            self.programTex.enableAttributeArray("position")
-            self.programTex.enableAttributeArray("texcoord")
-            self.programTex.setAttributeArray("position", self.quadCoord)
-            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+                glEnable(GL_TEXTURE_2D)
+                glDisable(GL_DEPTH_TEST)
 
-
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
-            self.programTex.setUniformValue("texture",0)
-
-            glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-            self.programTex.setUniformValue("texture_alpha",1)
-
-            glActiveTexture(GL_TEXTURE2)
-            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",2)
+                self.programTex.enableAttributeArray("position")
+                self.programTex.enableAttributeArray("texcoord")
+                self.programTex.setAttributeArray("position", self.quadCoord)
+                self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
 
 
-            glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.texture)
+                self.programTex.setUniformValue("texture",0)
+
+                glActiveTexture(GL_TEXTURE1)
+                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+                self.programTex.setUniformValue("texture_alpha",1)
+
+                glActiveTexture(GL_TEXTURE2)
+                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+                self.programTex.setUniformValue("texture_LUT",2)
+
+
+                glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
 
@@ -643,33 +622,36 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             # import time
             # t = time.time()
+            for i,r in enumerate(self.renderers):
 
-            self.renderer.set_modelView(self.transform.getUnscaledModelView())
-            self.renderer.set_projection(self.transform.getProjection())
-            self.renderer.set_min_val(self.transform.minVal)
+                print "MAXVAL", self.transform.maxVal
 
-            self.renderer.set_max_val(self.transform.maxVal)
-            self.renderer.set_gamma(self.transform.gamma)
-            self.renderer.set_alpha_pow(self.transform.alphaPow)
+                r.set_modelView(self.transform.getUnscaledModelView())
+                r.set_projection(self.transform.getProjection())
+                r.set_min_val(self.transform.minVal)
 
-            if self.transform.isIso:
-                renderMethod = "iso_surface"
+                r.set_max_val(self.transform.maxVal)
+                r.set_gamma(self.transform.gamma)
+                r.set_alpha_pow(self.transform.alphaPow)
+
                 
-            else:
-                renderMethod = "max_project_part"
+                if self.transform.isIso:
+                    renderMethod = "iso_surface"
+                
+                else:
+                    renderMethod = "max_project_part"
 
-            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
+                self.outputs[i], self.outputs_alpha[i] = r.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
-                    out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
+                    out = self.dataModel[self.transform.dataPos][i,:,:,self.transform.slicePos]
                 elif self.transform.sliceDim==1:
-                    out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
+                    out = self.dataModel[self.transform.dataPos][i,:,self.transform.slicePos,:]
                 elif self.transform.sliceDim==2:
-                    out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
+                    out = self.dataModel[self.transform.dataPos][i,self.transform.slicePos,:,:]
 
-                # self.sliceOutput = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
 
@@ -799,11 +781,18 @@ def test_sphere():
     for p in phi:
         d += 100.*exp(-10*(Z**2+(Y-r*sin(p))**2+(X-r*cos(p))**2))
 
+    
+    d = np.array([d,40*X])
+    print d.shape
 
-    win.setModel(DataModel(NumpyData(d)))
+    m = DataModel(NumpyData(d))
+
+    win.setModel(m)
+
 
     win.transform.setValueScale(0,40)
 
+    win.transform.setIso(True)
 
     win.show()
 
@@ -833,7 +822,7 @@ def test_demo():
 
 
     # win.transform.setValueScale(0,10000.)
-    # win.transform.setBox(False)
+    # win.transform.setIso(True)
 
     win.show()
 
@@ -846,6 +835,6 @@ def test_demo():
 
 if __name__ == '__main__':
 
-    # test_sphere()
+    test_sphere()
 
-    test_demo()
+    # test_demo()

@@ -710,6 +710,7 @@ def test_sphere():
 
     win = MainWidget()
 
+    d = np.array([d,20*X])
     win.setModel(DataModel(NumpyData(d)))
 
     # win.glWidget.transform.setIso(True)

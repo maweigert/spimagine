@@ -26,9 +26,8 @@ import re
 
 
 from collections import defaultdict
-import imgutils
+import spimagine.imgutils as imgutils
 
-from spimagine.lib.czifile import CziFile
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -52,7 +51,7 @@ given by GenericData
 """
 
 class GenericData():
-    """abstract base class for 4d data
+    """abstract base class for 5d data
 
     if you wanna sublass it, just overwrite self.size() and self.__getitem__()
 
@@ -63,11 +62,12 @@ class GenericData():
         self.stackUnits = None
         self.name = name
 
-    # def setStackSize(self, stackSize):
-    #     self.stackSize  = list(stackSize)
 
     def sizeT(self):
         return self.size()[0]
+
+    def sizeC(self):
+        return self.size()[1]
 
     def size(self):
         return self.stackSize
@@ -91,7 +91,12 @@ class SpimData(GenericData):
     def load(self,fName):
         if fName:
             try:
-                self.stackSize = imgutils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                self.stackSize = list(imgutils.parseIndexFile(os.path.join(fName,"data/index.txt")))
+                #incorporate single channel
+                self.stackSize.insert(1,1)
+                self.stackSize = tuple(self.stackSize)
+                print self.stackSize
+                
                 self.stackUnits = imgutils.parseMetaFile(os.path.join(fName,"metadata.txt"))
                 self.fName = fName
             except Exception as e:
@@ -140,7 +145,7 @@ class Img2dData(GenericData):
         if fName:
             try:
                 self.img  = np.array([imgutils.openImageFile(fName)])
-                self.stackSize = (1,) + self.img.shape
+                self.stackSize = (1,1,1) + self.img.shape
             except Exception as e:
                 print e
                 self.fName = ""
@@ -167,7 +172,12 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.stackSize = (1,)+ imgutils.getTiffSize(fName)
+                self.data = imgutils.read3dTiff(fName)
+                print "da", self.data.shape
+                
+                self.data = self.data.reshape((1,)+self.data.shape)
+                self.stackSize = (1,) + self.data.shape
+                print "here", self.data.shape
             except Exception as e:
                 print e
                 self.fName = ""
@@ -180,7 +190,7 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return imgutils.read3dTiff(self.fName)
+            return self.data
         else:
             return None
 
@@ -190,15 +200,11 @@ class NumpyData(GenericData):
     def __init__(self, data, stackUnits = [1.,1.,1.]):
         GenericData.__init__(self,"NumpyData")
 
-        if len(data.shape)==3:
-            self.stackSize = (1,) + data.shape
-            self.data = data.copy().reshape(self.stackSize)
-        elif len(data.shape)==4:
-            self.stackSize = data.shape
-            self.data = data.copy()
+        if data.ndim in [3,4,5]:
+            self.stackSize = (1,)*(5-data.ndim) + data.shape
+            self.data = data.reshape(self.stackSize)
         else:
             raise TypeError("data should be 3 or 4 dimensional! shape = %s" %str(data.shape))
-
 
         self.stackUnits = stackUnits
 
@@ -216,13 +222,13 @@ class DemoData(GenericData):
             logger.debug("loading precomputed demodata")
             self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif")).astype(np.float32)
             N = 80
-            self.stackSize = (10,N,N,N)
+            self.stackSize = (10,1,N,N,N)
             self.fName = ""
             self.nT = 10
             self.stackUnits = (1,1,1)
 
         else:
-            self.stackSize = (1,N,N,N)
+            self.stackSize = (1,1,N,N,N)
             self.fName = ""
             self.nT = N
             self.stackUnits = (1,1,1)
@@ -237,11 +243,14 @@ class DemoData(GenericData):
                 for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
 
             u2 = np.exp(-7*R2**2)
-            self.data = (10000*(u + 2*u2)).astype(np.float32)
+            self.data = (10000*(u + 2*u2)).astype(np.float32).reshape((1,)+u.shape)
 
 
     def sizeT(self):
         return self.nT
+
+    def sizeC(self):
+        return 1
 
     def __getitem__(self,pos):
         return (self.data*np.exp(-.3*pos)).astype(np.float32)
@@ -250,14 +259,11 @@ class DemoData(GenericData):
 class EmptyData(GenericData):
     def __init__(self):
         GenericData.__init__(self,"EmptyData")
-        self.stackSize = (1,1,1,1)
+        self.stackSize = (1,1,1,1,1)
         self.fName = ""
         self.nT = 1
         self.stackUnits = (1,1,1)
-        self.data = np.zeros((1,1,1)).astype(np.uint16)
-
-    def sizeT(self):
-        return self.nT
+        self.data = np.zeros((1,1,1,1)).astype(np.uint16)
 
     def __getitem__(self,pos):
         return self.data
@@ -296,15 +302,13 @@ class CZIData(GenericData):
 
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
-            with CziFile(fName)  as f:
-                try:
-                    self.data = np.squeeze(f.asarray())
-                    assert(self.data.ndim == 3)
-                    self.stackSize = (1,)+ self.data.shape
-                    self.stackUnits = stackUnits
-                    self.fName = fName
-                except Excpetion as e:
-                    print e
+            try:
+                self.data = imgutils.readCziFile(fName)
+                self.stackSize = (1,1) + self.data.shape
+                self.stackUnits = stackUnits
+                self.fName = fName
+            except Excpetion as e:
+                print e
         
     def __getitem__(self,pos):
         return self.data
@@ -419,6 +423,10 @@ class DataModel(QtCore.QObject):
         if self.dataContainer:
             return self.dataContainer.sizeT()
 
+    def sizeC(self):
+        if self.dataContainer:
+            return self.dataContainer.sizeC()
+
     def size(self):
         if self.dataContainer:
             return self.dataContainer.size()
@@ -453,8 +461,6 @@ class DataModel(QtCore.QObject):
             self.data[pos] = newdata
             self._rwLock.unlock()
 
-
-
         if self.prefetchSize > 0:
             self.prefetch(pos)
 
@@ -480,8 +486,6 @@ class DataModel(QtCore.QObject):
             self.setContainer(SpimData(fName),prefetchSize)
 
 
-
-
 def test_spimdata():
     d = SpimData("/Users/mweigert/Data/HisGFP")
 
@@ -491,6 +495,7 @@ def test_spimdata():
         print pos
         print np.mean(m[pos])
 
+    return d
 
 def test_tiffdata():
     d = TiffData("/Users/mweigert/Data/droso_test.tif")
@@ -501,6 +506,7 @@ def test_tiffdata():
         print pos
         print np.mean(m[pos])
 
+    return d
 
 def test_numpydata():
     d = NumpyData(np.ones((10,100,100,100)))
@@ -541,7 +547,7 @@ def test_data_sets():
     fNames = ["test_data/Drosophila_Single",
               "test_data/HisStack_uint16_0000.tif",
               "test_data/HisStack_uint8_0000.tif",
-              "test_data/meep.h5",
+              # "test_data/meep.h5",
               "test_data/retina.czi"
           ]
 
@@ -558,7 +564,7 @@ if __name__ == '__main__':
     test_data_sets()
     # test_spimdata()
 
-    # test_tiffdata()
+    d = test_tiffdata()
     # test_numpydata()
 
     # test_speed()
