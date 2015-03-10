@@ -26,9 +26,8 @@ import re
 
 
 from collections import defaultdict
-import imgutils
 
-from spimagine.lib.czifile import CziFile
+import spimagine.imgutils as imgutils
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -167,7 +166,8 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.stackSize = (1,)+ imgutils.getTiffSize(fName)
+                self.data = imgutils.read3dTiff(fName)
+                self.stackSize = (1,)+ self.data.shape
             except Exception as e:
                 print e
                 self.fName = ""
@@ -180,7 +180,7 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return imgutils.read3dTiff(self.fName)
+            return self.data
         else:
             return None
 
@@ -296,15 +296,14 @@ class CZIData(GenericData):
 
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
-            with CziFile(fName)  as f:
-                try:
-                    self.data = np.squeeze(f.asarray())
-                    assert(self.data.ndim == 3)
-                    self.stackSize = (1,)+ self.data.shape
-                    self.stackUnits = stackUnits
-                    self.fName = fName
-                except Excpetion as e:
-                    print e
+            try:
+                self.data = np.squeeze(imgutils.readCziFile(fName))
+                assert(self.data.ndim == 3)
+                self.stackSize = (1,)+ self.data.shape
+                self.stackUnits = stackUnits
+                self.fName = fName
+            except Excpetion as e:
+                print e
         
     def __getitem__(self,pos):
         return self.data
@@ -547,8 +546,13 @@ def test_data_sets():
 
     
     for fName in fNames:
-        d = DataModel.fromPath(fName)
-        print fName, d[0].shape
+        try:
+            d = DataModel.fromPath(fName)
+            print fName, d[0].shape
+        except Exception as e:
+            print e
+            print "ERROR    could not open %s"%fName
+            
 
     
         
