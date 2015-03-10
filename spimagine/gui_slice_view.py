@@ -270,7 +270,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         if not self.dataModel:
             return
 
-        dim = array(self.dataModel.size()[1:])[::-1]
+        dim = array(self.dataModel.size()[2:])[::-1]
 
         dim *= array(self.transform.stackUnits)
 

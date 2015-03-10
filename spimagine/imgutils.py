@@ -8,12 +8,16 @@ import re
 from PIL import Image
 
 
+from spimagine.lib.tifffile import TiffFile
+from spimagine.lib.czifile import CziFile
+
+
 try:
     import libtiff
 except ImportError as e:
     print e
-    logger.warning("couldnt import libtiff... falling back to PIL which\
-    is rather slow in reading tiff files")
+    # logger.warning("couldnt import libtiff... falling back to PIL which\
+    # is rather slow in reading tiff files")
     _LIBTIFF_SUPPORT = False
 else:
     logger.info("loading libtiff... ")
@@ -37,6 +41,10 @@ def _read3dTiff_PIL(fName):
 
     return np.array(data)
 
+def _read3dTiff_tifffile(fName):
+
+    with TiffFile(fName) as f:
+        return f.asarray()
 
 
 def _read3dTiff_libtiff(fName):
@@ -54,10 +62,11 @@ def _read3dTiff_libtiff(fName):
         return data
 
 def read3dTiff(fName):
-    if _LIBTIFF_SUPPORT:
-        return _read3dTiff_libtiff(fName)
-    else:
-        return _read3dTiff_PIL(fName)
+    return _read3dTiff_tifffile(fName)
+    # if _LIBTIFF_SUPPORT:
+    #     return _read3dTiff_libtiff(fName)
+    # else:
+    #     return _read3dTiff_PIL(fName)
 
 def write3dTiff(data,fName):
     if _LIBTIFF_SUPPORT:
@@ -79,8 +88,10 @@ def getTiffSize(fName):
     return (depth,)+img.size[::-1]
 
 
-def absPath(s):
-    return os.path.join(os.path.dirname(__file__),s)
+def readCziFile(fName):
+    with CziFile(fName)  as f:
+        return np.squeeze(f.asarray())
+            
 
 
 def parseIndexFile(fname):
@@ -142,22 +153,19 @@ def fromSpimFolder(fName,dataFileName="data/data.bin",indexFileName="data/index.
             return np.fromfile(f,dtype="<u2",
                                count=np.prod(stackSize)).reshape(stackSize)
 
+            t = time()
+            ds.append(func(fName))
+            print "%s\ntime: %.2f ms"%(func.__name__, 1000.*(time()-t))
 
-def fromSpimFile(fName,stackSize):
-    return np.fromfile(fName,dtype="<u2").reshape(stackSize)
+        assert np.allclose(*ds)
 
-
-
-def openImageFile( fName):
-    with  open(fName) as f:
-        data = np.asarray(Image.open(f).convert('L'))
-        return data
-
-
-
+        
+def test_czi():
+    d = readCziFile("test_data/retina.czi")
+    return d
+    
 if __name__ == '__main__':
-    from time import time
-    t = time()
-    d = read3dTiff("/Users/mweigert/Data/Wing_cropped.tif")
-    print d
-    print time()-t
+
+    # test_tiff()
+
+    d = test_czi()
