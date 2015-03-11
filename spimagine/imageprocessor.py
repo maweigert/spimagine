@@ -3,9 +3,12 @@ Implements generic classes for processing of volumetric data
 """
 
 import numpy as np
-import imgtools
-import lucy_richardson_gpu
 
+try:
+    import imgtools
+    import lucy_richardson_gpu
+except:
+    print "could not import imgtools"
 
 class ImageProcessor(object):
     def __init__(self,name = "",**kwargs):
