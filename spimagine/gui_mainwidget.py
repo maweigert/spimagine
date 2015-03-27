@@ -562,7 +562,7 @@ class MainWidget(QtGui.QWidget):
                                                      '.', selectedFilter='*.png')
 
         if fileName:
-            self.glWidget.saveFrame(fileName)
+            self.glWidget.saveFrame(str(fileName))
 
 
     def setLoopBounce(self,loopBounce):

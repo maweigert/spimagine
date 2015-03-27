@@ -110,8 +110,14 @@ void main()
 
   gl_FragColor.w = 1.0*length(col.xyz);
 
+  //gl_FragColor.w = 1.;
+  //gl_FragColor *= (alph.x==0.)?0.:1.;
 
-//  gl_FragColor = alph.x>0.01?gl_FragColor:vec4(0,0,0,1.);
+  //gl_FragColor.w = (alph.x==0.)?0.:gl_FragColor.w+1./255.;
+
+ // gl_FragColor = (alph.x==0.)?0.:gl_FragColor+1./255.;
+  
+//   gl_FragColor.x = (alph.x==0.)?0.:gl_FragColor.x+6./255.;
 
 
 }
@@ -179,16 +185,17 @@ void main()
 
   // float tnear = texture2D(texture_alpha,mytexcoord.xy).x;
 
-
-  gl_FragColor = vec4(1.,1.,1.,.3);
-
-
   float tnear = texture2D(texture_alpha,texcoord).x;
 
-  float att = exp(-.4*(zPos-tnear));
+  float att = exp(-.5*(zPos-tnear));
 
-  gl_FragColor = vec4(att,att,att,.3);
+  gl_FragColor = color*att;
 
+//  gl_FragColor = vec4(att,att,att,.3);
+
+// gl_FragColor = vec4(0.,0.,0.,1.);
+
+//gl_FragColor.w =1.;
 }
 """
 
@@ -337,8 +344,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         try:
             arr = spimagine.__COLORMAPDICT__[name]
-            self.makeCurrent()
-            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+            self._set_colormap_array(arr)
         except:
             print "could not load colormap %s"%name
 
@@ -350,7 +356,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def _set_colormap_array(self,arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
 
-
+    
         self.makeCurrent()
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         self.refresh()
@@ -393,10 +399,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         logger.debug("GLSL programOverlay log:%s",self.programOverlay.log())
 
 
-        glClearColor(0,0,0,1.)
-        # glClearColor(1,1,1,.1)
-
-
         self.texture = None
         self.textureAlpha = None
         self.textureSlice = None
@@ -423,11 +425,17 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glLineWidth(2.0);
+
+        glLineWidth(1.0);
         # glBlendFunc(GL_ONE,GL_ONE)
 
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
+
+        self.set_background_color(0,0,0,.0)
+        # self.set_background_color(1,1,1,.6)
+
+
 
 
     def setTransform(self, transform):
@@ -446,6 +454,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.refresh()
 
+
+    def set_background_color(self,r,g,b,a=1.):
+        self._background_color = (r,g,b,a)
+        glClearColor(r,g,b,a)
+        
 
 
     def dataSourceChanged(self):
@@ -516,14 +529,15 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
-
             if self.transform.isBox:
                 # Draw the cube
                 self.programCube.bind()
                 self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
 
-                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+                r,g,b,a = self._background_color
+                self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1-r,1-g,1-b,0.6))
                 self.programCube.setAttributeArray("position", self.cubeCoords)
 
 
@@ -532,30 +546,14 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.programCube.setUniformValue("texture_alpha",0)
 
                 glEnable(GL_DEPTH_TEST)
+
+                # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+                glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
                 glDrawArrays(GL_LINES,0,len(self.cubeCoords))
 
 
                 glDisable(GL_DEPTH_TEST)
-
-
-            if False:
-                # Draw the cube
-                self.programOverlay.bind()
-                self.programOverlay.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programOverlay.enableAttributeArray("position")
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-                self.programOverlay.setUniformValue("texture_alpha",0)
-
-                foo = create_sphere_coords(.5,20,20)
-
-                print self.transform.zoom
-                foo[:,0] += 2. * (self.transform.zoom-1.)
-
-                self.programOverlay.setAttributeArray("position", foo)
-
-                glDrawArrays(GL_TRIANGLES,0,len(foo))
 
             if self.transform.isSlice and self.sliceOutput is not None:
                 #draw the slice
@@ -632,6 +630,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
             self.programTex.setUniformValue("texture_LUT",2)
 
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            # glBlendFunc(GL_ONE, GL_ONE)
 
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
@@ -678,10 +679,17 @@ class GLWidget(QtOpenGL.QGLWidget):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
         logger.info("saving frame as %s", fName)
 
+        #has to be png
+
+        name, ext = os.path.splitext(fName)
+        if ext != ".png":
+            fName = name+".png"
+
         self.render()
         self.paintGL()
         glFlush()
-        self.grabFrameBuffer().save(fName)
+        im = self.grabFrameBuffer()
+        im.save(fName)
 
         
     def onRenderTimer(self):

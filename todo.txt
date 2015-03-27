@@ -1,3 +1,4 @@
 + tifffile czifile as standard loaders (faster)
 + keyframe edges linear/sigma
 + multi layer support
++ fix alpha blending (e.g. for export)
