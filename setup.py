@@ -17,13 +17,14 @@ setup(name='spimagine',
     ],
 
     package_data={"spimagine":['kernels/*','images/*','colormaps/*','lib/*']},
-    entry_points = {
-    'console_scripts': [
-    'spimagine_render = spimagine.spim_render:main'
-    ],
+      entry_points = {
+          'console_scripts': [
+              'spimagine_render = spimagine.spim_render:main'
+          ],
     'gui_scripts': [
-    'spimagine = spimagine.spimagine_gui:main'
-    },
+        'spimagine = spimagine.spimagine_gui:main'
+    ]
+        }
 
 
 )
