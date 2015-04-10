@@ -434,7 +434,7 @@ class KeyListView(QGraphicsView):
             event.accept()
             path = url.toLocalFile().toLocal8Bit().data()
 
-            if spimagine._SYSTEM_DARWIN_14:
+            if spimagine._SYSTEM_DARWIN_14_AND_FOUNDATION_:
                 path = spimagine._parseFileNameFix(path)
 
             self.load_from_JSON(path)

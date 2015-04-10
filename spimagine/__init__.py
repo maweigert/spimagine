@@ -124,14 +124,13 @@ from imgutils import read3dTiff, write3dTiff
 
 #this should fix an annoying file url drag drop bug in mac yosemite
 import platform
+_SYSTEM_DARWIN_14_AND_FOUNDATION_ = False
 if platform.system() =="Darwin" and platform.release()[:2] == "14":
     try:
         import Foundation
+        def _parseFileNameFix(fpath):
+            return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
+        _SYSTEM_DARWIN_14_AND_FOUNDATION_ = True
     except ImportError:
-        raise("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
+        logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
 
-    _SYSTEM_DARWIN_14 = True
-    def _parseFileNameFix(fpath):
-        return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
-else:
-    _SYSTEM_DARWIN_14 = False
