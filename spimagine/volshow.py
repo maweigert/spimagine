@@ -127,7 +127,6 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window = volfig(num)
 
-    data = np.array(data)
     # print "volfig: ", time()-t
     # t = time()
 
@@ -136,6 +135,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     elif isinstance(data,DataModel):
         m = data
     else:
+        data = np.array(data)
         if scale:
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:

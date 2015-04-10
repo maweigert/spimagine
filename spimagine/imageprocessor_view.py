@@ -127,6 +127,7 @@ class ImageProcessorView(QtGui.QWidget):
 
 
     def set_proc_attr_edit(self,obj, key , dtype):
+        print "set proc edit"
         def func():
             print "setting", key , obj.text()
             setattr(self.proc,key, dtype(obj.text()))
@@ -173,7 +174,7 @@ class ImageProcessorListView(QtGui.QWidget):
 
     def _include_imp_view(self,impView):
         impView._stateChanged.connect(self.stateChanged)
-        print self.gridBox.rowCount()
+        # print self.gridBox.rowCount()
         self.gridBox.addWidget(impView,self.gridBox.rowCount(),0)
         # line =  QtGui.QFrame()
         # line.setFrameShape(QtGui.QFrame.HLine)
@@ -202,7 +203,18 @@ class MainWindow(QtGui.QMainWindow):
 
         foo  = ImageProcessorListView([BlurProcessor(),FFTProcessor()])
 
+        
         foo.add_image_processor(BlurProcessor())
+
+
+        def myfunc(data,para=1.):
+            print "myfunc with para", para
+            return data*para
+
+        imp = FuncProcessor(myfunc,"myfunc",para=.1)
+        foo.add_image_processor(imp)
+
+        
         self.setCentralWidget(foo)
         self.setStyleSheet("background-color:black;")
 

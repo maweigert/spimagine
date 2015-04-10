@@ -8,7 +8,7 @@ import re
 from PIL import Image
 
 
-from spimagine.lib.tifffile import TiffFile
+from spimagine.lib.tifffile import TiffFile, imsave
 from spimagine.lib.czifile import CziFile
 
 
@@ -68,11 +68,12 @@ def read3dTiff(fName):
     # else:
     #     return _read3dTiff_PIL(fName)
 
-def write3dTiff(data,fName):
-    if _LIBTIFF_SUPPORT:
-        tiff = libtiff.TIFFimage(data, description='')
-        tiff.write_file(fName, compression='none')
+def _write3dTiff_libtiff(data,fName):
+    tiff = libtiff.TIFFimage(data, description='')
+    tiff.write_file(fName, compression='none')
 
+def write3dTiff(data,fName):
+    imsave(fName,data)
 
         
 def getTiffSize(fName):

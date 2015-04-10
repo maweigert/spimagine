@@ -338,11 +338,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         logger.debug("render")
         if self.dataModel:
             if self.transform.sliceDim==0:
-                out = fliplr(self.dataModel[self.dataPos][:,:,self.transform.slicePos].T)
+                out = fliplr(self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos].T)
             elif self.transform.sliceDim==1:
-                out = self.dataModel[self.dataPos][:,self.transform.slicePos,:]
+                out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
             elif self.transform.sliceDim==2:
-                out = self.dataModel[self.dataPos][self.transform.slicePos,:,:]
+                out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
             self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
 

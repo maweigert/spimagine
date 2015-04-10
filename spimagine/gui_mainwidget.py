@@ -46,7 +46,7 @@ from spimagine.imgutils import write3dTiff
 import logging
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 
@@ -409,10 +409,9 @@ class MainWidget(QtGui.QWidget):
 
         for imp in self.impListView.impViews:
             if imp.is_active():
-                print "active: ", imp.proc.name
+                print "active: ", imp.proc.name, imp.proc.kwargs
                 data = imp.proc.apply(data)
 
-        print data.shape, data.dtype
         self.glWidget.renderer.update_data(data)
         self.glWidget.refresh()
 
@@ -498,7 +497,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def dataModelChanged(self):
-        logger.info("data Model changed")
+        logger.debug("data Model changed")
         dataModel = self.glWidget.dataModel
         dataModel._dataSourceChanged.connect(self.dataSourceChanged)
 

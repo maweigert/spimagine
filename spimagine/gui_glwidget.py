@@ -236,7 +236,6 @@ void main()
 
 def _next_golden(n):
     res = round((sqrt(5)-1.)/2.*n)
-    print n, res
     return int(round((sqrt(5)-1.)/2.*n))
 
 
@@ -269,7 +268,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.renderer = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
 
-        self.renderer.dev.printInfo()
         self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 

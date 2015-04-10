@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 
@@ -118,6 +118,8 @@ def setOpenCLDevice(num):
 from volshow import volshow, volfig, TimeData
 
 from data_model import SpimData, TiffData, NumpyData
+
+from imgutils import read3dTiff, write3dTiff
 
 
 #this should fix an annoying file url drag drop bug in mac yosemite
