@@ -324,7 +324,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
 
-            if spimagine._SYSTEM_DARWIN_14:
+            if spimagine._SYSTEM_DARWIN_14_AND_FOUNDATION_:
                 path = spimagine._parseFileNameFix(path)
 
             self.setCursor(QtCore.Qt.BusyCursor)
