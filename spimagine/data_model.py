@@ -399,10 +399,10 @@ class DataModel(QtCore.QObject):
         return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())
 
     def dataSourceChanged(self):
-        logger.info("data source changed:\n%s",self)
+        logger.debug("data source changed:\n%s",self)
 
     def dataPosChanged(self, pos):
-        logger.info("data position changed to %i",pos)
+        logger.debug("data position changed to %i",pos)
 
 
 
