@@ -271,6 +271,10 @@ class KeyFrameEncoder(json.JSONEncoder):
                 spimagine.transform_model.TransformData)):
             return obj.__dict__
 
+        elif isinstance(obj,np.generic):
+            return np.asscalar(obj)
+
+        
         return json.JSONEncoder.default(self, obj)
 
 
@@ -371,6 +375,7 @@ if __name__ == '__main__':
 
     s = k._to_JSON()
 
+    print s
 
     k2 = KeyFrameList._from_JSON(s)
 
