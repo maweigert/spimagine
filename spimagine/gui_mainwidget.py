@@ -37,6 +37,7 @@ from spimagine.floatslider import FloatSlider
 
 from spimagine.transform_model import TransformModel
 
+
 from spimagine.gui_utils import *
 
 from spimagine.imgutils import write3dTiff
@@ -583,7 +584,9 @@ class MainWidget(QtGui.QWidget):
         path = QtGui.QFileDialog.getOpenFileName(self, 'Open Tif File',
                                                      '.', selectedFilter='*.tif')
 
+        
         path = str(path)
+        print path
         if path:
             if self.glWidget.dataModel:
                 self.glWidget.dataModel.loadFromPath(path,
