@@ -7,7 +7,7 @@
  */
 
 
-#define maxSteps 300
+#define maxSteps 500
 #define tstep 0.01f
 
 

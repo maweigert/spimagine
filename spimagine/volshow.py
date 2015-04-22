@@ -8,7 +8,7 @@ from collections import OrderedDict
 import spimagine
 from spimagine.gui_mainwidget import MainWidget
 
-from spimagine.data_model import DataModel, GenericData, EmptyData, DemoData, NumpyData
+from spimagine.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
@@ -130,7 +130,8 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     # print "volfig: ", time()-t
     # t = time()
 
-    if isinstance(data,GenericData):
+    # if isinstance(data,GenericData):
+    if hasattr(data,"stackUnits"):
         m = DataModel(data)
     elif isinstance(data,DataModel):
         m = data

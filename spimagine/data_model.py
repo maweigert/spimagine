@@ -20,6 +20,7 @@ import numpy as np
 from PyQt4 import QtCore
 import time
 import re
+import glob
 
 
 # import h5py
@@ -185,6 +186,39 @@ class TiffData(GenericData):
             return None
 
 
+
+class TiffFolderData(GenericData):
+    """3d tiff data inside a folder"""
+    def __init__(self,fName = ""):
+        GenericData.__init__(self, fName)
+        self.fNames = []
+        self.fName = ""
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            self.fNames = glob.glob(os.path.join(fName,"*.tif"))
+            if len(self.fNames) == 0:
+                raise Exception("folder %s seems to be empty"%fName)
+
+            try:
+                _tmp = imgutils.read3dTiff(self.fNames[0])
+                self.stackSize = (len(self.fNames),)+ _tmp.shape
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as TiffData"%self.fNames[0])
+                return
+
+            self.stackUnits = stackUnits
+            self.fName = fName
+
+
+    def __getitem__(self,pos):
+        if len(self.fNames)>0 and pos<len(self.fNames):
+            return imgutils.read3dTiff(self.fNames[pos])
+
+        
 class NumpyData(GenericData):
 
     def __init__(self, data, stackUnits = [1.,1.,1.]):
@@ -466,6 +500,7 @@ class DataModel(QtCore.QObject):
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
     def loadFromPath(self,fName, prefetchSize = 0):
+        
         if re.match(".*\.tif",fName):
             self.setContainer(TiffData(fName),prefetchSize = 0)
         elif re.match(".*\.(png|jpg|bmp)",fName):
@@ -474,9 +509,11 @@ class DataModel(QtCore.QObject):
         #     self.setContainer(HDF5Data(fName),prefetchSize = 0)
         elif re.match(".*\.czi",fName):
             self.setContainer(CZIData(fName),prefetchSize = 0)
-            
-        else:
-            self.setContainer(SpimData(fName),prefetchSize)
+        elif os.path.isdir(fName):
+            if os.path.exists(os.path.join(fName,"metadata.txt")):
+                self.setContainer(SpimData(fName),prefetchSize)
+            else:
+                self.setContainer(TiffFolderData(fName),prefetchSize = 0)            
 
 
 
@@ -559,7 +596,7 @@ def test_data_sets():
 
 if __name__ == '__main__':
 
-    test_data_sets()
+    # test_data_sets()
     # test_spimdata()
 
     # test_tiffdata()
@@ -570,5 +607,6 @@ if __name__ == '__main__':
     # test_frompath()
 
 
-    # d = Img2dData("/Users/mweigert/Data/test_images/actin.jpg")
+    d = TiffFolderData("/Users/mweigert/python/bpm_projects/retina/mie_compare/output_dn")
 
+    print d[0].shape
