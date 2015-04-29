@@ -336,7 +336,7 @@ class CZIData(GenericData):
                 self.stackSize = (1,)+ self.data.shape
                 self.stackUnits = stackUnits
                 self.fName = fName
-            except Excpetion as e:
+            except Exception as e:
                 print e
         
     def __getitem__(self,pos):
