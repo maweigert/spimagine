@@ -73,7 +73,7 @@ def absPath(myPath):
 
 class MainWidget(QtGui.QWidget):
     N_SCALE_MIN_EXP = -16
-    N_SCALE_MAX_EXP = 16
+    N_SCALE_MAX_EXP = 17
     N_SCALE_SLIDER = 500
 
     def __init__(self, parent = None):
