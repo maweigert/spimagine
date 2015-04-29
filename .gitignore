@@ -6,6 +6,7 @@
 build/dist/
 build/build/
 
+spimagine/test_data
 # /bin
 # /dist
 
