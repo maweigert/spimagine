@@ -16,6 +16,7 @@ just find the dmg in the download section, open and drag to Applications
 you wanna install libtiff to speed up opening of tiff files   
 > brew install libtiff
 
+The app essentially bundles all dependencies and extracts them on the fly  so startup might be slow
 
 #### as python package
   
@@ -37,6 +38,10 @@ then with pip
 > pip install --user git+http://mweigert@bitbucket.org/mweigert/pyocl
 
 > pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine
+
+or the developmental branch
+
+> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
 
 
 ## Usage
