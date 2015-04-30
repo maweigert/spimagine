@@ -23,6 +23,7 @@ The app essentially bundles all dependencies and extracts them on the fly  so st
 On Mac, clang might complain about non supported compiler flags, a quick fix to which is
 
 > export CFLAGS=-Qunused-arguments
+
 > export CPPFLAGS=-Qunused-arguments
 
 

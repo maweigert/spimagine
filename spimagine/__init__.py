@@ -2,14 +2,23 @@ import os
 __CONFIGFILE__ = os.path.expanduser("~/.spimagine")
 
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# logger.setLevel(logging.DEBUG)
+
+
+
 global __OPENCLDEVICE__
 global __DEFAULTCOLORMAP__
-
+global __DEFAULTWIDTH__
 global __COLORMAPDICT__
 
 import ConfigParser, StringIO
 
 import sys
+
 
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
@@ -19,31 +28,45 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if fName:
             self.read(fName)
 
-
     def read(self, fName):
         try:
             text = open(fName).read()
         except IOError:
-            raise IOError()
+            print "could not open %s"%fName
         else:
             file = StringIO.StringIO("[%s]\n%s"%(self.dummySection,text))
             self.readfp(file, fName)
 
-    def get(self,varStr):
-        return ConfigParser.ConfigParser.get(self,self.dummySection,varStr)
+    def get(self,key, defaultVal):
+        try:
+            return ConfigParser.ConfigParser.get(self,self.dummySection,key)
+        except:
+            return defaultVal
+
+    
 
 
-try:
-    __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
-    __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
-    __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
-except:
-    __OPENCLDEVICE__ = 0
-    __DEFAULTCOLORMAP__ = "coolwarm"
 
+# try:
+#     __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
+#     __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
+#     __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
+# except:
+#     __OPENCLDEVICE__ = 0
+#     __DEFAULTCOLORMAP__ = "coolwarm"
+
+__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"hot","width":800})
+__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
+__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","hot")
+__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
 
 
 from spimagine.gui_utils import arrayFromImage
+
+# try:
+#     print os.listdir(sys._MEIPASS)
+# except:
+#     pass
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -52,7 +75,7 @@ def absPath(myPath):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-        print "found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath))
+        logger.DEBUG("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
 
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
@@ -64,7 +87,12 @@ import re
 def _load_colormaps():
     global __COLORMAPDICT__
     __COLORMAPDICT__ = {}
-    basePath = absPath("colormaps/")
+
+    try:
+        basePath = sys._MEIPASS
+    except:
+        basePath = absPath("colormaps/")
+
     reg = re.compile("cmap_(.*)\.png")
     for fName in os.listdir(basePath):
         match = reg.match(fName)
@@ -83,13 +111,26 @@ def setOpenCLDevice(num):
 
 
 
-import logging
-logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)
 
 
 # from spimagine.volume_render import VolumeRenderer
 
-from volshow import volshow, volfig
+from volshow import volshow, volfig, TimeData
+
+from data_model import SpimData, TiffData, NumpyData
+
+from imgutils import read3dTiff, write3dTiff
+
+
+#this should fix an annoying file url drag drop bug in mac yosemite
+import platform
+_SYSTEM_DARWIN_14_AND_FOUNDATION_ = False
+if platform.system() =="Darwin" and platform.release()[:2] == "14":
+    try:
+        import Foundation
+        def _parseFileNameFix(fpath):
+            return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
+        _SYSTEM_DARWIN_14_AND_FOUNDATION_ = True
+    except ImportError:
+        logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
+

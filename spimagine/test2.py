@@ -40,22 +40,21 @@ class KeyableParameter(object):
 
 
 
+
 class TransformData(object):
     def __init__(self,quatRot = Quaternion(),
                  zoom = 1,
                  dataPos = 0,
-                 minVal = 0.,
                  maxVal = 100.,
                  gamma = 1.,
                  translate = [0,0,0],
                  bounds = [-1,1,-1,1,-1,1],
                  isBox = True,
                  isIso = False,
-                 alphaPow = 0.):
+                 alphaPow = 100.):
         self.setData(quatRot=quatRot,
                      zoom = zoom,
                      dataPos= dataPos,
-                     minVal = minVal,
                      maxVal = maxVal,
                      gamma= gamma,
                      translate = translate,
@@ -66,16 +65,14 @@ class TransformData(object):
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s \t%s\t%s\t%s"%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s\t%s\t%s: "%(str(self.quatRot),self.zoom,self.dataPos,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
 
-    def setData(self,quatRot,zoom, dataPos, minVal, maxVal,
+    def setData(self,quatRot,zoom, dataPos, maxVal,
                 gamma, translate, bounds,isBox,isIso, alphaPow):
 
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
         self.dataPos = dataPos
-        self.minVal = minVal
-
         self.maxVal = maxVal
         self.gamma = gamma
         self.bounds  = np.array(bounds)
@@ -90,8 +87,6 @@ class TransformData(object):
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
         newPos = int((1.-t)*x1.dataPos + t*x2.dataPos)
-        newMinVal = (1.-t)*x1.minVal + t*x2.minVal
-
         newMaxVal = (1.-t)*x1.maxVal + t*x2.maxVal
         newGamma = (1.-t)*x1.gamma + t*x2.gamma
 
@@ -104,8 +99,6 @@ class TransformData(object):
 
         return TransformData(quatRot = newQuat,zoom = newZoom,
                              dataPos= newPos,
-                             minVal = newMinVal,
-
                              maxVal = newMaxVal,
                              gamma= newGamma,
                              translate = newTranslate,
@@ -138,47 +131,30 @@ class KeyFrameList(QtCore.QObject):
         self._countID = 0
         self.posdict = sortedcontainers.SortedDict()
         self.items = dict()
-        # self.addItem(KeyFrame(0.))
-        # self.addItem(KeyFrame(1.))
+        self.addItem(KeyFrame(0.))
+        self.addItem(KeyFrame(1.))
         self._modelChanged.emit()
 
-
     def __repr__(self):
-        s = "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
-        s += "\n%s\n%s\n"%(str(self.posdict),str(self.items.keys()))
-        return s
+        return "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
+
 
     def dump_to_file(self,fName):
         print json.dumps(self._to_dict)
 
     def addItem(self, frame = KeyFrame()):
-        logger.debug("KeyFrameList.addItem: %s"%frame)
-
+        logger.debug("KeyFrameList.addItem: %s",frame)
         newID = self._getNewID()
         if newID in self.items:
             raise KeyError()
 
-        if newID in self.posdict.values():
-            raise KeyError()
-
         self.items[newID] = frame
         self.posdict[frame.pos] = newID
-
-        # print "AFTER"
-        # print self
-
         self._modelChanged.emit()
 
     def removeItem(self, ID):
-        logger.debug("KeyFrameList.removeItem: %s"%ID)
-        # print "REMOVE\nBEFORE"
-        # print self
-
         self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
         self.items.pop(ID)
-
-        # print "AFTER"
-        # print self
 
         self._modelChanged.emit()
 
@@ -186,9 +162,8 @@ class KeyFrameList(QtCore.QObject):
         return self.items[ID]
 
     def _getNewID(self):
-        newID = self._countID
         self._countID += 1
-        return newID
+        return self._countID
 
     def item_at(self, index):
         """"returns keyframe in order 0...len(items)"""
@@ -200,25 +175,17 @@ class KeyFrameList(QtCore.QObject):
 
     def pos_at(self, index):
         return self.posdict.keys()[index]
-
-    def pos_at_id(self, ID):
-        return self.posdict.keys()[self.posdict.values().index(ID)]
-
+    
     def update_pos(self,ID, pos):
-        if pos in self.posdict.keys():
-            print "pos already there:", pos
-            return
         frame = self.items[ID]
 
-        self.posdict.pop(self.pos_at_id(ID))
+        self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
         frame.pos = pos
         self.posdict[pos] = ID
 
 
     def getTransform(self,pos):
         logger.debug("getTransform")
-
-        print pos
 
         if pos<self.pos_at(0):
             return self.item_at(0).transformData
@@ -261,9 +228,6 @@ class KeyFrameEncoder(json.JSONEncoder):
         elif isinstance(obj, Quaternion):
             return obj.data.tolist()
 
-        elif isinstance(obj, sortedcontainers.SortedDict):
-            return dict(obj)
-
         elif isinstance(obj, (
                 KeyFrame,
                 KeyFrameList,
@@ -271,24 +235,7 @@ class KeyFrameEncoder(json.JSONEncoder):
                 spimagine.transform_model.TransformData)):
             return obj.__dict__
 
-        elif isinstance(obj,np.generic):
-            return np.asscalar(obj)
-
-        
         return json.JSONEncoder.default(self, obj)
-
-
-
-"""
-OLD
-
-    {"keyDict": {"1": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1]}, "tFrame": 0}, "2": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "isBox":true,"zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1]}, "tFrame": 1}}, "_countID": 2, "tFrames": [[0, 1], [1, 2]]}
-
-
-NEW
-
-{"items": {"0": {"transformData": {"dataPos": 0, "quatRot": [1.0, 0.0, 0.0, 0.0], "maxVal": 100.0, "isIso": false, "minVal": 0.0, "zoom": 1, "bounds": [-1, 1, -1, 1, -1, 1], "isBox": true, "alphaPow": 0.0, "translate": [0, 0, 0], "gamma": 1.0}, "pos": 0}}, "_countID": 1, "posdict": {"0": 0}}
-"""
 
 
 class KeyFrameDecoder(json.JSONDecoder):
@@ -299,15 +246,11 @@ class KeyFrameDecoder(json.JSONDecoder):
             dec = json.JSONDecoder.decode(self,s)
             ret = KeyFrameList()
             ret._countID = dec["_countID"]
-            ret.posdict = self.decode(dec["posdict"],"posdict")
-            ret.items = self.decode(dec["items"],"items")
+            ret.tFrames = dec["tFrames"]
+            ret.keyDict = self.decode(dec["keyDict"],"keyDict")
             return ret
-
-        elif classname == "posdict":
-            return sortedcontainers.SortedDict((float(k),int(v)) for k,v in s.iteritems())
-
-        elif classname == "items":
-            return dict((int(k),KeyFrame(v["pos"],self.decode(v["transformData"],"transformData"))) for k,v in s.iteritems())
+        elif classname == "keyDict":
+            return dict((int(k),KeyFrame(v["tFrame"],self.decode(v["transformData"],"transformData"))) for k,v in s.iteritems())
 
         elif classname == "transformData":
             t =  TransformData()
@@ -322,65 +265,23 @@ class KeyFrameDecoder(json.JSONDecoder):
 
 def test_interpolation():
     k = KeyFrameList()
-    k.addItem(KeyFrame(.5,TransformData(quatRot=Quaternion(.71,.71,0,0))))
+    k.addItem(KeyFrame(.5,0,TransformData(quatRot=Quaternion(.71,.71,0,0))))
 
     for t in np.linspace(0,1,10):
         print t, k.getTransform(t)
 
 
-def test_shuffle():
-    k = KeyFrameList()
-
-    k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
-
-
-    # print k
-    # for t in np.linspace(-.1,1.2,11):
-    #     print t, k.getTransform(t).zoom
-
-    np.random.seed(0)
-
-    def rand_ID(k):
-        #just pick from within the border...
-        return k.item_id_at(np.random.randint(1,len(k.items)-1))
-
-    #adding some
-    for i in range(4):
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
-
-    print k
-    #shuffle them
-    for i in range(100):
-        print "+++++++++++++++++"
-        k.addItem(KeyFrame(np.random.uniform(0,1)))
-
-        ID = rand_ID(k)
-        print "moving %s"%ID
-        k.update_pos(ID,np.random.uniform(0,1.))
-
-        ID = rand_ID(k)
-        print "removing %s"%ID
-        k.removeItem(ID)
 
 if __name__ == '__main__':
 
+
     k = KeyFrameList()
-
-    k.addItem(KeyFrame(0,TransformData()))
-
-    k.addItem(KeyFrame(1.,TransformData()))
 
     k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
-
-    s = k._to_JSON()
-
-    print s
-
-    k2 = KeyFrameList._from_JSON(s)
+    k.removeItem(k.item_id_at(2))
+    print k
 
 
-    print k2.getTransform(.1)
-    
-
-    k3 = KeyFrameList._from_JSON(open("test.json","r").read())
+    for t in np.linspace(-.1,1.2,11):
+        print t, k.getTransform(t).zoom

@@ -8,7 +8,7 @@ from collections import OrderedDict
 import spimagine
 from spimagine.gui_mainwidget import MainWidget
 
-from spimagine.data_model import DataModel, GenericData, EmptyData, DemoData, NumpyData
+from spimagine.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
@@ -74,28 +74,28 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
       e.g.
 
-         volshow( randint(0,10,(10, 20,30,40) )
 
+volshow( randint(0,10,(10, 20,30,40) )
 
 
     - an instance of a class derived from the abstract bass class GenericData
 
       e.g.
 
-        from spimagine.data_model import GenericData
+from spimagine.data_model import GenericData
 
-        class myData(GenericData):
-            def __getitem__(self,i):
-                return (100*i+3)*ones((100,100,100)
-            def size(self):
-                return (4,100,100,100)
+class myData(GenericData):
+    def __getitem__(self,i):
+        return (100*i+3)*ones((100,100,100)
+    def size(self):
+        return (4,100,100,100)
 
-        volshow(myData())
+volshow(myData())
 
         or
-        from spimagine.data_model import DataModel
+from spimagine.data_model import DataModel
 
-        volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
+volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
 
 
@@ -127,20 +127,21 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
 
     window = volfig(num)
 
-
     # print "volfig: ", time()-t
     # t = time()
 
-    if isinstance(data,GenericData):
+    # if isinstance(data,GenericData):
+    if hasattr(data,"stackUnits"):
         m = DataModel(data)
     elif isinstance(data,DataModel):
         m = data
     else:
+        data = np.array(data)
         if scale:
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:
                 ma +=1.
-            data = 16000.*(data-mi)/(ma-mi)
+            data = 1000.*(data-mi)/(ma-mi)
 
         m = DataModel(NumpyData(data.astype(np.float32)))
 
@@ -169,7 +170,24 @@ def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap 
     if blocking:
         getCurrentApp().exec_()
     else:
-        return window.glWidget
+        return window
+
+
+class TimeData(GenericData):
+    def __init__(self,func, dshape):
+        """ func(i) returns the volume
+        dshape is [Nt,Nz,Nx,Ny]
+        """
+        self.func = func
+        self.dshape = dshape
+
+        GenericData.__init__(self)
+
+    def __getitem__(self,i):
+        return self.func(i)
+
+    def size(self):
+        return self.dshape
 
 
 if __name__ == '__main__':
@@ -177,10 +195,9 @@ if __name__ == '__main__':
     # d = np.ones((512,)*3)
 
 
-    # volshow(d,blocking = False)
+    volshow(DemoData(100),blocking = False)
 
-    
-    volshow(DemoData(),blocking = True, cmap = "coolwarm")
+    # volshow(DemoData(),blocking = True, cmap = "coolwarm")
 
 
     # N = 128

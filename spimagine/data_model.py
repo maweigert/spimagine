@@ -20,9 +20,15 @@ import numpy as np
 from PyQt4 import QtCore
 import time
 import re
+import glob
+
+
+# import h5py
+
+
 from collections import defaultdict
 
-import imgutils
+import spimagine.imgutils as imgutils
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -49,7 +55,7 @@ class GenericData():
     """abstract base class for 4d data
 
     if you wanna sublass it, just overwrite self.size() and self.__getitem__()
-    
+
     """
     dataFileError = Exception("not a valid file")
     def __init__(self, name = ""):
@@ -161,7 +167,8 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.stackSize = (1,)+ imgutils.getTiffSize(fName)
+                self.data = imgutils.read3dTiff(fName)
+                self.stackSize = (1,)+ self.data.shape
             except Exception as e:
                 print e
                 self.fName = ""
@@ -174,11 +181,44 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return imgutils.read3dTiff(self.fName)
+            return self.data
         else:
             return None
 
 
+
+class TiffFolderData(GenericData):
+    """3d tiff data inside a folder"""
+    def __init__(self,fName = ""):
+        GenericData.__init__(self, fName)
+        self.fNames = []
+        self.fName = ""
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            self.fNames = glob.glob(os.path.join(fName,"*.tif"))
+            if len(self.fNames) == 0:
+                raise Exception("folder %s seems to be empty"%fName)
+
+            try:
+                _tmp = imgutils.read3dTiff(self.fNames[0])
+                self.stackSize = (len(self.fNames),)+ _tmp.shape
+            except Exception as e:
+                print e
+                self.fName = ""
+                raise Exception("couldnt open %s as TiffData"%self.fNames[0])
+                return
+
+            self.stackUnits = stackUnits
+            self.fName = fName
+
+
+    def __getitem__(self,pos):
+        if len(self.fNames)>0 and pos<len(self.fNames):
+            return imgutils.read3dTiff(self.fNames[pos])
+
+        
 class NumpyData(GenericData):
 
     def __init__(self, data, stackUnits = [1.,1.,1.]):
@@ -208,7 +248,7 @@ class DemoData(GenericData):
     def load(self,N = None):
         if N==None:
             logger.debug("loading precomputed demodata")
-            self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif"))
+            self.data = imgutils.read3dTiff(absPath("images/mpi_logo_80.tif")).astype(np.float32)
             N = 80
             self.stackSize = (10,N,N,N)
             self.fName = ""
@@ -231,14 +271,14 @@ class DemoData(GenericData):
                 for t in np.linspace(-np.pi/2.,np.pi/2.,10))*(1+Z)
 
             u2 = np.exp(-7*R2**2)
-            self.data = (10000*(u + 2*u2)).astype(np.int16)
+            self.data = (10000*(u + 2*u2)).astype(np.float32)
 
 
     def sizeT(self):
         return self.nT
 
     def __getitem__(self,pos):
-        return self.data*np.exp(-.3*pos)
+        return (self.data*np.exp(-.3*pos)).astype(np.float32)
 
 
 class EmptyData(GenericData):
@@ -253,6 +293,52 @@ class EmptyData(GenericData):
     def sizeT(self):
         return self.nT
 
+    def __getitem__(self,pos):
+        return self.data
+
+
+# class HDF5Data(GenericData):
+#     """loads hdf5 data files
+#     """
+
+#     def __init__(self,fName = None, key = None ):
+#         GenericData.__init__(self, fName)
+#         self.load(fName, key)
+
+#     def load(self,fName, key = None, stackUnits = [1.,1.,1.]):
+#         if fName:
+#             with h5py.File(fName,"r") as f:
+#                 if len(f.keys())==0 :
+#                     raise KeyError("no valid key found in file %s"%fName)
+#                 if key is None:
+#                     key = f.keys()[0]
+#                 self.data = np.asarray(f[key][:]).copy()
+#                 self.stackSize = (1,)+ self.data.shape
+#                 self.stackUnits = stackUnits
+#                 self.fName = fName
+        
+#     def __getitem__(self,pos):
+#         return self.data
+
+class CZIData(GenericData):
+    """loads czi data files
+    """
+
+    def __init__(self,fName = None):
+        GenericData.__init__(self, fName)
+        self.load(fName)
+
+    def load(self,fName, stackUnits = [1.,1.,1.]):
+        if fName:
+            try:
+                self.data = np.squeeze(imgutils.readCziFile(fName))
+                assert(self.data.ndim == 3)
+                self.stackSize = (1,)+ self.data.shape
+                self.stackUnits = stackUnits
+                self.fName = fName
+            except Exception as e:
+                print e
+        
     def __getitem__(self,pos):
         return self.data
 
@@ -347,10 +433,10 @@ class DataModel(QtCore.QObject):
         return "DataModel: %s \t %s"%(self.dataContainer.name,self.size())
 
     def dataSourceChanged(self):
-        logger.info("data source changed:\n%s",self)
+        logger.debug("data source changed:\n%s",self)
 
     def dataPosChanged(self, pos):
-        logger.info("data position changed to %i",pos)
+        logger.debug("data position changed to %i",pos)
 
 
 
@@ -414,12 +500,20 @@ class DataModel(QtCore.QObject):
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
     def loadFromPath(self,fName, prefetchSize = 0):
+        
         if re.match(".*\.tif",fName):
             self.setContainer(TiffData(fName),prefetchSize = 0)
         elif re.match(".*\.(png|jpg|bmp)",fName):
             self.setContainer(Img2dData(fName),prefetchSize = 0)
-        else:
-            self.setContainer(SpimData(fName),prefetchSize)
+        # elif re.match(".*\.h5",fName):
+        #     self.setContainer(HDF5Data(fName),prefetchSize = 0)
+        elif re.match(".*\.czi",fName):
+            self.setContainer(CZIData(fName),prefetchSize = 0)
+        elif os.path.isdir(fName):
+            if os.path.exists(os.path.join(fName,"metadata.txt")):
+                self.setContainer(SpimData(fName),prefetchSize)
+            else:
+                self.setContainer(TiffFolderData(fName),prefetchSize = 0)            
 
 
 
@@ -479,8 +573,30 @@ def test_speed():
         t.append(time.time())
 
 
+def test_data_sets():
+    fNames = ["test_data/Drosophila_Single",
+              "test_data/HisStack_uint16_0000.tif",
+              "test_data/HisStack_uint8_0000.tif",
+              "test_data/meep.h5",
+              "test_data/retina.czi"
+          ]
+
+    
+    for fName in fNames:
+        try:
+            d = DataModel.fromPath(fName)
+            print fName, d[0].shape
+        except Exception as e:
+            print e
+            print "ERROR    could not open %s"%fName
+            
+
+    
+        
+
 if __name__ == '__main__':
 
+    # test_data_sets()
     # test_spimdata()
 
     # test_tiffdata()
@@ -491,12 +607,6 @@ if __name__ == '__main__':
     # test_frompath()
 
 
-    # d = Img2dData("/Users/mweigert/Data/test_images/actin.jpg")
+    d = TiffFolderData("/Users/mweigert/python/bpm_projects/retina/mie_compare/output_dn")
 
-    m = DataModel.fromPath("/Users/mweigert/Data/test_images/actin.jpg")
-
-
-    print m.size()
-
-
-    print m[0].shape
+    print d[0].shape

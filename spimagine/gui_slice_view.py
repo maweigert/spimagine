@@ -173,7 +173,18 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             print "could not load colormap %s"%name
 
 
+    def set_colormap_rgb(self,color=[1.,1.,1.]):
+        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
 
+    def _set_colormap_array(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+
+
+        self.makeCurrent()
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        self.refresh()
+
+        
     def initializeGL(self):
 
         self.resized = True
@@ -219,13 +230,17 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+            self.transform.reset(amin(self.dataModel[0]),
+                                 amax(self.dataModel[0]),
+                                 self.dataModel.stackUnits())
 
             self.refresh()
 
 
     def dataSourceChanged(self):
-        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+        self.transform.reset(amin(self.dataModel[0]),
+                             amax(self.dataModel[0]),
+                             self.dataModel.stackUnits())
         self.refresh()
 
 
@@ -323,11 +338,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         logger.debug("render")
         if self.dataModel:
             if self.transform.sliceDim==0:
-                out = fliplr(self.dataModel[self.dataPos][:,:,self.transform.slicePos].T)
+                out = fliplr(self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos].T)
             elif self.transform.sliceDim==1:
-                out = self.dataModel[self.dataPos][:,self.transform.slicePos,:]
+                out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
             elif self.transform.sliceDim==2:
-                out = self.dataModel[self.dataPos][self.transform.slicePos,:,:]
+                out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
             self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
 
@@ -439,7 +454,7 @@ class SliceWidget(QtGui.QWidget):
         self.sliderSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.WheelFocus)
 
-        self.sliderSlice.setTracking(False)
+        self.sliderSlice.setTracking(True)
 
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)

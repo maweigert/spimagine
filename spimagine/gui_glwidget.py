@@ -95,20 +95,65 @@ void main()
 
 fragShaderTex = """
 uniform sampler2D texture;
+uniform sampler2D texture_alpha;
 uniform sampler2D texture_LUT;
 varying vec2 mytexcoord;
 
 void main()
 {
   vec4 col = texture2D(texture,mytexcoord);
+  vec4 alph = texture2D(texture_alpha,mytexcoord);
 
   vec4 lut = texture2D(texture_LUT,col.xy);
 
   gl_FragColor = vec4(lut.xyz,col.x);
 
-//  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+  gl_FragColor.w = 1.0*length(col.xyz);
 
-// gl_FragColor = vec4(1.,lut.yz,1);
+  //gl_FragColor.w = 1.;
+  //gl_FragColor *= (alph.x==0.)?0.:1.;
+
+  //gl_FragColor.w = (alph.x==0.)?0.:gl_FragColor.w+1./255.;
+
+ // gl_FragColor = (alph.x==0.)?0.:gl_FragColor+1./255.;
+  
+//   gl_FragColor.x = (alph.x==0.)?0.:gl_FragColor.x+6./255.;
+
+
+}
+"""
+vertShaderSliceTex ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+attribute vec2 texcoord;
+varying vec2 mytexcoord;
+
+void main()
+{
+    vec3 pos = position;
+    gl_Position = mvpMatrix *vec4(pos, 1.0);
+
+    mytexcoord = texcoord;
+}
+"""
+
+fragShaderSliceTex = """
+uniform sampler2D texture;
+uniform sampler2D texture_LUT;
+varying vec2 mytexcoord;
+
+void main()
+{
+   vec4 col = texture2D(texture,mytexcoord);
+
+   vec4 lut = texture2D(texture_LUT,col.xy);
+
+  gl_FragColor = vec4(lut.xyz,1.);
+
+  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
+  gl_FragColor.w = 1.0;
+
+
 
 }
 """
@@ -117,24 +162,81 @@ vertShaderCube ="""
 attribute vec3 position;
 uniform mat4 mvpMatrix;
 
+varying float zPos;
+varying vec2 texcoord;
 void main()
 {
   vec3 pos = position;
   gl_Position = mvpMatrix *vec4(pos, 1.0);
 
+  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
+  zPos = 0.04+gl_Position.z;
 }
 """
 
 fragShaderCube = """
 
 uniform vec4 color;
+uniform sampler2D texture_alpha;
+varying float zPos;
+varying vec2 texcoord;
+void main()
+{
+
+  // float tnear = texture2D(texture_alpha,mytexcoord.xy).x;
+
+  float tnear = texture2D(texture_alpha,texcoord).x;
+
+  float att = exp(-.5*(zPos-tnear));
+
+  gl_FragColor = color*att;
+
+//  gl_FragColor = vec4(att,att,att,.3);
+
+// gl_FragColor = vec4(0.,0.,0.,1.);
+
+//gl_FragColor.w =1.;
+}
+"""
+
+
+vertShaderOverlay ="""
+attribute vec3 position;
+uniform mat4 mvpMatrix;
+varying float zPos;
+varying vec2 texcoord;
 
 void main()
 {
-  gl_FragColor = vec4(1.,1.,1.,.6);
-  gl_FragColor = color;
+  gl_Position = mvpMatrix *vec4(position, 1.0);
+
+  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
+  zPos = 0.04+gl_Position.z;
 }
 """
+
+fragShaderOverlay = """
+varying float zPos;
+varying vec2 texcoord;
+uniform sampler2D texture_alpha;
+
+void main()
+{
+
+  gl_FragColor = vec4(1.,1.,1.,.3);
+
+  float tnear = texture2D(texture_alpha,texcoord).x;
+  float att = exp(-1.*(zPos-tnear));
+
+  att = tnear<0.000001?1.:att;
+  gl_FragColor = vec4(att,att,att,.3);
+
+}
+"""
+
+def _next_golden(n):
+    res = round((sqrt(5)-1.)/2.*n)
+    return int(round((sqrt(5)-1.)/2.*n))
 
 
 
@@ -153,7 +255,7 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-
+    
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -164,28 +266,35 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((800,800))
-        self.renderer.dev.printInfo()
-        self.renderer.set_projection(mat4_perspective(60,1.,.1,10))
+        self.renderer = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
+
+        self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_alpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+
+        self.sliceOutput = zeros((100,100),dtype = np.float32)
 
         self.setTransform(TransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(50)
+        self.renderTimer.setInterval(10)
         self.renderTimer.timeout.connect(self.onRenderTimer)
         self.renderTimer.start()
+        self.renderedSteps = 0
 
         self.N_PREFETCH = N_PREFETCH
 
+        self.NSubrenderSteps = 1
+
+
         self.dataModel = None
 
-
-
+        # self.setMouseTracking(True)
 
         self.refresh()
+
 
 
 
@@ -214,26 +323,42 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         for url in event.mimeData().urls():
             path = url.toLocalFile().toLocal8Bit().data()
+            if spimagine._SYSTEM_DARWIN_14_AND_FOUNDATION_:
+                path = spimagine._parseFileNameFix(path)
 
+            self.setCursor(QtCore.Qt.BusyCursor)
 
             if self.dataModel:
                 self.dataModel.loadFromPath(path, prefetchSize = self.N_PREFETCH)
             else:
                 self.setModel(DataModel.fromPath(path, prefetchSize = self.N_PREFETCH))
 
+            self.setCursor(QtCore.Qt.ArrowCursor)
+
 
     def set_colormap(self,name):
-        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+        """name should be either jet, hot, gray coolwarm"""
 
         try:
             arr = spimagine.__COLORMAPDICT__[name]
-            self.makeCurrent()
-            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+            self._set_colormap_array(arr)
         except:
             print "could not load colormap %s"%name
 
 
+    def set_colormap_rgb(self,color=[1.,1.,1.]):
+        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
 
+
+    def _set_colormap_array(self,arr):
+        """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+
+    
+        self.makeCurrent()
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        self.refresh()
+
+    
     def initializeGL(self):
 
         self.resized = True
@@ -254,10 +379,26 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programCube.bind()
         logger.debug("GLSL programCube log:%s",self.programCube.log())
 
+        self.programSlice = QtOpenGL.QGLShaderProgram()
+        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,
+                                                  vertShaderSliceTex)
+        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment,
+                                                  fragShaderSliceTex)
+        self.programSlice.link()
+        self.programSlice.bind()
+        logger.debug("GLSL programCube log:%s",self.programSlice.log())
 
-        glClearColor(0,0,0,1.)
+        self.programOverlay = QtOpenGL.QGLShaderProgram()
+        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderOverlay)
+        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderOverlay)
+        self.programOverlay.link()
+        self.programOverlay.bind()
+        logger.debug("GLSL programOverlay log:%s",self.programOverlay.log())
+
 
         self.texture = None
+        self.textureAlpha = None
+        self.textureSlice = None
 
         self.quadCoord = np.array([[-1.,-1.,0.],
                            [1.,-1.,0.],
@@ -273,25 +414,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                            [0,1.],
                            [0,0]])
 
-        self.cubeCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0],
-                                   [-1.0,  1.0,  1.0], [-1.0, -1.0,  1.0],
-                                   [-1.0, -1.0,  1.0], [ 1.0, -1.0,  1.0],
-                                   [1.0,  -1.0,  1.0], [ 1.0,  1.0,  1.0],
-
-                                   [1.0,   1.0,  -1.0], [-1.0,  1.0,  -1.0],
-                                   [-1.0,  1.0,  -1.0], [-1.0, -1.0,  -1.0],
-                                   [-1.0, -1.0,  -1.0], [ 1.0, -1.0,  -1.0],
-                                   [1.0,  -1.0,  -1.0], [ 1.0,  1.0,  -1.0],
-
-                                   [1.0,   1.0,  1.0], [1.0,  1.0,  -1.0],
-                                   [-1.0,  1.0,  1.0], [-1.0, 1.0,  -1.0],
-                                   [-1.0, -1.0,  1.0], [-1.0,-1.0,  -1.0],
-                                   [1.0,  -1.0,  1.0], [1.0, -1.0,  -1.0],
-                  ])
-
-        self.cubeFaceCoord = np.array([[1.0,   1.0,  1.0], [-1.0,  1.0,  1.0], [-1.0,  -1.0,  1.0],
-                                       [-1.0,  -1.0,  1.0], [1.0,  -1.0,  1.0], [1.0,  1.0,  1.0],
-                                       ])
+        # self.cubeCoords = create_cube_coords([-1,1,-1,1,-1,1])
 
         self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
 
@@ -299,31 +422,53 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+
+        glLineWidth(1.0);
         # glBlendFunc(GL_ONE,GL_ONE)
 
+        glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
+
+        self.set_background_color(0,0,0,.0)
+        # self.set_background_color(1,1,1,.6)
+
+
 
 
     def setTransform(self, transform):
         self.transform = transform
         self.transform._transformChanged.connect(self.refresh)
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
+        self.transform._boundsChanged.connect(self.setBounds)
 
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.renderer.set_data(self.dataModel[0])
-            self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+            self.renderer.set_data(self.dataModel[0], autoConvert = True)
+            self.transform.reset(minVal = amin(self.dataModel[0]),
+                                 maxVal = amax(self.dataModel[0]),
+                                 stackUnits= self.dataModel.stackUnits())
 
             self.refresh()
 
 
+    def set_background_color(self,r,g,b,a=1.):
+        self._background_color = (r,g,b,a)
+        glClearColor(r,g,b,a)
+        
+
 
     def dataSourceChanged(self):
-        self.renderer.set_data(self.dataModel[0])
-        self.transform.reset(amax(self.dataModel[0])+1,self.dataModel.stackUnits())
+        self.renderer.set_data(self.dataModel[0],autoConvert = True)
+        self.transform.reset(minVal = amin(self.dataModel[0]),
+                             maxVal = amax(self.dataModel[0]),
+                             stackUnits= self.dataModel.stackUnits())
         self.refresh()
 
+
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        self.cubeCoords = create_cube_coords([x1,x2,y1,y2,z1,z2])
+        self.renderer.set_box_boundaries([x1,x2,y1,y2,z1,z2])
 
     def setStackUnits(self,px,py,pz):
         logger.debug("setStackUnits to %s"%[px,py,pz])
@@ -339,6 +484,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # if self.parentWidget() and self.dataModel:
         #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
         self.renderUpdate = True
+        self.renderedSteps = 0
 
     def resizeGL(self, width, height):
 
@@ -366,51 +512,99 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.resized = False
 
 
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
 
         if self.dataModel:
             modelView = self.transform.getModelView()
 
             proj = self.transform.getProjection()
 
-            finalMat = dot(proj,modelView)
+            self.finalMat = dot(proj,modelView)
+
+
+            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
             if self.transform.isBox:
                 # Draw the cube
                 self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
+                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
 
-                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
-                self.programCube.setAttributeArray("position", self.cubeCoord)
+                r,g,b,a = self._background_color
+                self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1-r,1-g,1-b,0.6))
+                self.programCube.setAttributeArray("position", self.cubeCoords)
 
-                glDrawArrays(GL_LINES,0,len(self.cubeCoord))
 
-                # self.programCube.setAttributeArray("position", .99*self.cubeFaceCoord)
-                # self.programCube.setUniformValue("color",QtGui.QVector4D(0,0,0,.6))
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+                self.programCube.setUniformValue("texture_alpha",0)
 
-                # glDrawArrays(GL_TRIANGLES,0,len(self.cubeFaceCoord))
+                glEnable(GL_DEPTH_TEST)
 
-            if self.transform.isSlice:
-                # draw the slice
-                self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
-                self.programCube.enableAttributeArray("position")
+                # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+                glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
-                self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+                glDrawArrays(GL_LINES,0,len(self.cubeCoords))
+
+
+                glDisable(GL_DEPTH_TEST)
+
+            if self.transform.isSlice and self.sliceOutput is not None:
+                #draw the slice
+                self.programSlice.bind()
+                self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+                self.programSlice.enableAttributeArray("position")
 
                 pos, dim = self.transform.slicePos,self.transform.sliceDim
 
                 coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-                self.programCube.setAttributeArray("position", coords)
+
+                texcoords = [[0.,0.],[1,0.],[1.,1.],
+                             [1.,1.],[0.,1.],[0.,0.]]
+
+
+
+                self.programSlice.setAttributeArray("position", coords)
+                self.programSlice.setAttributeArray("texcoord", texcoords)
+
+                self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
+
+
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_2D, self.textureSlice)
+                self.programSlice.setUniformValue("texture",0)
+
+
+                glActiveTexture(GL_TEXTURE1)
+                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+                self.programSlice.setUniformValue("texture_LUT",1)
+
+
                 glDrawArrays(GL_TRIANGLES,0,len(coords))
+
+                # OLD
+                # draw the slice
+                # self.programCube.bind()
+                # self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+                # self.programCube.enableAttributeArray("position")
+
+                # self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
+
+
+                # pos, dim = self.transform.slicePos,self.transform.sliceDim
+
+                # coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+                # self.programCube.setAttributeArray("position", coords)
+                # glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
             # Draw the render texture
             self.programTex.bind()
 
             self.texture = fillTexture2d(self.output,self.texture)
-
 
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
@@ -426,9 +620,16 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.programTex.setUniformValue("texture",0)
 
             glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",1)
+            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+            self.programTex.setUniformValue("texture_alpha",1)
 
+            glActiveTexture(GL_TEXTURE2)
+            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+            self.programTex.setUniformValue("texture_LUT",2)
+
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            # glBlendFunc(GL_ONE, GL_ONE)
 
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
@@ -438,31 +639,67 @@ class GLWidget(QtOpenGL.QGLWidget):
     def render(self):
         logger.debug("render")
         if self.dataModel:
+            # import time
+            # t = time.time()
+
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
-            out = self.renderer.render()
+            self.renderer.set_min_val(self.transform.minVal)
+
+            self.renderer.set_max_val(self.transform.maxVal)
+            self.renderer.set_gamma(self.transform.gamma)
+            self.renderer.set_alpha_pow(self.transform.alphaPow)
+
+            if self.transform.isIso:
+                renderMethod = "iso_surface"
+                
+            else:
+                renderMethod = "max_project_part"
+
+            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
 
-            self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
-            # self.output = clip(self.output,0,0.99)
+            if self.transform.isSlice:
+                if self.transform.sliceDim==0:
+                    out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
+                elif self.transform.sliceDim==1:
+                    out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
+                elif self.transform.sliceDim==2:
+                    out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
-            logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
+                # self.sliceOutput = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
+                self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
+
 
 
     def saveFrame(self,fName):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
         logger.info("saving frame as %s", fName)
 
+        #has to be png
+
+        name, ext = os.path.splitext(fName)
+        if ext != ".png":
+            fName = name+".png"
+
         self.render()
         self.paintGL()
         glFlush()
-        self.grabFrameBuffer().save(fName)
+        im = self.grabFrameBuffer()
+        im.save(fName)
 
-
+        
     def onRenderTimer(self):
-        if self.renderUpdate:
+        # if self.renderUpdate:
+        #     self.render()
+        #     self.renderUpdate = False
+        #     self.updateGL()
+        if self.renderedSteps<self.NSubrenderSteps:
+            # print ((self.renderedSteps*7)%self.NSubrenderSteps)
+            s = time.time()
             self.render()
-            self.renderUpdate = False
+            logger.debug("time to render:  %.2f"%(1000.*(time.time()-s)))
+            self.renderedSteps +=1 
             self.updateGL()
 
 
@@ -503,8 +740,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.buttons() == QtCore.Qt.RightButton:
             (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
 
+        # self.setCursor(QtCore.Qt.ClosedHandCursor)
+
+    def mouseReleaseEvent(self, event):
+        super(GLWidget, self).mouseReleaseEvent(event)
+
+        # self.setCursor(QtCore.Qt.ArrowCursor)
 
     def mouseMoveEvent(self, event):
+
+        # c = append(self.cubeCoords,ones(24)[:,newaxis],axis=1)
+        # cUser = dot(c,self.finalMat)
+        # cUser = cUser[:,:3]/cUser[:,-1,newaxis]
+        # print self.finalMat
+        # print c[0], cUser[0]
         # Rotation
         if event.buttons() == QtCore.Qt.LeftButton:
 
@@ -523,31 +772,85 @@ class GLWidget(QtOpenGL.QGLWidget):
             x, y = self.posToVec2(event.x(),event.y())
 
             dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
-            self.transform.translate[0] += dx
-            self.transform.translate[1] += dy
 
+            self.transform.addTranslate(dx,dy,foo)
             self._x0,self._y0 = x,y
 
         self.refresh()
 
-if __name__ == '__main__':
-    from data_model import DataModel, DemoData, SpimData
+
+
+def test_sphere():
+    from data_model import DataModel, NumpyData, SpimData, TiffData
 
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(500,500))
 
 
-    win.setModel(DataModel(DemoData()))
+    x = np.linspace(-1,1,128)
+    Z,Y,X = np.meshgrid(x,x,x)
+    # R = sqrt(Z**2+Y**2+(X-.35)**2)
+    # R2 = sqrt(Z**2+Y**2+(X+.35)**2)
 
-    # win.transform.setStackUnits(1.,1.,5.)
+    # d = 100.*exp(-10*R**2)+.0*np.random.normal(0,1.,X.shape)
+
+    # d += 100.*exp(-10*R2**2)+.0*np.random.normal(0,1.,X.shape)
+
+    Ns = 5
+    r = .6
+    phi = linspace(0,2*pi,Ns+1)[:-1]
+    d = zeros_like(X)
+    for p in phi:
+        d += 100.*exp(-10*(Z**2+(Y-r*sin(p))**2+(X-r*cos(p))**2))
 
 
-    # win.transform.setBox()
-    # win.transform.setPerspective(True)
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.transform.setValueScale(0,40)
+
 
     win.show()
 
     win.raise_()
 
     sys.exit(app.exec_())
+
+def test_demo():
+
+    from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
+    import imgtools
+    
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+    N = 256
+
+    d = imgtools.ZYX(N)[0]
+    
+    d = 100*exp(-100*d**2)
+    win.NSubrenderSteps = 1
+    
+    win.setModel(DataModel(NumpyData(d)))
+    
+    # win.setModel(DataModel(DemoData()))
+
+
+    # win.transform.setValueScale(0,10000.)
+    # win.transform.setBox(False)
+
+    win.show()
+
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
+
+
+if __name__ == '__main__':
+
+    # test_sphere()
+
+    test_demo()
