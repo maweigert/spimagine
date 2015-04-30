@@ -2,11 +2,11 @@
 
 import os
 
-def addAll(folderPath,attrib = "Data"):
+def addAll(folderPath,attrib = "Data", prefix = ""):
     res = []
     for fold, subs, files in os.walk(folderPath):
         for fName in files:
-            res += [(fName,os.path.join(fold,fName),attrib)]
+            res += [(prefix+fName,os.path.join(fold,fName),attrib)]
 
     return res
 
@@ -14,7 +14,9 @@ def addAll(folderPath,attrib = "Data"):
 a = Analysis(['../spimagine/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine',
                      '/Library/Python/2.7/site-packages/libtiff'],
-             hiddenimports=[],
+             hiddenimports=[
+                 'scipy.special._ufuncs_cxx',
+                 "pyfft"],
              hookspath=None,
              runtime_hooks=None)
 pyz = PYZ(a.pure)
@@ -25,10 +27,27 @@ a.datas += addAll("../spimagine/kernels")
 a.datas += addAll("../spimagine/images")
 a.datas += addAll("../spimagine/colormaps")
 
-print a.datas
+
+a.datas += addAll("/Users/mweigert/python/imgtools/imgtools/convolve/kernels")
+a.datas += addAll("/Users/mweigert/python/imgtools/imgtools/convolve/kernels")
+
+a.datas += addAll("/Users/mweigert/python/pyopencl/build/lib.macosx-10.9-x86_64-2.7/pyopencl/cl")
+
+
+
+
+a.datas += [("lucy_richardson.cl","/Users/mweigert/python/Deconvolution/lucy_richardson.cl","Data")]
+
 
 # include the libtiff dylib and all the py files (work around)
 a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
+
+a.datas += addAll("/Library/Python/2.7/site-packages/pyfft", prefix="pyfft/")
+
+print a.datas
+
+
+
 # a.datas += [("tiff_h_4_0_3.py","/Library/Python/2.7/site-packages/libtiff/tiff_h_4_0_3.py","Data")]
 
 
@@ -50,7 +69,8 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='spimagine',
-          debug=True,
+          debug=False,
+          # debug=True,
           strip=None,
           upx=True,
           console=False )
@@ -60,29 +80,29 @@ app = BUNDLE(exe,
              icon=None)
 
 
-b = Analysis(['../spimagine/spim_render.py'],
-             pathex=['/Users/mweigert/python/spimagine/spimagine'],
-             hiddenimports=[],
-             hookspath=None,
-             runtime_hooks=None)
-pyz = PYZ(b.pure)
+# b = Analysis(['../spimagine/spim_render.py'],
+#              pathex=['/Users/mweigert/python/spimagine/spimagine'],
+#              hiddenimports=[],
+#              hookspath=None,
+#              runtime_hooks=None)
+# pyz = PYZ(b.pure)
 
 
-b.datas += addAll("../spimagine/kernels")
+# b.datas += addAll("../spimagine/kernels")
 
-b.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
+# b.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
 
-b.binaries += [("libtiff.5.dylib","/usr/local/lib/libtiff.5.dylib","BINARY")]
+# b.binaries += [("libtiff.5.dylib","/usr/local/lib/libtiff.5.dylib","BINARY")]
 
 
-pyz = PYZ(b.pure)
-exe = EXE(pyz,
-          b.scripts,
-          b.binaries,
-          b.zipfiles,
-          b.datas,
-          name='spimagine_render',
-          debug=True,
-          strip=None,
-          upx=True,
-          console=True)
+# pyz = PYZ(b.pure)
+# exe = EXE(pyz,
+#           b.scripts,
+#           b.binaries,
+#           b.zipfiles,
+#           b.datas,
+#           name='spimagine_render',
+#           debug=True,
+#           strip=None,
+#           upx=True,
+#           console=True)

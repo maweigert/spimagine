@@ -67,7 +67,7 @@ def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
     checkStr = checkBoxStyleStr%(absPath(img1),absPath(img2))
     if os.name =="nt":
         checkStr = checkStr.replace("\\","/")
-       
+
     check.setStyleSheet(checkStr)
     check.setToolTip(tooltip)
     return check
@@ -126,13 +126,23 @@ def fillTexture2d(data,tex = None):
     return tex
 
 def arrayFromImage(fName):
-    """converts png image to float32 array"""
-    img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
-    Nx, Ny = img.width(),img.height()
-    tmp = img.bits().asstring(img.numBytes())
-    arr = np.frombuffer(tmp, np.uint8).reshape((Ny,Nx,4))
-    arr = arr.astype(np.float32)/np.amax(arr)
-    return arr[:,:,:-1][:,:,::-1]
+    """converts png image to float32 array
+    returns an array of shape [w,h,3]
+    """
+    try:
+        img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
+
+
+        Nx, Ny = img.width(),img.height()
+        tmp = img.bits().asstring(img.numBytes())
+        arr = np.frombuffer(tmp, np.uint8).reshape((Ny,Nx,4))
+        arr = arr.astype(np.float32)/np.amax(arr)
+        return arr[:,:,:-1][:,:,::-1]
+    except Exception as e:
+        print e
+        print "could not load image %s"%fName
+        return np.zeros((10,100,3),np.float32)
+
 
 
 
@@ -155,3 +165,50 @@ def slice_coords(relPos,dim):
     coords[:,dim] = -1.+2*relPos
 
     return coords
+
+
+def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
+    x1,x2,y1,y2,z1,z2 = bounds
+    return np.array([[x2, y2, z2], [x1, y2, z2],
+                     [x1, y2, z2], [x1, y1, z2],
+                     [x1, y1, z2], [x2, y1, z2],
+                     [x2, y1, z2], [x2, y2, z2],
+
+                     [x2, y2, z1], [x1, y2, z1],
+                     [x1, y2, z1], [x1, y1, z1],
+                     [x1, y1, z1], [x2, y1, z1],
+                     [x2, y1, z1], [x2, y2, z1],
+
+                     [x2, y2, z2], [x2, y2, z1],
+                     [x1, y2, z2], [x1, y2, z1],
+                     [x1, y1, z2], [x1, y1, z1],
+                     [x2, y1, z2], [x2, y1, z1],
+                     ])
+
+
+
+def create_sphere_coords(r,Nphi=10,Ntheta=10):
+    ts = np.arccos(np.linspace(-1.,1.,Ntheta+1))
+    ps = np.linspace(0,2.*np.pi,Nphi+1)
+
+    T,P = np.meshgrid(ts,ps)
+
+    xs = r*np.array([np.cos(P)*np.sin(T),np.sin(P)*np.sin(T),np.cos(T)])
+
+    coords = []
+    for i in range(Ntheta):
+        for j in range(Nphi):
+            coords.append(xs[:,i,j])
+            coords.append(xs[:,i+1,j])
+            coords.append(xs[:,i+1,j+1])
+            coords.append(xs[:,i,j])
+            coords.append(xs[:,i,j+1])
+            coords.append(xs[:,i+1,j+1])
+
+    return np.array(coords)
+
+
+
+if __name__ == '__main__':
+    c =  create_sphere_coords(.8,10,10)
+    

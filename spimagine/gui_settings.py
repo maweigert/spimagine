@@ -8,6 +8,9 @@ import os
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
+
+from spimagine.floatslider import FloatSlider
+
 import numpy as np
 
 from gui_utils import *
@@ -46,9 +49,15 @@ def createImgCheckBox(fName_active,fName_inactive):
 class SettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _playIntervalChanged = QtCore.pyqtSignal(int)
+    _substepsChanged = QtCore.pyqtSignal(int)
+
     _dirNameChanged =  QtCore.pyqtSignal(str)
     _frameNumberChanged = QtCore.pyqtSignal(int)
+    _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
+    _alphaPowChanged = QtCore.pyqtSignal(float)
+    _rgbColorChanged = QtCore.pyqtSignal(float, float,float)
 
+    
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
 
@@ -104,6 +113,11 @@ class SettingsPanel(QtGui.QWidget):
                                                     absPath("images/egg_inactive.png"),
                                                     tooltip="toggle egg control")
 
+
+        self.butColor = createStandardButton(self,absPath("images/icon_colors.png"),
+                                             method = self.onButtonColor,
+                                                    tooltip="color")
+
         gridBox = QtGui.QGridLayout()
 
         gridBox.addWidget(QtGui.QLabel("projection:\t"),1,0)
@@ -119,7 +133,7 @@ class SettingsPanel(QtGui.QWidget):
         self.colormaps = list(spimagine.__COLORMAPDICT__.keys())
 
         self.colorCombo.setIconSize(QtCore.QSize(100,20))
-        
+
         for s in self.colormaps:
             self.colorCombo.addItem(QtGui.QIcon(absPath("colormaps/cmap_%s.png"%s)),"")
 
@@ -127,29 +141,65 @@ class SettingsPanel(QtGui.QWidget):
 
         gridBox.addWidget(self.colorCombo,3,1)
 
+        gridBox.addWidget(self.butColor,4,0)
 
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),4,0)
-        gridBox.addWidget(self.checkLoopBounce,4,1)
+
+        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),5,0)
+        gridBox.addWidget(self.checkLoopBounce,5,1)
 
 
         gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
-
         self.playInterval = QtGui.QLineEdit("50")
         self.playInterval.setValidator(QtGui.QIntValidator(bottom=10))
         self.playInterval.returnPressed.connect(self.playIntervalChanged)
         gridBox.addWidget(self.playInterval)
 
-        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"),6,0)
-        gridBox.addWidget(self.checkEgg,6,1)
+        gridBox.addWidget(QtGui.QLabel("subrender steps:\t"))
+        self.editSubsteps = QtGui.QLineEdit("1")
+        self.editSubsteps.setValidator(QtGui.QIntValidator(bottom=1))
+        self.editSubsteps.returnPressed.connect(self.substepsChanged)
+        gridBox.addWidget(self.editSubsteps)
+
+        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"))
+        gridBox.addWidget(self.checkEgg)
+
+
+        self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderAlphaPow.setRange(0,1.)
+        self.sliderAlphaPow.setTickInterval(1)
+        self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderAlphaPow.setTracking(True)
+        self.sliderAlphaPow.setValue(1.)
+
+        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"))
+        gridBox.addWidget(self.sliderAlphaPow)
 
         vbox.addLayout(gridBox)
-
 
         vbox.addStretch()
         line =  QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
 
         vbox.addWidget(line)
+
+        #################
+
+        gridBox = QtGui.QGridLayout()
+        self.sliderBounds = [QtGui.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
+        for i,s in enumerate(self.sliderBounds):
+            s.setTickPosition(QtGui.QSlider.TicksBothSides)
+            s.setRange(-100,100)
+            s.setTickInterval(1)
+            s.setFocusPolicy(QtCore.Qt.ClickFocus)
+            s.setTracking(True)
+            s.setValue(-100+200*(i%2))
+            s.valueChanged.connect(self.boundsChanged)
+            s.setStyleSheet("height: 12px; border = 0px;")
+
+            gridBox.addWidget(s,i,1)
+
+
+        vbox.addLayout(gridBox)
 
         vbox.addWidget(QtGui.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
 
@@ -176,7 +226,7 @@ class SettingsPanel(QtGui.QWidget):
 
         vbox.addLayout(hbox)
 
-
+        
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("number frames:\t"))
         frameEdit = QtGui.QLineEdit("100")
@@ -206,6 +256,7 @@ class SettingsPanel(QtGui.QWidget):
         self.setLayout(vbox)
 
 
+
     def setDirName(self,dirName):
         logger.debug("setDirName: %s"%dirName)
         self.dirName = dirName
@@ -218,11 +269,32 @@ class SettingsPanel(QtGui.QWidget):
         if dirName:
             self.setDirName(dirName)
 
+    def onButtonColor(self):
+        col = QtGui.QColorDialog.getColor()
+
+        if col.isValid():
+            color = 1./255*np.array(col.getRgb()[:3])
+            self._rgbColorChanged.emit(*color)
 
     def setStackUnits(self,px,py,pz):
         for e,p in zip(self.stackEdits,[px,py,pz]):
             e.setText(str(p))
 
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        for x,s in zip([x1,x2,y1,y2,z1,z2],self.sliderBounds):
+            flag = s.blockSignals(True)
+            s.setValue(x*100)
+            s.blockSignals(flag)
+
+
+    def boundsChanged(self):
+        bounds = [s.value()/100. for s in self.sliderBounds]
+        self._boundsChanged.emit(*bounds)
+
+
+    def alphaPowChanged(self):
+        alphaPow = 100.*(self.sliderAlphaPow.value()/100.)**3
+        self._alphaPowChanged.emit(alphaPow)
 
     def stackUnitsChanged(self):
         try:
@@ -235,6 +307,10 @@ class SettingsPanel(QtGui.QWidget):
     def playIntervalChanged(self):
         self._playIntervalChanged.emit(int(self.playInterval.text()))
 
+    def substepsChanged(self):
+        print "changed substeps to ", int(self.editSubsteps.text())
+        self._substepsChanged.emit(int(self.editSubsteps.text()))
+        
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, ):

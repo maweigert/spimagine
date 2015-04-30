@@ -19,17 +19,27 @@ from spimagine.keyframe_model import TransformData
 
 
 class TransformModel(QtCore.QObject):
-    _maxChanged = QtCore.pyqtSignal(int)
+    _maxChanged = QtCore.pyqtSignal(float)
+    _minChanged = QtCore.pyqtSignal(float)
+    
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
+
+    _isoChanged = QtCore.pyqtSignal(bool)
+
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
     _rotationChanged = QtCore.pyqtSignal()
+
+    _translateChanged = QtCore.pyqtSignal(float,float,float)
     _slicePosChanged =  QtCore.pyqtSignal(int)
     _sliceDimChanged =  QtCore.pyqtSignal(int)
+    _boundsChanged = QtCore.pyqtSignal(float,float,float,float,float,float)
 
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
+
+    _alphaPowChanged = QtCore.pyqtSignal(float)
 
     def __init__(self):
         super(TransformModel,self).__init__()
@@ -38,17 +48,19 @@ class TransformModel(QtCore.QObject):
     def setModel(self,dataModel):
         self.dataModel = dataModel
 
-    def reset(self,maxVal = 256.,stackUnits=None):
+    def reset(self,minVal = 0., maxVal = 256.,stackUnits=None):
         logger.debug("reset")
 
         self.dataPos = 0
         self.slicePos = 0
         self.sliceDim = 0
         self.zoom = 1.
+        self.setIso(False)
         self.isPerspective = True
         self.setPerspective()
-        self.setValueScale(0,maxVal)
+        self.setValueScale(minVal,maxVal)
         self.setGamma(1.)
+        self.setAlphaPow(0)
         self.setBox(True)
 
         if not hasattr(self,"isSlice"):
@@ -60,15 +72,37 @@ class TransformModel(QtCore.QObject):
         self.center()
 
 
+    def setIso(self,isIso):
+        logger.debug("setting Iso %s"%isIso)
+        self.isIso = isIso
+        self._isoChanged.emit(isIso)
+        self._transformChanged.emit()
+
     def center(self):
         self.quatRot = Quaternion()
-        self.translate = [0,0,0]
         self.cameraZ = 5.
         self.zoom  = 1.
         self.scaleAll = 1.
+        self.setBounds(-1,1.,-1,1,-1,1)
+        self.setTranslate(0,0,0)
+
         self.update()
         self._transformChanged.emit()
 
+    def setTranslate(self,x,y,z):
+        self.translate = np.array([x,y,z])
+        self._translateChanged.emit(x,y,z)
+        self._transformChanged.emit()
+
+    def addTranslate(self,dx,dy,dz):
+        self.translate = self.translate + np.array([dx,dy,dz])
+        self._translateChanged.emit(*self.translate)
+        self._transformChanged.emit()
+
+    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        self.bounds = np.array([x1,x2,y1,y2,z1,z2])
+        self._boundsChanged.emit(x1,x2,y1,y2,z1,z2)
+        self._transformChanged.emit()
 
     def setShowSlice(self,isSlice=True):
         self.isSlice = isSlice
@@ -102,11 +136,33 @@ class TransformModel(QtCore.QObject):
         self._gammaChanged.emit(self.gamma)
         self._transformChanged.emit()
 
-    def setValueScale(self,minVal,maxVal):
-        self.minVal, self.maxVal = minVal, maxVal
-        self._maxChanged.emit(self.maxVal)
+
+    def setAlphaPow(self, alphaPow):
+        logger.debug("setAlphaPow(%s)",alphaPow)
+        self.alphaPow = alphaPow
+        self._alphaPowChanged.emit(self.alphaPow)
         self._transformChanged.emit()
 
+    def setValueScale(self,minVal,maxVal):
+        logger.debug("set scale to %s,%s"%(minVal, maxVal))
+
+        self.setMin(minVal)
+        self.setMax(maxVal)
+
+    def setMin(self,minVal):
+        self.minVal = max(1.e-6,minVal)
+        logger.debug("set min to %s"%(self.minVal))
+
+        self._minChanged.emit(self.minVal)
+        self._transformChanged.emit()
+
+    def setMax(self,maxVal):
+        self.maxVal = maxVal
+        
+        logger.debug("set max to %s"%(self.maxVal))
+
+        self._maxChanged.emit(self.maxVal)
+        self._transformChanged.emit()
 
     def setStackUnits(self,px,py,pz):
         self.stackUnits = px,py,pz
@@ -183,7 +239,6 @@ class TransformModel(QtCore.QObject):
     def getUnscaledModelView(self):
         view  = mat4_translate(0,0,-self.cameraZ)
 
-
         model = mat4_scale(*[self.scaleAll]*3)
         model = np.dot(model,self.quatRot.toRotation4())
         model = np.dot(model,mat4_translate(*self.translate))
@@ -195,6 +250,23 @@ class TransformModel(QtCore.QObject):
         self.setQuaternion(transformData.quatRot)
         self.setZoom(transformData.zoom)
         self.setPos(transformData.dataPos)
+        self.setBounds(*transformData.bounds)
+        self.setBox(transformData.isBox)
+        self.setIso(transformData.isIso)
+
+        self.setAlphaPow(transformData.alphaPow)
+        self.setTranslate(*transformData.translate)
+        self.setValueScale(transformData.minVal,transformData.maxVal)
+        # self.setGamma(transformData.gamma)
 
     def toTransformData(self):
-        return TransformData(quatRot = self.quatRot, zoom = self.zoom, dataPos = self.dataPos)
+        return TransformData(quatRot = self.quatRot, zoom = self.zoom,
+                             dataPos = self.dataPos,
+                             minVal = self.minVal,
+                             maxVal = self.maxVal,
+                             gamma= self.gamma,
+                             translate = self.translate,
+                             bounds = self.bounds,
+                             isBox = self.isBox,
+                             isIso = self.isIso,
+                             alphaPow = self.alphaPow)
