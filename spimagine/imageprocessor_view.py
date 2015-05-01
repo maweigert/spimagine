@@ -127,16 +127,16 @@ class ImageProcessorView(QtGui.QWidget):
 
 
     def set_proc_attr_edit(self,obj, key , dtype):
-        print "set proc edit"
+        # print "set proc edit"
         def func():
-            print "setting", key , obj.text()
+            # print "setting", key , obj.text()
             setattr(self.proc,key, dtype(obj.text()))
             self._stateChanged.emit(-1)
         return func
 
     def set_proc_attr_check(self,obj, key , dtype):
         def func():
-            print "setting", key , obj.checkState() !=0
+            # print "setting", key , obj.checkState() !=0
             setattr(self.proc,key, obj.checkState() !=0)
             self._stateChanged.emit(-1)
         return func
