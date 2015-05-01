@@ -1,12 +1,9 @@
 # SpImagine
 
-OpenCL accelerated rendering of 3D and 4D data with python
+A python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes. The package provides a generic 3D+t data viewer as well as denoising and deconvolution methods and makes use of GPU acceleration via OpenCL. 
 
 
-
-
-
-[![Alt text for your video](huhu)](https://vimeo.com/126597994)
+[![Alt text for your video](poster_vimeo.png)](https://vimeo.com/126597994)
 
 ## Installing
 
