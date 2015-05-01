@@ -3,7 +3,10 @@
 OpenCL accelerated rendering of 3D and 4D data with python
 
 
-![Alt text](https://bitbucket.org/mweigert/spimagine/raw/master/spimagine_image.png)
+
+
+
+[![Alt text for your video](huhu)](https://vimeo.com/126597994)
 
 ## Installing
 
