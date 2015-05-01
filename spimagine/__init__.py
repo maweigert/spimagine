@@ -121,6 +121,12 @@ from data_model import SpimData, TiffData, NumpyData
 
 from imgutils import read3dTiff, write3dTiff
 
+from imgtools import denoise_filter2,denoise_filter3
+import sys
+sys.path.append("/Users/mweigert/python/deconv_new")
+from rl_deconv import deconv_RL
+from tv_deconv import deconv_tv3_gpu
+
 
 #this should fix an annoying file url drag drop bug in mac yosemite
 import platform
