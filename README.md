@@ -6,7 +6,7 @@ OpenCL accelerated rendering of 3D and 4D data with python
 
 
 
-[![Alt text for your video](huhu)](https://vimeo.com/126597994)
+[![Alt text for your video](poster_vimeo.png)](https://vimeo.com/126597994)
 
 ## Installing
 
