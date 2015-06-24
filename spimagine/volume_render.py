@@ -111,6 +111,9 @@ class VolumeRenderer:
                                             mem_flags = cl.mem_flags.READ_ONLY)
 
 
+        self.projection = np.zeros((4,4))
+        self.modelView = np.zeros((4,4))
+                
         if size:
             self.resize(size)
         else:
@@ -151,6 +154,13 @@ class VolumeRenderer:
     def reset_buffer(self):
         self.buf = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
         self.bufAlpha = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
+        self.bufDepth = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
+
+        self.bufNormals = self.dev.createBuffer(3*self.height*self.width,dtype=np.float32)
+
+        self.bufNormalsScratch = self.dev.createBuffer(3*self.height*self.width,dtype=np.float32)
+        
+
 
     def _get_downsampled_data_slices(self,data):
         """in case data is bigger then gpu texture memory, we should downsample it
@@ -192,12 +202,14 @@ class VolumeRenderer:
             _data = data.astype(self.dtype)
 
         self.dataSlices = self._get_downsampled_data_slices(_data)
+
         if self.dataSlices is not None:
             self.set_shape(_data[self.dataSlices].shape[::-1])
         else:
             self.set_shape(_data.shape[::-1])
 
         self.update_data(_data, copyData = copyData)
+        self.update_matrices()
 
     def set_shape(self,dataShape):
         if self.isGPU:
@@ -236,6 +248,7 @@ class VolumeRenderer:
         self.projection = projection
         self.update_matrices()
 
+        
     def set_modelView(self, modelView = mat4_identity()):
         self.modelView = 1.*modelView
         self.update_matrices()
@@ -318,7 +331,7 @@ class VolumeRenderer:
                 method = "max_project_short"
             else:
                 method = "max_project_float"
-                
+
             self.proc.runKernel(method,
                             (self.width,self.height),
                             None,
@@ -386,6 +399,52 @@ class VolumeRenderer:
                             np.int32(self.dtype == np.uint16)
                             )
 
+        if method=="iso_surface_new":
+            self.proc.runKernel("iso_surface_new",
+                            (self.width,self.height),
+                            None,
+                            self.bufNormals,
+                            self.bufAlpha,
+                            np.int32(self.width),np.int32(self.height),
+                            np.float32(self.boxBounds[0]),
+                            np.float32(self.boxBounds[1]),
+                            np.float32(self.boxBounds[2]),
+                            np.float32(self.boxBounds[3]),
+                            np.float32(self.boxBounds[4]),
+                            np.float32(self.boxBounds[5]),
+                            np.float32(self.maxVal/2),
+                            np.float32(self.gamma),
+                            self.invPBuf,
+                            self.invMBuf,
+                            self.dataImg,
+                            np.int32(self.dtype == np.uint16)
+                            )
+
+
+            self.proc.runKernel("blur_normals_x",
+                            (self.width,self.height),
+                            None,
+                            self.bufNormals,
+                            self.bufNormalsScratch,
+                            np.int32(3))
+            self.proc.runKernel("blur_normals_y",
+                            (self.width,self.height),
+                            None,
+                            self.bufNormalsScratch,
+                            self.bufNormals,
+                            np.int32(3))
+
+            self.proc.runKernel("iso_shading",
+                                (self.width,self.height),
+                                None,
+                                self.bufNormals,
+                                self.bufAlpha,
+                                self.invMBuf,
+                                self.invPBuf,
+                                self.buf)
+
+            # return self.dev.readBuffer(self.bufNormals,dtype = np.float32).reshape(self.width,self.height,3)
+            
         if return_alpha:
             return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height),  self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
         else:
@@ -479,18 +538,19 @@ def _getDirec(P,M,u=1,v=0):
 def test_simple2():
     import time
 
-    N = 256
+    N = 128
 
     x = np.linspace(-1,1,N)
     Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
     R = np.sqrt(X**2+Y**2+Z**2)
 
-    # d = np.linspace(0,10000.,N**3).reshape((N,)*3).astype(np.float32)
+    
     d = 10000*np.exp(-10*R**2)
 
     rend = VolumeRenderer((600,600))
 
-    rend.set_modelView(mat4_rotation(.5,0,1.,0))
+    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
+    rend.set_modelView(mat4_translate(0,0,-10.))
 
     # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
     t1 = time.time()
@@ -502,7 +562,7 @@ def test_simple2():
     t2 = time.time()
 
     rend.dev.queue.finish()
-    out = rend.render(maxVal = 200.)
+    out = rend.render(maxVal = 10000.)
     rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
@@ -511,6 +571,42 @@ def test_simple2():
 
     return d, rend, out
 
+def test_new_iso():
+    import time
+
+    N = 128
+
+    x = np.linspace(-1,1,N)
+    Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
+    R = np.sqrt(X**2+Y**2+Z**2)
+
+    
+    d = 10000*np.exp(-10*R**2)
+    d += 00*np.random.uniform(-1,1,d.shape) 
+
+    rend = VolumeRenderer((600,600))
+
+    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
+    rend.set_modelView(mat4_translate(0,0,-1.))
+
+    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
+    t1 = time.time()
+
+    rend.dev.queue.finish()
+    rend.set_data(d, autoConvert = True)
+    rend.dev.queue.finish()
+
+    t2 = time.time()
+
+    rend.dev.queue.finish()
+    out = rend.render(maxVal = 1000., method="iso_surface_new")
+    rend.dev.queue.finish()
+
+    print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
+
+    print "time to render %s^3:\t %.2f ms"%(N,1000*(time.time()-t2))
+
+    return d, rend, out
 
 def test_real():
     import imgtools
@@ -571,8 +667,11 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
-    pass
-    # d, rend, out = test_simple2()
+    # test_speed(256)
+
+    d, rend, out = test_new_iso()
+
+
     # d, rend, out = test_real()
 
 
