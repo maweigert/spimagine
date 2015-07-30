@@ -72,13 +72,15 @@ class TransformModel(QtCore.QObject):
         self.center()
 
 
-    def setIso(self,isIso):
+    def setIso(self,isIso, emit_signal = True):
         logger.debug("setting Iso %s"%isIso)
         self.isIso = isIso
-        self._isoChanged.emit(isIso)
-        self._transformChanged.emit()
 
-    def center(self):
+        if emit_signal:
+            self._isoChanged.emit(isIso)
+            self._transformChanged.emit()
+
+    def center(self, emit_signal = True):
         self.quatRot = Quaternion()
         self.cameraZ = 5.
         self.zoom  = 1.
@@ -87,111 +89,133 @@ class TransformModel(QtCore.QObject):
         self.setTranslate(0,0,0)
 
         self.update()
-        self._transformChanged.emit()
+        
+        if emit_signal:
+            self._transformChanged.emit()
 
-    def setTranslate(self,x,y,z):
+    def setTranslate(self,x,y,z, emit_signal = True):
         self.translate = np.array([x,y,z])
-        self._translateChanged.emit(x,y,z)
-        self._transformChanged.emit()
 
-    def addTranslate(self,dx,dy,dz):
+        if emit_signal:
+            self._translateChanged.emit(x,y,z)
+            self._transformChanged.emit()
+
+    def addTranslate(self,dx,dy,dz, emit_signal = True):
         self.translate = self.translate + np.array([dx,dy,dz])
-        self._translateChanged.emit(*self.translate)
-        self._transformChanged.emit()
 
-    def setBounds(self,x1,x2,y1,y2,z1,z2):
+        if emit_signal:
+            self._translateChanged.emit(*self.translate)
+            self._transformChanged.emit()
+
+    def setBounds(self,x1,x2,y1,y2,z1,z2, emit_signal = True):
         self.bounds = np.array([x1,x2,y1,y2,z1,z2])
-        self._boundsChanged.emit(x1,x2,y1,y2,z1,z2)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._boundsChanged.emit(x1,x2,y1,y2,z1,z2)
+            self._transformChanged.emit()
 
-    def setShowSlice(self,isSlice=True):
+    def setShowSlice(self,isSlice=True, emit_signal = True):
         self.isSlice = isSlice
-        self._transformChanged.emit()
+        if emit_signal:
+            self._transformChanged.emit()
 
-    def setSliceDim(self,dim):
+    def setSliceDim(self,dim, emit_signal = True):
         logger.debug("setSliceDim(%s)",dim)
         if dim>= 0 and dim<3:
             self.sliceDim = dim
-            self._sliceDimChanged.emit(dim)
-            self._transformChanged.emit()
+            if emit_signal:
+                self._sliceDimChanged.emit(dim)
+                self._transformChanged.emit()
         else:
             raise ValueError("dim should be in [0,1,2]!")
 
-    def setSlicePos(self,pos):
+    def setSlicePos(self,pos, emit_signal = True):
         logger.debug("setSlicePos(%s)",pos)
         self.slicePos = pos
-        self._slicePosChanged.emit(pos)
-        self._transformChanged.emit()
 
-    def setPos(self,pos):
+        if emit_signal:
+            self._slicePosChanged.emit(pos)
+            self._transformChanged.emit()
+
+    def setPos(self,pos, emit_signal = True):
         logger.debug("setPos(%s)",pos)
         self.dataPos = pos
         self.dataModel.setPos(pos)
-        self._transformChanged.emit()
 
-    def setGamma(self, gamma):
+        if emit_signal:
+            self._transformChanged.emit()
+
+    def setGamma(self, gamma, emit_signal = True):
         logger.debug("setGamma(%s)",gamma)
 
         self.gamma = gamma
-        self._gammaChanged.emit(self.gamma)
-        self._transformChanged.emit()
+        
+        if emit_signal:
+            self._gammaChanged.emit(self.gamma)
+            self._transformChanged.emit()
 
 
-    def setAlphaPow(self, alphaPow):
+    def setAlphaPow(self, alphaPow, emit_signal = True):
         logger.debug("setAlphaPow(%s)",alphaPow)
         self.alphaPow = alphaPow
-        self._alphaPowChanged.emit(self.alphaPow)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._alphaPowChanged.emit(self.alphaPow)
+            self._transformChanged.emit()
 
-    def setValueScale(self,minVal,maxVal):
+    def setValueScale(self,minVal,maxVal, emit_signal = True):
         logger.debug("set scale to %s,%s"%(minVal, maxVal))
 
-        self.setMin(minVal)
-        self.setMax(maxVal)
+        self.setMin(minVal, emit_signal)
+        self.setMax(maxVal, emit_signal)
 
-    def setMin(self,minVal):
+    def setMin(self,minVal, emit_signal = True):
         self.minVal = max(1.e-6,minVal)
         logger.debug("set min to %s"%(self.minVal))
 
-        self._minChanged.emit(self.minVal)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._minChanged.emit(self.minVal)
+            self._transformChanged.emit()
 
-    def setMax(self,maxVal):
+    def setMax(self,maxVal, emit_signal = True):
         self.maxVal = maxVal
         
         logger.debug("set max to %s"%(self.maxVal))
 
-        self._maxChanged.emit(self.maxVal)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._maxChanged.emit(self.maxVal)
+            self._transformChanged.emit()
 
-    def setStackUnits(self,px,py,pz):
+    def setStackUnits(self,px,py,pz, emit_signal = True):
         self.stackUnits = px,py,pz
-        self._stackUnitsChanged.emit(px,py,pz)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._stackUnitsChanged.emit(px,py,pz)
+            self._transformChanged.emit()
 
-    def setBox(self,isBox = True):
+    def setBox(self,isBox = True, emit_signal = True):
         self.isBox = isBox
-        self._boxChanged.emit(isBox)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._boxChanged.emit(isBox)
+            self._transformChanged.emit()
 
-    def setZoom(self,zoom = 1.):
+    def setZoom(self,zoom = 1., emit_signal = True):
         self.zoom = np.clip(zoom,.5,2)
         self.update()
-        self._transformChanged.emit()
+        if emit_signal:
+            self._transformChanged.emit()
 
 
-    def addRotation(self, angle, x, y, z):
+    def addRotation(self, angle, x, y, z, emit_signal = True):
         q = Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z)
-        self.setQuaternion(self.quatRot * q)
+        self.setQuaternion(self.quatRot * q, emit_signal)
 
-    def setRotation(self,angle,x,y,z):
-        self.setQuaternion(Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z))
+    def setRotation(self,angle,x,y,z, emit_signal = True):
+        self.setQuaternion(Quaternion(np.cos(angle),np.sin(angle)*x,np.sin(angle)*y,np.sin(angle)*z),emit_signal)
 
-    def setQuaternion(self,quat):
+    def setQuaternion(self,quat, emit_signal = True):
         logger.debug("set quaternion to %s",quat.data)
         self.quatRot = Quaternion.copy(quat)
-        self._rotationChanged.emit()
-        self._transformChanged.emit()
+        if emit_signal:
+            self._rotationChanged.emit()
+            self._transformChanged.emit()
 
 
     def update(self):
@@ -202,7 +226,7 @@ class TransformModel(QtCore.QObject):
             self.cameraZ = 0.
             self.scaleAll = 2.5**(self.zoom-1.)
 
-    def setPerspective(self, isPerspective = True):
+    def setPerspective(self, isPerspective = True, emit_signal = True):
         self.isPerspective = isPerspective
         if isPerspective:
             self.projection = mat4_perspective(60.,1.,.1,10)
@@ -210,8 +234,9 @@ class TransformModel(QtCore.QObject):
             self.projection = mat4_ortho(-2.,2.,-2.,2.,-1.5,1.5)
 
         self.update()
-        self._perspectiveChanged.emit(isPerspective)
-        self._transformChanged.emit()
+        if emit_signal:
+            self._perspectiveChanged.emit(isPerspective)
+            self._transformChanged.emit()
 
     def getProjection(self):
         return self.projection

@@ -173,11 +173,8 @@ class TiffData(GenericData):
         if fName:
             try:
                 self.data = imgutils.read3dTiff(fName)
-                print "da", self.data.shape
-                
                 self.data = self.data.reshape((1,)+self.data.shape)
                 self.stackSize = (1,) + self.data.shape
-                print "here", self.data.shape
             except Exception as e:
                 print e
                 self.fName = ""
@@ -244,6 +241,9 @@ class DemoData(GenericData):
 
             u2 = np.exp(-7*R2**2)
             self.data = (10000*(u + 2*u2)).astype(np.float32).reshape((1,)+u.shape)
+
+        self.data = self.data.reshape((1,)+self.data.shape)
+        self.stackSize = (1,) + self.data.shape
 
 
     def sizeT(self):
@@ -519,58 +519,10 @@ def test_numpydata():
         print pos
         print np.mean(m[pos])
 
-def test_frompath():
-    m = DataModel.fromPath("/Users/mweigert/Data/HisGFP")
-    m = DataModel.fromPath("/Users/mweigert/Data/droso_test.tif")
-
-
-def test_speed():
-    import time
-
-    fName  = "/Users/mweigert/Data/Drosophila_full"
-
-    t = []
-    d = DataModel.fromPath(fName,1)
-
-    for i in range(100):
-        print i
-
-        if i%10==0:
-            a = d[i/10]
-
-
-        time.sleep(.1)
-        t.append(time.time())
-
-
-def test_data_sets():
-    fNames = ["test_data/Drosophila_Single",
-              "test_data/HisStack_uint16_0000.tif",
-              "test_data/HisStack_uint8_0000.tif",
-              # "test_data/meep.h5",
-              "test_data/retina.czi"
-          ]
-
-    
-    for fName in fNames:
-        d = DataModel.fromPath(fName)
-        print fName, d[0].shape
-
-    
         
 
 if __name__ == '__main__':
 
-    test_data_sets()
-    # test_spimdata()
-
+    
     d = test_tiffdata()
-    # test_numpydata()
-
-    # test_speed()
-
-    # test_frompath()
-
-
-    # d = Img2dData("/Users/mweigert/Data/test_images/actin.jpg")
-
+    
