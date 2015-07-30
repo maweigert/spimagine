@@ -48,6 +48,7 @@ import spimagine
 
 import sys
 
+import time
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -345,6 +346,7 @@ class VolumeRenderer:
             else:
                 method = "max_project_part_float"
 
+            print numParts, currentPart
             self.proc.runKernel(method,
                             (self.width,self.height),
                             None,
