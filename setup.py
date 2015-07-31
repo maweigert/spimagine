@@ -13,7 +13,7 @@ setup(name='spimagine',
     packages=['spimagine'],
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
-        ,"sortedcontainers"
+        ,"sortedcontainers", "scikit-tensor"
     ],
 
     package_data={"spimagine":['kernels/*','images/*','colormaps/*','lib/*']},
