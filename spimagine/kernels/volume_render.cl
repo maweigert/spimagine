@@ -56,10 +56,10 @@ int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tn
 	return smallest_tmax > largest_tmin;
 }
 
-void printf4(const float4 v)
-{
-  printf("kernel: %.2f  %.2f  %.2f  %.2f\n",v.x,v.y,v.z,v.w); 
-}
+// void printf4(const float4 v)
+// {
+//   printf("kernel: %.2f  %.2f  %.2f  %.2f\n",v.x,v.y,v.z,v.w); 
+// }
 
 float4 mult(__constant float* M, float4 v){
   float4 res;
@@ -1190,8 +1190,8 @@ __kernel void iso_surface_new(
   
   // the normal
 
-  if (x==300 &&y ==300)
-	printf("diffuse: %.4f \n",tnear);
+  // if (x==300 &&y ==300)
+  // 	printf("diffuse: %.4f \n",tnear);
   
   float4 normal;
   float h = dt;
@@ -1249,8 +1249,8 @@ __kernel void blur_normals_x(__global float *d_input,
 
   }
 
-  if (x==300 &&y ==300)
-	  printf("%.2f \n",hsum);
+  // if (x==300 &&y ==300)
+  // 	  printf("%.2f \n",hsum);
 
 
   res *= 1./hsum;
@@ -1394,8 +1394,8 @@ __kernel void iso_shading(__global float *d_normals,
   }
 
 
-  if (x==300 &&y ==300)
-	printf("diffuse: %.4f \n",dot(light,normal));
+  // if (x==300 &&y ==300)
+  // 	printf("diffuse: %.4f \n",dot(light,normal));
 
 
 }
