@@ -38,7 +38,7 @@ then with pip
 
 > pip install --user git+http://mweigert@bitbucket.org/mweigert/pyocl
 
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine
+> pip install --user git+https://github.com/maweigert/spimagine
 
 or the developmental branch
 
