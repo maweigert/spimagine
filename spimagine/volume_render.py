@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """
@@ -31,11 +32,12 @@ logger = logging.getLogger(__name__)
 
 
 import os
-from PyOCL import cl, OCLDevice, OCLProcessor, cl_datatype_dict
+from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
+
+from gputools.core.config import cl_datatype_dict
 
 #this is due to some pyinstaller bug!
 from scipy.integrate import *
-
 
 
 from scipy.misc import imsave
@@ -76,9 +78,10 @@ class VolumeRenderer:
             # simulate GPU fail...
             # raise Exception()
 
-            self.dev = OCLDevice(useGPU = True, 
+            # self.dev = OCLDevice(useGPU = True, 
+            #                      useDevice = spimagine.__OPENCLDEVICE__)
+            init_device(useGPU = True, 
                                  useDevice = spimagine.__OPENCLDEVICE__)
-
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -87,29 +90,24 @@ class VolumeRenderer:
             print "could not find GPU OpenCL device -  trying CPU..."
 
             try:
-                self.dev = OCLDevice(useGPU = False)
+                init_device(useGPU = False)
                 self.isGPU = False
                 self.dtypes = [np.float32]
             except Exception as e:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = .4*self.dev.device.get_info(getattr(
-            cl.device_info,"MAX_MEM_ALLOC_SIZE"))
+        self.memMax = .4*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.memMax = 2.*self.dev.device.get_info(getattr(
-            cl.device_info,"MAX_MEM_ALLOC_SIZE"))
+        self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
+        self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
                                  "-cl-fast-relaxed-math -cl-unsafe-math-optimizations -cl-mad-enable")
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
-        self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
-                                            mem_flags = cl.mem_flags.READ_ONLY)
-
-        self.invPBuf = self.dev.createBuffer(16,dtype=np.float32,
-                                            mem_flags = cl.mem_flags.READ_ONLY)
-
+        self.invMBuf = OCLArray.empty(16,dtype=np.float32)
+        
+        self.invPBuf = OCLArray.empty(16,dtype=np.float32)
 
         self.projection = np.zeros((4,4))
         self.modelView = np.zeros((4,4))
@@ -152,13 +150,13 @@ class VolumeRenderer:
 
 
     def reset_buffer(self):
-        self.buf = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
-        self.bufAlpha = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
-        self.bufDepth = self.dev.createBuffer(self.height*self.width,dtype=np.float32)
+        self.buf = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.bufAlpha = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.bufDepth = OCLArray.empty((self.height,self.width),dtype=np.float32)
 
-        self.bufNormals = self.dev.createBuffer(3*self.height*self.width,dtype=np.float32)
+        # self.bufNormals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
 
-        self.bufNormalsScratch = self.dev.createBuffer(3*self.height*self.width,dtype=np.float32)
+        # self.bufNormalsScratch = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
         
 
 
@@ -213,14 +211,23 @@ class VolumeRenderer:
 
     def set_shape(self,dataShape):
         if self.isGPU:
-            self.dataImg = self.dev.createImage(dataShape,
-                mem_flags = cl.mem_flags.READ_ONLY,
-                channel_type = cl_datatype_dict[self.dtype])
+            self.dataImg = OCLImage.empty(dataShape,dtype= self.dtype)
         else:
-            self.dataImg = self.dev.createImage(dataShape,
-                mem_flags = cl.mem_flags.READ_ONLY,
-                channel_order = cl.channel_order.INTENSITY,
-                channel_type = cl_datatype_dict[self.dtype])
+            raise NotImplementedError("TODO")
+            # self.dataImg = self.dev.createImage(dataShape,
+            #     mem_flags = cl.mem_flags.READ_ONLY,
+            #     channel_order = cl.channel_order.INTENSITY,
+            #     channel_type = cl_datatype_dict[self.dtype])
+
+        # if self.isGPU:
+        #     self.dataImg = self.dev.createImage(dataShape,
+        #         mem_flags = cl.mem_flags.READ_ONLY,
+        #         channel_type = cl_datatype_dict[self.dtype])
+        # else:
+        #     self.dataImg = self.dev.createImage(dataShape,
+        #         mem_flags = cl.mem_flags.READ_ONLY,
+        #         channel_order = cl.channel_order.INTENSITY,
+        #         channel_type = cl_datatype_dict[self.dtype])
 
     def update_data(self,data, copyData = False):
         #do we really want to copy here?
@@ -236,7 +243,7 @@ class VolumeRenderer:
         if self._data.dtype != self.dtype:
             self._data = self._data.astype(self.dtype)
 
-        self.dev.writeImage(self.dataImg,self._data)
+        self.dataImg.write_array(self._data)
 
     def set_box_boundaries(self,boxBounds = [-1,1,-1,1,-1,1]):
         self.boxBounds = np.array(boxBounds)
@@ -257,9 +264,9 @@ class VolumeRenderer:
         if hasattr(self,"dataImg"):
             mScale = self._stack_scale_mat()
             invM = inv(np.dot(self.modelView,mScale))
-            self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
+            self.invMBuf.write_array(invM.flatten().astype(np.float32))
             invP = inv(self.projection)
-            self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
+            self.invPBuf.write_array(invP.flatten().astype(np.float32))
 
     # def _get_user_coords(self,x,y,z):
     #     p = array([x,y,z,1])
@@ -307,17 +314,17 @@ class VolumeRenderer:
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
             if return_alpha:
-                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height), self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+                return self.buf.get(), self.bufAlpha.get()
             else:
-                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+                return self.buf.get()
 
 
         if not modelView and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
             if return_alpha:
-                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height), self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+                return self.buf.get(), self.bufAlpha.get()
             else:
-                return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+                return self.buf.get()
 
         # mScale = self._stack_scale_mat()
         # invM = inv(np.dot(self.modelView,mScale))
@@ -332,10 +339,10 @@ class VolumeRenderer:
             else:
                 method = "max_project_float"
 
-            self.proc.runKernel(method,
+            self.proc.run_kernel(method,
                             (self.width,self.height),
                             None,
-                            self.buf,self.bufAlpha,
+                            self.buf.data,self.bufAlpha.data,
                             np.int32(self.width),np.int32(self.height),
                             np.float32(self.boxBounds[0]),
                             np.float32(self.boxBounds[1]),
@@ -347,8 +354,8 @@ class VolumeRenderer:
                             np.float32(self.maxVal),
                             np.float32(self.gamma),
                             np.float32(self.alphaPow),
-                            self.invPBuf,
-                            self.invMBuf,
+                            self.invPBuf.data,
+                            self.invMBuf.data,
                             self.dataImg)
 
 
@@ -358,10 +365,10 @@ class VolumeRenderer:
             else:
                 method = "max_project_part_float"
 
-            self.proc.runKernel(method,
+            self.proc.run_kernel(method,
                             (self.width,self.height),
                             None,
-                            self.buf,self.bufAlpha,
+                            self.buf.data,self.bufAlpha.data,
                             np.int32(self.width),np.int32(self.height),
                             np.float32(self.boxBounds[0]),
                             np.float32(self.boxBounds[1]),
@@ -375,15 +382,15 @@ class VolumeRenderer:
                             np.float32(self.alphaPow),
                             np.int32(numParts),
                             np.int32(currentPart),
-                            self.invPBuf,
-                            self.invMBuf,
+                            self.invPBuf.data,
+                            self.invMBuf.data,
                             self.dataImg)
-    
+
         if method=="iso_surface":
-            self.proc.runKernel("iso_surface",
+            self.proc.run_kernel("iso_surface",
                             (self.width,self.height),
                             None,
-                            self.buf,self.bufAlpha,
+                            self.buf.data,self.bufAlpha.data,
                             np.int32(self.width),np.int32(self.height),
                             np.float32(self.boxBounds[0]),
                             np.float32(self.boxBounds[1]),
@@ -393,62 +400,60 @@ class VolumeRenderer:
                             np.float32(self.boxBounds[5]),
                             np.float32(self.maxVal/2),
                             np.float32(self.gamma),
-                            self.invPBuf,
-                            self.invMBuf,
+                            self.invPBuf.data,
+                            self.invMBuf.data,
                             self.dataImg,
                             np.int32(self.dtype == np.uint16)
                             )
 
-        if method=="iso_surface_new":
-            self.proc.runKernel("iso_surface_new",
-                            (self.width,self.height),
-                            None,
-                            self.bufNormals,
-                            self.bufAlpha,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.maxVal/2),
-                            np.float32(self.gamma),
-                            self.invPBuf,
-                            self.invMBuf,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+        # if method=="iso_surface_new":
+        #     self.proc.run_kernel("iso_surface_new",
+        #                     (self.width,self.height),
+        #                     None,
+        #                     self.bufNormals.data,
+        #                     self.bufAlpha.data,
+        #                     np.int32(self.width),np.int32(self.height),
+        #                     np.float32(self.boxBounds[0]),
+        #                     np.float32(self.boxBounds[1]),
+        #                     np.float32(self.boxBounds[2]),
+        #                     np.float32(self.boxBounds[3]),
+        #                     np.float32(self.boxBounds[4]),
+        #                     np.float32(self.boxBounds[5]),
+        #                     np.float32(self.maxVal/2),
+        #                     np.float32(self.gamma),
+        #                     self.invPBuf.data,
+        #                     self.invMBuf.data,
+        #                     self.dataImg.data,
+        #                     np.int32(self.dtype == np.uint16)
+        #                     )
 
 
-            self.proc.runKernel("blur_normals_x",
-                            (self.width,self.height),
-                            None,
-                            self.bufNormals,
-                            self.bufNormalsScratch,
-                            np.int32(3))
-            self.proc.runKernel("blur_normals_y",
-                            (self.width,self.height),
-                            None,
-                            self.bufNormalsScratch,
-                            self.bufNormals,
-                            np.int32(3))
+        #     self.proc.run_kernel("blur_normals_x",
+        #                     (self.width,self.height),
+        #                     None,
+        #                     self.bufNormals.data,
+        #                     self.bufNormalsScratch.data,
+        #                     np.int32(3))
+        #     self.proc.run_kernel("blur_normals_y",
+        #                     (self.width,self.height),
+        #                     None,
+        #                     self.bufNormalsScratch.data,
+        #                     self.bufNormals.data,
+        #                     np.int32(3))
 
-            self.proc.runKernel("iso_shading",
-                                (self.width,self.height),
-                                None,
-                                self.bufNormals,
-                                self.bufAlpha,
-                                self.invMBuf,
-                                self.invPBuf,
-                                self.buf)
+        #     self.proc.run_kernel("iso_shading",
+        #                         (self.width,self.height),
+        #                         None,
+        #                         self.bufNormals.data,
+        #                         self.bufAlpha.data,
+        #                         self.invMBuf.data,
+        #                         self.invPBuf.data,
+        #                         self.buf.data)
 
-            # return self.dev.readBuffer(self.bufNormals,dtype = np.float32).reshape(self.width,self.height,3)
-            
         if return_alpha:
-            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height),  self.dev.readBuffer(self.bufAlpha,dtype = np.float32).reshape(self.width,self.height)
+            return self.buf.get(), self.bufAlpha.get()
         else:
-            return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
+            return self.buf.get()
 
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
@@ -521,24 +526,23 @@ def _getDirec(P,M,u=1,v=0):
     return dot(inv(M),direc0)
 
 
-# def test_simple():
-#     from spimagine.data_model import TiffData
-#     import pylab
+def test_simple():
+    import pylab
+    
+    N= 64
+    d = np.linspace(0,1,N**3).reshape((N,)*3).astype(np.float32)
 
-#     # d = TiffData("/Users/mweigert/Data/C1-wing_disc.tif")[0]
-#     d = TiffData("/Users/mweigert/Data/Droso07.tif")[0]
+    rend = VolumeRenderer((400,400))
 
-#     rend = VolumeRenderer((400,400))
-
-#     rend.set_data(d)
-#     out = rend.render
-#     pylab.imshow(out)
-#     pylab.show()
+    rend.set_data(d)
+    out = rend.render()
+    pylab.imshow(out)
+    pylab.show()
 
 def test_simple2():
     import time
 
-    N = 128
+    N = 64
 
     x = np.linspace(-1,1,N)
     Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
@@ -667,9 +671,10 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
+    # test_simple()
     # test_speed(256)
 
-    d, rend, out = test_new_iso()
+    # d, rend, out = test_new_iso()
 
 
     # d, rend, out = test_real()
@@ -680,3 +685,12 @@ if __name__ == "__main__":
     # ts = [[test_speed(128,w,n) for w in ws] for n in nums]
 
     
+    N= 64
+    d = np.linspace(0,1,N**3).reshape((N,)*3).astype(np.float32)
+
+    rend = VolumeRenderer((400,400))
+    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
+    rend.set_modelView(mat4_translate(0,0,5.))
+
+    rend.set_data(d)
+    out = rend.render(maxVal = 1., method = "max_project_part")

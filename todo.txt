@@ -2,3 +2,6 @@
 + keyframe edges linear/sigma
 + multi layer support
 + fix alpha blending (e.g. for export)
+
+
+remove imgtools, pyocl deps 
