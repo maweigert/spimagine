@@ -6,8 +6,10 @@
   mweigert@mpi-cbg.de
  */
 
-
+#ifndef maxSteps
 #define maxSteps 200
+#endif
+
 #define tstep 0.01f
 
 
