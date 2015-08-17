@@ -101,7 +101,11 @@ class VolumeRenderer:
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
         self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
-                                 "-cl-fast-relaxed-math -cl-unsafe-math-optimizations -cl-mad-enable")
+                                 "-cl-fast-relaxed-math\
+                                 -cl-unsafe-math-optimizations\
+                                 -cl-mad-enable\
+                                 -D maxSteps=%s"%spimagine.__DEFAULTMAXSTEPS__)
+
         # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
 
         self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
@@ -199,7 +203,7 @@ class VolumeRenderer:
             _data = data
         else:
             print "converting type from %s to %s"%(data.dtype.type,self.dtype)
-            _data = data.astype(self.dtype)
+            _data = data.astype(self.dtype,copy = False)
 
         self.dataSlices = self._get_downsampled_data_slices(_data)
 
@@ -234,7 +238,7 @@ class VolumeRenderer:
                 self._data = data
 
         if self._data.dtype != self.dtype:
-            self._data = self._data.astype(self.dtype)
+            self._data = self._data.astype(self.dtype,copy=False)
 
         self.dev.writeImage(self.dataImg,self._data)
 
