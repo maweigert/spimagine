@@ -101,7 +101,7 @@ class VolumeRenderer:
 
         self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.proc = OCLProgram.(absPath("kernels/volume_render.cl"),
+        self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
                                  "-cl-fast-relaxed-math\
                                  -cl-unsafe-math-optimizations\
                                  -cl-mad-enable\
@@ -213,7 +213,7 @@ class VolumeRenderer:
 
     def set_shape(self,dataShape):
         if self.isGPU:
-            self.dataImg = OCLImage.empty(dataShape,dtype= self.dtype)
+            self.dataImg = OCLImage.empty(dataShape[::-1],dtype= self.dtype)
         else:
             raise NotImplementedError("TODO")
             # self.dataImg = self.dev.createImage(dataShape,
@@ -233,7 +233,7 @@ class VolumeRenderer:
 
     def update_data(self,data, copyData = False):
         #do we really want to copy here?
-
+        
         if self.dataSlices is not None:
             self._data = data[self.dataSlices].copy()
         else:
