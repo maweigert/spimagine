@@ -459,6 +459,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataSourceChanged(self):
+        # print "SETDATA: ", self.dataModel[0].shape
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
         self.transform.reset(minVal = amin(self.dataModel[0]),
                              maxVal = amax(self.dataModel[0]),
