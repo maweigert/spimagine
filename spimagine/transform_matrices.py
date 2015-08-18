@@ -43,6 +43,20 @@ def mat4_perspective(fovy = 45,aspect = 1.,
                   [0,0,-1.*(z2+z1)/(z2-z1),-2.*z1*z2/(z2-z1)],
                   [0,0,-1,0]])
 
+def mat4_stereo_perspective(fovy = 45,aspect = 1.,
+                            z1 = 0.1, z2 = 10, eye_shift = 0):
+    h = z1 * np.tan(fovy/180.*np.pi/2.)
+    w = h * aspect;
+
+    return mat4_frustrum(-w-eye_shift,w-eye_shift,-h,h,z1,z2)
+    
+
+def mat4_frustrum(left, right, bottom, top, zNear, zFar):
+    return np.array([[2.*zNear/(right-left),0,1.*(right+left)/(right-left),0],
+                     [0,2.*zNear/(top-bottom),(top+bottom)/(top-bottom),0],
+                     [0,0,-1.*(zFar+zNear)/(zFar-zNear),-2.*zFar*zNear/(zFar-zNear)],
+                     [0,0,-1.,0]])
+
 
 def mat4_ortho(x1 = -1, x2 = 1,
                  y1 = -1, y2 = 1,
