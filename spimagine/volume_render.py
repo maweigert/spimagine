@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 import os
-from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
 
-from gputools.core.config import cl_datatype_dict
 
 #this is due to some pyinstaller bug!
 from scipy.integrate import *
@@ -44,11 +42,16 @@ from scipy.misc import imsave
 import numpy as np
 from scipy.linalg import inv
 
+from time import time
+
+
+import sys
+from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
+
+from gputools.core.config import cl_datatype_dict
 
 from spimagine.transform_matrices import *
 import spimagine
-
-import sys
 
 
 def absPath(myPath):
@@ -208,7 +211,9 @@ class VolumeRenderer:
         else:
             self.set_shape(_data.shape[::-1])
 
+        t = time()
         self.update_data(_data, copyData = copyData)
+        logger.debug("update data: %s ms"%(1000.*(time()-t))) 
         self.update_matrices()
 
     def set_shape(self,dataShape):
@@ -321,7 +326,7 @@ class VolumeRenderer:
                 return self.buf.get()
 
 
-        if not modelView and not hasattr(self,'modelView'):
+        if  modelView is None and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
             if return_alpha:
                 return self.buf.get(), self.bufAlpha.get()
