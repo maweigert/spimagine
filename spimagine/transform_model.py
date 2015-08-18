@@ -63,6 +63,8 @@ class TransformModel(QtCore.QObject):
         self.setAlphaPow(0)
         self.setBox(True)
 
+        self.eye_dist_proj = 0
+        self.eye_dist_cam = 0
         if not hasattr(self,"isSlice"):
             self.setShowSlice(False)
 
@@ -194,6 +196,18 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
 
+    def setEyeDistProj(self,eye_dist_proj = 0):
+        self.eye_dist_proj = eye_dist_proj
+        self.update()
+        print self.eye_dist_proj
+        self._transformChanged.emit()
+
+    def setEyeDistCam(self,eye_dist_cam = 0.):
+        self.eye_dist_cam = eye_dist_cam
+        print self.eye_dist_cam
+        self.update()
+        self._transformChanged.emit()
+
     def update(self):
         if self.isPerspective:
             self.cameraZ = 4*(1-np.log(self.zoom)/np.log(2.))
@@ -270,3 +284,4 @@ class TransformModel(QtCore.QObject):
                              isBox = self.isBox,
                              isIso = self.isIso,
                              alphaPow = self.alphaPow)
+
