@@ -359,6 +359,9 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
 
+        self.settingsView.sliderEyeProj.floatValueChanged.connect(self.glWidget.transform.setEyeDistProj)
+        self.settingsView.sliderEyeCam.floatValueChanged.connect(self.glWidget.transform.setEyeDistCam)
+
         self.glWidget.transform._alphaPowChanged.connect(self.settingsView.sliderAlphaPow.setValue)
 
         self.glWidget.transform._boundsChanged.connect(self.settingsView.setBounds)
