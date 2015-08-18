@@ -122,6 +122,24 @@ void main()
 
 }
 """
+
+fragShaderStereo = """
+uniform sampler2D texture;
+uniform vec4 col0;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+  
+  gl_FragColor = col0*col.x;
+
+  gl_FragColor.w = 1.0*length(col.xyz);
+
+
+}
+"""
+
 vertShaderSliceTex ="""
 attribute vec3 position;
 uniform mat4 mvpMatrix;
@@ -273,6 +291,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
         self.output_alpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_left = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_alpha_left = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_right = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_alpha_right = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
         self.sliceOutput = zeros((100,100),dtype = np.float32)
 
@@ -372,6 +394,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.bind()
         logger.debug("GLSL programTex log:%s",self.programTex.log())
 
+
+        self.programStereo = QtOpenGL.QGLShaderProgram()
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStereo)
+        self.programStereo.link()
+        self.programStereo.bind()
+        logger.debug("GLSL programStereo log:%s",self.programStereo.log())
+
         self.programCube = QtOpenGL.QGLShaderProgram()
         self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
         self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderCube)
@@ -420,11 +450,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glEnable( GL_BLEND )
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
-        glLineWidth(1.0);
-        # glBlendFunc(GL_ONE,GL_ONE)
+        # glLineWidth(1.0);
+        glBlendFunc(GL_ONE,GL_ONE)
 
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
@@ -601,39 +631,70 @@ class GLWidget(QtOpenGL.QGLWidget):
                 # glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
-            # Draw the render texture
-            self.programTex.bind()
+            ##  Draw the render texture
+            # self.programTex.bind()
 
-            self.texture = fillTexture2d(self.output,self.texture)
+            # self.texture = fillTexture2d(self.output,self.texture)
+
+            # glEnable(GL_TEXTURE_2D)
+            # glDisable(GL_DEPTH_TEST)
+
+            # self.programTex.enableAttributeArray("position")
+            # self.programTex.enableAttributeArray("texcoord")
+            # self.programTex.setAttributeArray("position", self.quadCoord)
+            # self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+
+
+            # glActiveTexture(GL_TEXTURE0)
+            # glBindTexture(GL_TEXTURE_2D, self.texture)
+            # self.programTex.setUniformValue("texture",0)
+
+            # glActiveTexture(GL_TEXTURE1)
+            # glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+            # self.programTex.setUniformValue("texture_alpha",1)
+
+            # glActiveTexture(GL_TEXTURE2)
+            # glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+            # self.programTex.setUniformValue("texture_LUT",2)
+
+            # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            # # glBlendFunc(GL_ONE, GL_ONE)
+
+            # glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
+
+            self.programStereo.bind()
+
+            self.texture = fillTexture2d(self.output_left,self.texture)
 
             glEnable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
-            self.programTex.enableAttributeArray("position")
-            self.programTex.enableAttributeArray("texcoord")
-            self.programTex.setAttributeArray("position", self.quadCoord)
-            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+            self.programStereo.enableAttributeArray("position")
+            self.programStereo.enableAttributeArray("texcoord")
+            self.programStereo.setAttributeArray("position", self.quadCoord)
+            self.programStereo.setAttributeArray("texcoord", self.quadCoordTex)
 
 
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self.texture)
-            self.programTex.setUniformValue("texture",0)
+            self.programStereo.setUniformValue("texture",0)
+            self.programStereo.setUniformValue("col0",QtGui.QVector4D(1,0,1,.5))
 
-            glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-            self.programTex.setUniformValue("texture_alpha",1)
-
-            glActiveTexture(GL_TEXTURE2)
-            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",2)
-
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-            # glBlendFunc(GL_ONE, GL_ONE)
+            glBlendFunc(GL_ONE, GL_ONE)
 
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
+            self.texture = fillTexture2d(self.output_right,self.texture)
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self.texture)
+            self.programStereo.setUniformValue("texture",0)
+            self.programStereo.setUniformValue("col0",QtGui.QVector4D(0,1,0,.5))
+
+            
+            glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
     def render(self):
@@ -641,7 +702,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
             # import time
             # t = time.time()
-
+            
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_min_val(self.transform.minVal)
@@ -658,6 +719,19 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
+
+            self.renderer.set_modelView(np.dot(
+                spimagine.transform_matrices.mat4_translate(.02,0,0),
+                self.transform.getUnscaledModelView()))
+
+            self.output_left, self.output_alpha_left = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
+
+
+            self.renderer.set_modelView(np.dot(
+                spimagine.transform_matrices.mat4_translate(-.02,0,0),
+                self.transform.getUnscaledModelView()))
+
+            self.output_right, self.output_alpha_right = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
@@ -848,9 +922,26 @@ def test_demo():
     sys.exit(app.exec_())
 
 
+def test_demo_simple():
+
+    from data_model import DataModel, DemoData
+    
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+    win.setModel(DataModel(DemoData()))
+    
+    win.show()
+
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
 
     # test_sphere()
 
-    test_demo()
+    test_demo_simple()
