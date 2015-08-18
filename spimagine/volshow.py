@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 def getCurrentApp():
@@ -64,7 +64,7 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = True, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
+def volshow(data, scale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
     """
     class to visualize 3d/4d data
 
@@ -127,8 +127,8 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window = volfig(num)
 
-    # print "volfig: ", time()-t
-    # t = time()
+    logger.debug("volfig: %s s "%(time()-t))
+    t = time()
 
     # if isinstance(data,GenericData):
     if hasattr(data,"stackUnits"):
@@ -136,20 +136,19 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     elif isinstance(data,DataModel):
         m = data
     else:
-        data = np.array(data)
+        if not isinstance(data,np.ndarray):
+            data = np.array(data)
         if scale:
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:
                 ma +=1.
             data = 1000.*(data-mi)/(ma-mi)
 
-        m = DataModel(NumpyData(data.astype(np.float32)))
+        m = DataModel(NumpyData(data.astype(np.float32,copy=False)))
 
-    # print "create model: ", time()-t
-    # t = time()
 
-    # m = NumpyData(data.astype(np.float32))
-    # window = MainWindow(dataContainer = m)
+    logger.debug("create model: %s s "%( time()-t))
+    t = time()
 
     window.setModel(m)
 
@@ -160,12 +159,11 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     window.glWidget.set_colormap(cmap)
 
 
+
+    logger.debug("set model: %s s"%( time()-t));
+    t = time()
+
     window.glWidget.transform.setStackUnits(*stackUnits)
-
-
-    # print "set model: ", time()-t
-    # t = time()
-
 
     if blocking:
         getCurrentApp().exec_()
@@ -192,27 +190,8 @@ class TimeData(GenericData):
 
 if __name__ == '__main__':
 
-    # d = np.ones((512,)*3)
+    d = np.zeros((512,)*3).astype(np.float32)
+    d[0,0,0] = 1.
 
+    volshow(d,blocking = False)
 
-    volshow(DemoData(100),blocking = False)
-
-    # volshow(DemoData(),blocking = True, cmap = "coolwarm")
-
-
-    # N = 128
-    # d = np.linspace(0,100,N**3).reshape((N,)*3)
-
-    # d[50,:,:] = 1.
-
-    # import time
-
-    # # class myData(GenericData):
-    # #     def __getitem__(self,i):
-    # #         return (100*i+3)*d
-    # #     def size(self):
-    # #         return (4,)+d.shape
-
-    # # volshow(myData(), blocking = True)
-
-    # volshow(d, blocking = True)
