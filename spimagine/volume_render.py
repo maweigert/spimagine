@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 import os
-from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
 
-from gputools.core.config import cl_datatype_dict
 
 #this is due to some pyinstaller bug!
 from scipy.integrate import *
@@ -44,11 +42,16 @@ from scipy.misc import imsave
 import numpy as np
 from scipy.linalg import inv
 
+from time import time
+
+
+import sys
+from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
+
+from gputools.core.config import cl_datatype_dict
 
 from spimagine.transform_matrices import *
 import spimagine
-
-import sys
 
 
 def absPath(myPath):
@@ -101,7 +104,7 @@ class VolumeRenderer:
 
         self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
+        self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
                                  "-cl-fast-relaxed-math\
                                  -cl-unsafe-math-optimizations\
                                  -cl-mad-enable\
@@ -208,12 +211,14 @@ class VolumeRenderer:
         else:
             self.set_shape(_data.shape[::-1])
 
+        t = time()
         self.update_data(_data, copyData = copyData)
+        logger.debug("update data: %s ms"%(1000.*(time()-t))) 
         self.update_matrices()
 
     def set_shape(self,dataShape):
         if self.isGPU:
-            self.dataImg = OCLImage.empty(dataShape,dtype= self.dtype)
+            self.dataImg = OCLImage.empty(dataShape[::-1],dtype= self.dtype)
         else:
             raise NotImplementedError("TODO")
             # self.dataImg = self.dev.createImage(dataShape,
@@ -233,7 +238,7 @@ class VolumeRenderer:
 
     def update_data(self,data, copyData = False):
         #do we really want to copy here?
-
+        
         if self.dataSlices is not None:
             self._data = data[self.dataSlices].copy()
         else:
@@ -321,7 +326,7 @@ class VolumeRenderer:
                 return self.buf.get()
 
 
-        if not modelView and not hasattr(self,'modelView'):
+        if  modelView is None and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
             if return_alpha:
                 return self.buf.get(), self.bufAlpha.get()
