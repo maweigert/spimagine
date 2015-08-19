@@ -8,8 +8,12 @@ import re
 from PIL import Image
 
 
-from spimagine.lib.tifffile import TiffFile, imsave, imread
-from spimagine.lib.czifile import CziFile
+import warnings 
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from spimagine.lib.tifffile import TiffFile, imsave, imread
+    from spimagine.lib.czifile import CziFile
 
 
 

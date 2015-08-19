@@ -37,12 +37,16 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
             file = StringIO.StringIO("[%s]\n%s"%(self.dummySection,text))
             self.readfp(file, fName)
 
-    def get(self,key, defaultVal):
+    def get(self,key, defaultValue = None):
         try:
-            return ConfigParser.ConfigParser.get(self,self.dummySection,key)
-        except:
-            return defaultVal
-
+            val =  ConfigParser.ConfigParser.get(self,self.dummySection,key)
+            logger.info("from config file: %s = %s "%(key,val))
+            return val
+        except Exception as e:
+            print e
+            return defaultValue
+        
+        
     
 
 
@@ -55,19 +59,25 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
 #     __OPENCLDEVICE__ = 0
 #     __DEFAULTCOLORMAP__ = "coolwarm"
 
-__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"hot","width":800})
-__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
-__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","hot")
-__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
-__DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps",200))
+__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,
+                                           {
+                                               "opencldevice":"0",
+                                               "colormap":"matlab",
+                                               "width":"800",
+                                               "max_steps":"200"
+                                           }
+                                       )
+
+__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
+__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
+__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width"))
+__DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps"))
+
+
 
 
 from spimagine.gui_utils import arrayFromImage
 
-# try:
-#     print os.listdir(sys._MEIPASS)
-# except:
-#     pass
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -84,6 +94,7 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 import re
+
 
 def _load_colormaps():
     global __COLORMAPDICT__
@@ -106,6 +117,8 @@ def _load_colormaps():
 
 _load_colormaps()
 
+
+
 def setOpenCLDevice(num):
     global __OPENCLDEVICE__
     __OPENCLDEVICE__ = num
@@ -116,14 +129,16 @@ def setOpenCLDevice(num):
 
 # from spimagine.volume_render import VolumeRenderer
 
-from volshow import volshow, volfig, TimeData
+
 
 from data_model import SpimData, TiffData, NumpyData
 
 from imgutils import read3dTiff, write3dTiff
 
-from imgtools import denoise_filter2,denoise_filter3
 
+from volshow import volshow, volfig, TimeData
+
+# from imgtools import denoise_filter2,denoise_filter3
 # this should not be in the develop
 # import sys
 # sys.path.append("/Users/mweigert/python/deconv_new")
@@ -141,5 +156,5 @@ if platform.system() =="Darwin" and platform.release()[:2] == "14":
             return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
         _SYSTEM_DARWIN_14_AND_FOUNDATION_ = True
     except ImportError:
-        logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug")
+        logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug in the drag/dropping of files")
 

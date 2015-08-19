@@ -5,8 +5,11 @@ from PyQt4 import QtCore,QtGui
 
 from collections import OrderedDict
 
+
 import spimagine
+
 from spimagine.gui_mainwidget import MainWidget
+
 
 from spimagine.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
 
