@@ -100,13 +100,16 @@ class VolumeRenderer:
         self.memMax = 2.*self.dev.device.get_info(getattr(
             cl.device_info,"MAX_MEM_ALLOC_SIZE"))
 
-        self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
+        try:
+            self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
                                  "-cl-fast-relaxed-math\
                                  -cl-unsafe-math-optimizations\
                                  -cl-mad-enable\
                                  -D maxSteps=%s"%spimagine.__DEFAULTMAXSTEPS__)
 
-        # self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),options="-cl-fast-relaxed-math")
+        except:
+            self.proc = OCLProcessor(self.dev,absPath("kernels/volume_render.cl"),
+                                 "-D maxSteps=%s"%spimagine.__DEFAULTMAXSTEPS__)
 
         self.invMBuf = self.dev.createBuffer(16,dtype=np.float32,
                                             mem_flags = cl.mem_flags.READ_ONLY)
