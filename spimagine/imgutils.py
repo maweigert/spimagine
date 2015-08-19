@@ -8,22 +8,8 @@ import re
 from PIL import Image
 
 
-from spimagine.lib.tifffile import TiffFile, imsave
+from spimagine.lib.tifffile import TiffFile, imsave, imread
 from spimagine.lib.czifile import CziFile
-
-
-try:
-    import libtiff
-except ImportError as e:
-    print e
-    # logger.warning("couldnt import libtiff... falling back to PIL which\
-    # is rather slow in reading tiff files")
-    _LIBTIFF_SUPPORT = False
-else:
-    logger.info("loading libtiff... ")
-
-    _LIBTIFF_SUPPORT = True
-
 
 
 
@@ -41,36 +27,9 @@ def _read3dTiff_PIL(fName):
 
     return np.array(data)
 
-def _read3dTiff_tifffile(fName):
-
-    with TiffFile(fName) as f:
-        return f.asarray()
-
-
-def _read3dTiff_libtiff(fName):
-    import libtiff
-    tif = libtiff.TIFFfile(fName)
-    try:
-        data = tif.get_samples()[0][0]
-    except Exception as e:
-        print e
-        data = _read3dTiff_PIL(fName)
-        
-    if data.dtype == ">u2":
-        return data.astype(np.uint16)
-    else:
-        return data
-
 def read3dTiff(fName):
-    return _read3dTiff_tifffile(fName)
-    # if _LIBTIFF_SUPPORT:
-    #     return _read3dTiff_libtiff(fName)
-    # else:
-    #     return _read3dTiff_PIL(fName)
+    return imread(fName)
 
-def _write3dTiff_libtiff(data,fName):
-    tiff = libtiff.TIFFimage(data, description='')
-    tiff.write_file(fName, compression='none')
 
 def write3dTiff(data,fName):
     imsave(fName,data)
