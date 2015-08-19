@@ -26,12 +26,16 @@ from spimagine.keyframe_model import KeyFrameList, KeyFrame
 from spimagine.keyframe_view import KeyFramePanel
 from spimagine.gui_settings import SettingsPanel
 from spimagine.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-from spimagine import egg3d
+
 
 from spimagine.gui_slice_view import SliceWidget
 
+
 from spimagine.imageprocessor_view import ImageProcessorListView
+
+import spimagine.egg3d as egg3d
 from spimagine.imageprocessor import *
+
 
 from spimagine.floatslider import FloatSlider
 

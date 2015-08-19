@@ -2,15 +2,17 @@
 Implements generic classes for processing of volumetric data
 """
 
+import sys
 import numpy as np
 import PyOCL
 
 
-try:
-    import imgtools
-    import lucy_richardson_gpu
-except:
-    print "could not import imgtools or lucy_richardson module"
+
+# try:
+#     import imgtools
+#     import lucy_richardson_gpu
+# except:
+#     print "could not import imgtools or lucy_richardson module"
 
 class ImageProcessor(object):
     def __init__(self,name = "",**kwargs):
