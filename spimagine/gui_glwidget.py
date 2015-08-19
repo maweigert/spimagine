@@ -826,6 +826,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.buttons() == QtCore.Qt.RightButton:
             (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
 
+
+        if event.buttons() == QtCore.Qt.MiddleButton:
+            fname = "eye_log_%s.txt"%os.getpid()
+            outstr = "%.6f,%.6f,%.6f,"%(self.transform.zoom,self.transform.eye_dist_proj,self.transform.eye_dist_cam)
+            if not os.path.exists(fname):
+                with open(fname,"w") as f:
+                    f.write(outstr)
+            else: 
+                with open(fname,"a") as f:
+                    f.write(outstr)
         # self.setCursor(QtCore.Qt.ClosedHandCursor)
 
     def mouseReleaseEvent(self, event):
