@@ -199,12 +199,12 @@ class TransformModel(QtCore.QObject):
     def setEyeDistProj(self,eye_dist_proj = 0):
         self.eye_dist_proj = eye_dist_proj
         self.update()
-        print self.eye_dist_proj
+        print self.eye_dist_proj, ",",self.eye_dist_cam
         self._transformChanged.emit()
 
     def setEyeDistCam(self,eye_dist_cam = 0.):
         self.eye_dist_cam = eye_dist_cam
-        print self.eye_dist_cam
+        print self.eye_dist_proj,",", self.eye_dist_cam
         self.update()
         self._transformChanged.emit()
 
