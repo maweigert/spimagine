@@ -26,10 +26,6 @@ from spimagine.gui_mainwidget import MainWidget
 from spimagine.data_model import DemoData, DataModel
 
 
-from numpy import *
-from scipy.integrate import *
-
-
 def main():
     
 
@@ -38,9 +34,13 @@ def main():
     if sys.platform.startswith("win"):
     	QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
 
+    
     win = MainWidget()
 
-    win.setModel(DataModel(DemoData()))
+    if len(sys.argv)>1:
+        win.setModel(DataModel.fromPath(sys.argv[1]))
+    else:
+        win.setModel(DataModel(DemoData()))
 
     win.show()
     win.raise_()
