@@ -458,6 +458,8 @@ class VolumeRenderer:
             return self.dev.readBuffer(self.buf,dtype = np.float32).reshape(self.width,self.height)
 
 
+
+
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):
     """legacy"""
