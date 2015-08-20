@@ -26,10 +26,6 @@ from spimagine.gui_mainwidget import MainWidget
 from spimagine.data_model import DemoData, DataModel
 
 
-from numpy import *
-from scipy.integrate import *
-
-
 def main():
     
 
