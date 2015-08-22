@@ -654,6 +654,7 @@ class MainWidget(QtGui.QWidget):
             if self.rotateTimer.isActive():
                 self.rotateTimer.stop()
                 
+            self.glWidget.renderTimer.stop()
             
             # self.glWidget.setParent(None)
             # free the gpu resources....

@@ -483,7 +483,6 @@ class KeyFramePanel(QWidget):
 
         self.playButton = QPushButton("",self)
         self.playButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
         self.playButton.setIconSize(QSize(24,24))
         self.playButton.clicked.connect(self.onPlay)
@@ -517,8 +516,8 @@ class KeyFramePanel(QWidget):
         self.trashButton.setMaximumWidth(24)
         self.trashButton.setMaximumHeight(24)
 
-        self.progressBar = QProgressBar(self)
-        self.progressBar.setRange(0,100)
+        # self.progressBar = QProgressBar(self)
+        # self.progressBar.setRange(0,100)
         # self.recordThread = RecordThread(self.glWidget,self.keyView)
         # self.recordThread.notifyProgress.connect(self.onRecordProgress)
 
@@ -542,8 +541,6 @@ class KeyFramePanel(QWidget):
         hbox.addWidget(self.keyView)
 
         vbox = QVBoxLayout()
-        # vbox.addWidget(self.keyView)
-        # vbox.addWidget(self.progressBar)
         vbox.addLayout(hbox)
         vbox.addWidget(self.slider)
 
@@ -611,7 +608,7 @@ class KeyFramePanel(QWidget):
         trans = self.keyView.keyList.getTransform(1.*self.recordPos/self.nFrames)
         self.keyView.transformModel.fromTransformData(trans)
         self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
-        self.progressBar.setValue(100*self.recordPos/self.nFrames)
+        # self.progressBar.setValue(100*self.recordPos/self.nFrames)
 
 
 
