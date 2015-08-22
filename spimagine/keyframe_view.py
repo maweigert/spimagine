@@ -441,22 +441,6 @@ class KeyListView(QGraphicsView):
 
 
 
-class RecordThread(QThread):
-    notifyProgress = pyqtSignal(int)
-    def __init__(self,glWidget,keyView):
-        super(RecordThread,self).__init__()
-        self.glWidget = glWidget
-        self.keyView = keyView
-
-    def run(self):
-        for i in range(100):
-            logger.debug("thread: %s",i )
-            trans = self.keyView.keyList.getTransform(1.*i/100.)
-            self.keyView.transformModel.fromTransformData(trans)
-            self.notifyProgress.emit(i)
-            self.glWidget.saveFrame("output.png")
-            sleep(0.1)
-
 class KeyFramePanel(QWidget):
     _keyTimeChanged = pyqtSignal(float)
 
@@ -516,10 +500,6 @@ class KeyFramePanel(QWidget):
         self.trashButton.setMaximumWidth(24)
         self.trashButton.setMaximumHeight(24)
 
-        # self.progressBar = QProgressBar(self)
-        # self.progressBar.setRange(0,100)
-        # self.recordThread = RecordThread(self.glWidget,self.keyView)
-        # self.recordThread.notifyProgress.connect(self.onRecordProgress)
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setTickPosition(QSlider.TicksBothSides)
@@ -544,7 +524,13 @@ class KeyFramePanel(QWidget):
         vbox.addLayout(hbox)
         vbox.addWidget(self.slider)
 
-        # self._keyTimeChanged.connect(lambda x:self.slider.setValue(int(100*x)))
+        def _set_value_without_emitting(val):
+            old = self.slider.blockSignals(True)
+            self.slider.setValue(int(100*val))
+            self.slider.blockSignals(old)
+            
+        self._keyTimeChanged.connect(_set_value_without_emitting)
+        
         self.slider.valueChanged.connect(lambda x:self.setKeyTime(x/100.))
 
         self.setLayout(vbox)
@@ -604,11 +590,9 @@ class KeyFramePanel(QWidget):
             self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
             return
 
+        self.setKeyTime(1.*self.recordPos/self.nFrames)
 
-        trans = self.keyView.keyList.getTransform(1.*self.recordPos/self.nFrames)
-        self.keyView.transformModel.fromTransformData(trans)
         self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
-        # self.progressBar.setValue(100*self.recordPos/self.nFrames)
 
 
 
@@ -618,10 +602,6 @@ class KeyFramePanel(QWidget):
 
         if self.keyView.transformModel:
             self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
-
-            print self.keyView.keyList.getTransform(newTime)
-
-
 
 
         self._keyTimeChanged.emit(self.t)
