@@ -200,7 +200,9 @@ class TiffFolderData(GenericData):
             self.fNames = glob.glob(os.path.join(fName,"*.tif"))
             if len(self.fNames) == 0:
                 raise Exception("folder %s seems to be empty"%fName)
-
+            else:
+                self.fNames.sort()
+            
             try:
                 _tmp = imgutils.read3dTiff(self.fNames[0])
                 self.stackSize = (len(self.fNames),)+ _tmp.shape
