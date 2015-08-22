@@ -14,7 +14,7 @@ email: mweigert@mpi-cbg.de
 
 import logging
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)
 import os
 import numpy as np
 from PyQt4 import QtCore
@@ -390,6 +390,8 @@ class DataLoadThread(QtCore.QThread):
                     logger.debug("preload: %s",k)
                     time.sleep(.0001)
 
+            # print "load thead dict length: ", len(self.data.keys())
+            
             time.sleep(.0001)
 
 
@@ -403,6 +405,8 @@ class DataModel(QtCore.QObject):
     _rwLock = QtCore.QReadWriteLock()
 
     def __init__(self, dataContainer = None, prefetchSize = 0):
+        assert prefetchSize>=0
+        
         super(DataModel,self).__init__()
         self.dataLoadThread = DataLoadThread(self._rwLock)
         self._dataSourceChanged.connect(self.dataSourceChanged)
@@ -419,14 +423,13 @@ class DataModel(QtCore.QObject):
     def setContainer(self,dataContainer = None, prefetchSize = 0):
         self.dataContainer = dataContainer
         self.prefetchSize = prefetchSize
-        self.nset = []
+        self.nset = [0]
         self.data = defaultdict(lambda: None)
 
         if self.dataContainer:
-            if prefetchSize > 0:
-                self.stopDataLoadThread()
-                self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
-                self.dataLoadThread.start(priority=QtCore.QThread.LowPriority)
+            self.stopDataLoadThread()
+            self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
+            self.dataLoadThread.start(priority=QtCore.QThread.LowPriority)
             self._dataSourceChanged.emit()
             self.setPos(0)
 
@@ -488,11 +491,9 @@ class DataModel(QtCore.QObject):
             self.data[pos] = newdata
             self._rwLock.unlock()
 
+        self.prefetch(pos)
 
-
-        if self.prefetchSize > 0:
-            self.prefetch(pos)
-
+        # print "number of datasets: ", len(self.data.keys())
         return self.data[pos]
 
 
@@ -515,7 +516,7 @@ class DataModel(QtCore.QObject):
             if os.path.exists(os.path.join(fName,"metadata.txt")):
                 self.setContainer(SpimData(fName),prefetchSize)
             else:
-                self.setContainer(TiffFolderData(fName),prefetchSize = 0)            
+                self.setContainer(TiffFolderData(fName),prefetchSize = prefetchSize)            
 
 
 
@@ -609,6 +610,8 @@ if __name__ == '__main__':
     # test_frompath()
 
 
-    d = TiffFolderData("/Users/mweigert/python/bpm_projects/retina/mie_compare/output_dn")
+    d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize= 5)
 
-    print d[0].shape
+    for i in range(50):
+        print i
+        a = d[i]

@@ -482,6 +482,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def refresh(self):
         # if self.parentWidget() and self.dataModel:
         #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
+        
         self.renderUpdate = True
         self.renderedSteps = 0
 
@@ -637,6 +638,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def render(self):
         logger.debug("render")
+
         if self.dataModel:
             # import time
             # t = time.time()
