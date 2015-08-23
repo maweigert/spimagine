@@ -346,7 +346,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
-        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
+        self._set_colormap_array(np.outer(np.linspace(0,1.,255),np.array(color)))
 
 
     def _set_colormap_array(self,arr):

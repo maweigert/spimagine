@@ -13,7 +13,9 @@ from spimagine.floatslider import FloatSlider
 
 import numpy as np
 
-from gui_utils import *
+
+from gui_utils import createStandardCheckbox,createStandardButton
+
 
 import spimagine
 
@@ -46,17 +48,11 @@ def createImgCheckBox(fName_active,fName_inactive):
 
 
 
-class SettingsPanel(QtGui.QWidget):
+class VolumeSettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
-    _playIntervalChanged = QtCore.pyqtSignal(int)
-    _substepsChanged = QtCore.pyqtSignal(int)
-
-    _dirNameChanged =  QtCore.pyqtSignal(str)
-    _frameNumberChanged = QtCore.pyqtSignal(int)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
     _alphaPowChanged = QtCore.pyqtSignal(float)
     _rgbColorChanged = QtCore.pyqtSignal(float, float,float)
-
     
     def __init__(self):
         super(QtGui.QWidget,self).__init__()
@@ -68,14 +64,12 @@ class SettingsPanel(QtGui.QWidget):
     def initUI(self):
 
 
-        # The stack units line edits
-        stackLabels = ["x","y","z"]
 
         vbox = QtGui.QVBoxLayout()
 
-
-
         vbox.addWidget(QtGui.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
+        # The stack units line edits
+        stackLabels = ["x","y","z"]
 
 
         self.stackEdits = []
@@ -89,6 +83,26 @@ class SettingsPanel(QtGui.QWidget):
             vbox.addLayout(hbox)
             self.stackEdits.append(edit)
 
+
+        vbox.addWidget(QtGui.QLabel("Borders",alignment = QtCore.Qt.AlignCenter))
+
+        gridBox = QtGui.QGridLayout()
+        self.sliderBounds = [QtGui.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
+        for i,s in enumerate(self.sliderBounds):
+            s.setTickPosition(QtGui.QSlider.TicksBothSides)
+            s.setRange(-100,100)
+            s.setTickInterval(1)
+            s.setFocusPolicy(QtCore.Qt.ClickFocus)
+            s.setTracking(True)
+            s.setValue(-100+200*(i%2))
+            s.valueChanged.connect(self.boundsChanged)
+            s.setStyleSheet("height: 18px; border = 0px;")
+
+            gridBox.addWidget(s,i,1)
+
+
+        vbox.addLayout(gridBox)
+            
         line =  QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
 
@@ -96,23 +110,12 @@ class SettingsPanel(QtGui.QWidget):
         vbox.addWidget(QtGui.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
 
         # the perspective/box checkboxes
-
-
         self.checkProj = createStandardCheckbox(self,absPath("images/rays_persp.png"),
                                                     absPath("images/rays_ortho.png"), tooltip="projection")
 
         self.checkBox = createStandardCheckbox(self,absPath("images/wire_cube.png"),
                                                     absPath("images/wire_cube_incative.png"),
                                                     tooltip="toggle box")
-
-        self.checkLoopBounce = QtGui.QCheckBox()
-
-
-
-        self.checkEgg = createStandardCheckbox(self,absPath("images/egg.png"),
-                                                    absPath("images/egg_inactive.png"),
-                                                    tooltip="toggle egg control")
-
 
         self.butColor = createStandardButton(self,absPath("images/icon_colors.png"),
                                              method = self.onButtonColor,
@@ -137,31 +140,9 @@ class SettingsPanel(QtGui.QWidget):
         for s in self.colormaps:
             self.colorCombo.addItem(QtGui.QIcon(absPath("colormaps/cmap_%s.png"%s)),"")
 
-
-
         gridBox.addWidget(self.colorCombo,3,1)
 
         gridBox.addWidget(self.butColor,4,0)
-
-
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),5,0)
-        gridBox.addWidget(self.checkLoopBounce,5,1)
-
-
-        gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
-        self.playInterval = QtGui.QLineEdit("50")
-        self.playInterval.setValidator(QtGui.QIntValidator(bottom=10))
-        self.playInterval.returnPressed.connect(self.playIntervalChanged)
-        gridBox.addWidget(self.playInterval)
-
-        gridBox.addWidget(QtGui.QLabel("subrender steps:\t"))
-        self.editSubsteps = QtGui.QLineEdit("1")
-        self.editSubsteps.setValidator(QtGui.QIntValidator(bottom=1))
-        self.editSubsteps.returnPressed.connect(self.substepsChanged)
-        gridBox.addWidget(self.editSubsteps)
-
-        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"))
-        gridBox.addWidget(self.checkEgg)
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
@@ -171,70 +152,18 @@ class SettingsPanel(QtGui.QWidget):
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
-        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"))
-        gridBox.addWidget(self.sliderAlphaPow)
+        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),5,0)
+        gridBox.addWidget(self.sliderAlphaPow,5,1)
 
         vbox.addLayout(gridBox)
 
-        vbox.addStretch()
+        # vbox.addStretch()
         line =  QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
 
         vbox.addWidget(line)
 
         #################
-
-        gridBox = QtGui.QGridLayout()
-        self.sliderBounds = [QtGui.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
-        for i,s in enumerate(self.sliderBounds):
-            s.setTickPosition(QtGui.QSlider.TicksBothSides)
-            s.setRange(-100,100)
-            s.setTickInterval(1)
-            s.setFocusPolicy(QtCore.Qt.ClickFocus)
-            s.setTracking(True)
-            s.setValue(-100+200*(i%2))
-            s.valueChanged.connect(self.boundsChanged)
-            s.setStyleSheet("height: 12px; border = 0px;")
-
-            gridBox.addWidget(s,i,1)
-
-
-        vbox.addLayout(gridBox)
-
-        vbox.addWidget(QtGui.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
-
-        renderFolder = QtGui.QLineEdit("./")
-        hbox = QtGui.QHBoxLayout()
-
-        hbox.addWidget(QtGui.QLabel("output folder: ",alignment = QtCore.Qt.AlignCenter))
-
-        hbox.addWidget(renderFolder)
-        folderButton = QtGui.QPushButton("",self)
-        folderButton.setStyleSheet("background-color: black")
-        folderButton.setIcon(QtGui.QIcon(absPath("images/icon_folder.png")))
-        folderButton.setIconSize(QtCore.QSize(24,24))
-        folderButton.clicked.connect(self.folderSelect)
-        # self.screenshotButton.setMaximumWidth(24)
-        # self.screenshotButton.setMaximumHeight(24)
-
-        hbox.addWidget(folderButton)
-
-        renderFolder.returnPressed.connect(lambda: self.setDirName(renderFolder.text()))
-        self._dirNameChanged.connect(renderFolder.setText)
-
-        self.setDirName("./")
-
-        vbox.addLayout(hbox)
-
-        
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("number frames:\t"))
-        frameEdit = QtGui.QLineEdit("100")
-        frameEdit.setValidator(QtGui.QIntValidator(bottom=1))
-        frameEdit.returnPressed.connect(lambda: self._frameNumberChanged.emit(int(frameEdit.text())))
-        hbox.addWidget(frameEdit)
-
-        vbox.addLayout(hbox)
 
         line =  QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
@@ -253,21 +182,11 @@ class SettingsPanel(QtGui.QWidget):
         """)
         self.colorCombo.setStyleSheet("background-color:none;")
 
+        vbox.addStretch()
+
         self.setLayout(vbox)
 
 
-
-    def setDirName(self,dirName):
-        logger.debug("setDirName: %s"%dirName)
-        self.dirName = dirName
-        self._dirNameChanged.emit(dirName)
-
-
-    def folderSelect(self,event):
-        dirName= QtGui.QFileDialog.getExistingDirectory(self, 'select output folder',
-                self.dirName)
-        if dirName:
-            self.setDirName(dirName)
 
     def onButtonColor(self):
         col = QtGui.QColorDialog.getColor()
@@ -303,13 +222,6 @@ class SettingsPanel(QtGui.QWidget):
         except Exception as e:
             print "couldnt parse text"
             print e
-
-    def playIntervalChanged(self):
-        self._playIntervalChanged.emit(int(self.playInterval.text()))
-
-    def substepsChanged(self):
-        print "changed substeps to ", int(self.editSubsteps.text())
-        self._substepsChanged.emit(int(self.editSubsteps.text()))
         
 class MainWindow(QtGui.QMainWindow):
 
@@ -319,7 +231,7 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(500, 300)
         self.setWindowTitle('Test')
 
-        self.settings = SettingsPanel()
+        self.settings = VolumeSettingsPanel()
         self.setCentralWidget(self.settings)
         self.setStyleSheet("background-color:black;")
 
