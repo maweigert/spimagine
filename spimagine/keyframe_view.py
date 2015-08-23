@@ -15,7 +15,7 @@ from PyQt4.QtGui import *
 
 from keyframe_model import KeyFrame, KeyFrameList
 
-
+from collections import OrderedDict 
 
 from data_model import DataModel, DemoData
 from transform_model import TransformModel
@@ -198,7 +198,6 @@ class KeyNode(QGraphicsItem):
             # self.keyList[self.ID].tFrame = tFrame
 
             self.keyList.update_pos(self.ID, tpos)
-            print self.keyList
             self.setPos(pos)
             for edge in self.edgeList:
                 edge.adjust()
@@ -230,6 +229,8 @@ class KeyNode(QGraphicsItem):
         # self.graph.resetScene()
 
 
+    def showProperties(self):
+        QMessageBox.about(None, "KeyFrame", str(self.keyList[self.ID]))
 
 
     def updateTransformData(self):
@@ -242,8 +243,11 @@ class KeyNode(QGraphicsItem):
         self.transformModel.fromTransformData(self.keyList[self.ID].transformData)
 
     def contextMenuEvent(self, contextEvent):
-        actionMethods = {"delete" : self.delete, "update" : self.updateTransformData}
-        actions = {}
+        actionMethods = OrderedDict((("update",self.updateTransformData),
+                                     ("delete",self.delete),
+                                     ("properties" ,self.showProperties)))
+
+        actions = OrderedDict()
 
         object_cntext_Menu = QMenu()
         for k, meth in actionMethods.iteritems():
@@ -482,8 +486,18 @@ class KeyFramePanel(QWidget):
         self.recordButton.setMaximumWidth(24)
         self.recordButton.setMaximumHeight(24)
 
+        self.distributeButton = QPushButton("",self)
+        self.distributeButton.setToolTip("distribute data times according to keyframes")
+        self.distributeButton.setStyleSheet("background-color: black; color:black")
+        self.distributeButton.setIcon(QIcon(absPath("images/icon_distribute.png")))
+        self.distributeButton.setIconSize(QSize(24,24))
+        self.distributeButton.clicked.connect(self.onDistribute)
+        self.distributeButton.setMaximumWidth(24)
+        self.distributeButton.setMaximumHeight(24)
+
         self.saveButton = QPushButton("",self)
-        self.saveButton.setStyleSheet("background-color: black")
+        self.saveButton.setToolTip("save keyframes as json")
+        self.saveButton.setStyleSheet("background-color: black; color:black")
         # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.saveButton.setIcon(QIcon(absPath("images/icon_save.png")))
         self.saveButton.setIconSize(QSize(24,24))
@@ -505,7 +519,7 @@ class KeyFramePanel(QWidget):
         self.slider.setTickPosition(QSlider.TicksBothSides)
         self.slider.setTickInterval(1)
         self.slider.setFocusPolicy(Qt.ClickFocus)
-        self.slider.setTracking(True)
+        self.slider.setTracking(False)
 
         self.slider.setRange(0,100)
         self.slider.setStyleSheet("height: 12px; border = 0px;")
@@ -516,7 +530,9 @@ class KeyFramePanel(QWidget):
 
         hbox.addWidget(self.playButton)
         hbox.addWidget(self.recordButton)
+        hbox.addWidget(self.distributeButton)
         hbox.addWidget(self.saveButton)
+
         hbox.addWidget(self.trashButton)
         hbox.addWidget(self.keyView)
 
@@ -566,6 +582,15 @@ class KeyFramePanel(QWidget):
             self.playTimer.start()
             self.playButton.setIcon(QIcon(absPath("images/icon_pause.png")))
 
+
+    def onDistribute(self,e):
+        if self.keyView.transformModel:
+            pos1 = self.keyView.keyList.getTransform(0).dataPos
+            pos2 = self.keyView.keyList.getTransform(1.).dataPos
+            self.keyView.keyList.distribute(pos1, pos2)
+            # self.keyView.keyList.distribute()
+
+            
     def onRecord(self,evt):
         if self.recordTimer.isActive():
             self.recordTimer.stop()

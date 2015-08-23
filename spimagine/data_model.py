@@ -15,6 +15,8 @@ email: mweigert@mpi-cbg.de
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
 import os
 import numpy as np
 from PyQt4 import QtCore
@@ -373,6 +375,8 @@ class DataLoadThread(QtCore.QThread):
     def run(self):
         self.stopped = False
         while not self.stopped:
+            self._rwLock.lockForWrite()
+
             kset = set(self.data.keys())
             dkset = kset.difference(set(self.nset))
             dnset = set(self.nset).difference(kset)
@@ -380,6 +384,8 @@ class DataLoadThread(QtCore.QThread):
             for k in dkset:
                 del(self.data[k])
 
+            self._rwLock.unlock()
+            
             if dnset:
                 logger.debug("preloading %s", list(dnset))
                 for k in dnset:
@@ -483,8 +489,13 @@ class DataModel(QtCore.QObject):
     def __getitem__(self,pos):
         # self._rwLock.lockForRead()
         if not hasattr(self,"data"):
+            print "something is wrong in datamodel as its lacking a 'data' atttribute!"
             return None
 
+
+        # switching of the prefetched version for now...
+        # as for some instances there seems to be a race condition still
+        
         if not self.data.has_key(pos):
             newdata = self.dataContainer[pos]
             self._rwLock.lockForWrite()
@@ -493,8 +504,9 @@ class DataModel(QtCore.QObject):
 
         self.prefetch(pos)
 
-        # print "number of datasets: ", len(self.data.keys())
         return self.data[pos]
+
+        # return self.dataContainer[pos]
 
 
 
@@ -610,8 +622,8 @@ if __name__ == '__main__':
     # test_frompath()
 
 
-    d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize= 5)
+    d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize= 0)
 
-    for i in range(50):
+    for i in np.random.randint(0,d.sizeT(),100):
         print i
         a = d[i]

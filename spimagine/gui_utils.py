@@ -10,24 +10,29 @@ N_PREFETCH = 10
 checkBoxStyleStr = """
 QCheckBox::indicator:checked {
 background:black;
+color:black;
 border-image: url(%s);
 }
 QCheckBox::indicator:unchecked {
 background:black;
+color:black;
 border-image: url(%s);}
 """
 
 checkBoxTristateStyleStr = """
 QCheckBox::indicator:unchecked {
 background:black;
+color:black;
 border-image: url(%s);}
 
 QCheckBox::indicator:indeterminate {
 background:black;
+color:black;
 border-image: url(%s);}
 
 QCheckBox::indicator:checked {
 background:black;
+color:black;
 border-image: url(%s);
 }
 
@@ -51,11 +56,12 @@ def absPath(myPath):
 
 def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
     but = QtGui.QPushButton("",parent)
-    but.setStyleSheet("background-color: black")
+    but.setStyleSheet("background-color: black;color:black;")
     if fName:
         but.setIcon(QtGui.QIcon(fName))
     but.setIconSize(QtCore.QSize(width,width))
-    but.clicked.connect(method)
+    if method:
+        but.clicked.connect(method)
     but.setMaximumWidth(width)
     but.setMaximumHeight(width)
     but.setToolTip(tooltip)
