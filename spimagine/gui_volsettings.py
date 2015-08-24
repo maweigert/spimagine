@@ -146,14 +146,31 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
-        self.sliderAlphaPow.setRange(0,1.)
-        self.sliderAlphaPow.setTickInterval(1)
+        self.sliderAlphaPow.setRange(0,1.,100)
         self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
         gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),5,0)
         gridBox.addWidget(self.sliderAlphaPow,5,1)
+
+
+        self.sliderEyeProj = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderEyeProj.setRange(-0.005,0.005,100)
+        self.sliderEyeProj.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderEyeProj.setTracking(True)
+        self.sliderEyeProj.setValue(0)
+        gridBox.addWidget(QtGui.QLabel("eye proj:\t"))
+        gridBox.addWidget(self.sliderEyeProj)
+
+        self.sliderEyeCam = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderEyeCam.setRange(-0.06,0.06,100)
+        self.sliderEyeCam.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderEyeCam.setTracking(True)
+        self.sliderEyeCam.setValue(0)
+
+        gridBox.addWidget(QtGui.QLabel("eye cam:\t"))
+        gridBox.addWidget(self.sliderEyeCam)
 
         vbox.addLayout(gridBox)
 

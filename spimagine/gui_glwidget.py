@@ -121,6 +121,24 @@ void main()
 
 }
 """
+
+fragShaderStereo = """
+uniform sampler2D texture;
+uniform vec4 col0;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+  
+  gl_FragColor = col0*col.x;
+
+  gl_FragColor.w = 1.0*length(col.xyz);
+
+
+}
+"""
+
 vertShaderSliceTex ="""
 attribute vec3 position;
 uniform mat4 mvpMatrix;
@@ -371,6 +389,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.bind()
         logger.debug("GLSL programTex log:%s",self.programTex.log())
 
+
+        self.programStereo = QtOpenGL.QGLShaderProgram()
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStereo)
+        self.programStereo.link()
+        self.programStereo.bind()
+        logger.debug("GLSL programStereo log:%s",self.programStereo.log())
+
         self.programCube = QtOpenGL.QGLShaderProgram()
         self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
         self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderCube)
@@ -419,11 +445,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glEnable( GL_BLEND )
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
-        glLineWidth(1.0);
-        # glBlendFunc(GL_ONE,GL_ONE)
+        # glLineWidth(1.0);
+        glBlendFunc(GL_ONE,GL_ONE)
 
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
@@ -458,6 +484,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataSourceChanged(self):
+        # print "SETDATA: ", self.dataModel[0].shape
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
         self.transform.reset(minVal = np.amin(self.dataModel[0]),
                              maxVal = np.amax(self.dataModel[0]),
@@ -585,20 +612,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
                 glDrawArrays(GL_TRIANGLES,0,len(coords))
 
-                # OLD
-                # draw the slice
-                # self.programCube.bind()
-                # self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                # self.programCube.enableAttributeArray("position")
-
-                # self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
-
-
-                # pos, dim = self.transform.slicePos,self.transform.sliceDim
-
-                # coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-                # self.programCube.setAttributeArray("position", coords)
-                # glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
             # Draw the render texture
@@ -629,20 +642,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-            # glBlendFunc(GL_ONE, GL_ONE)
-
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
-
-
 
 
     def render(self):
         logger.debug("render")
 
         if self.dataModel:
-            # import time
-            # t = time.time()
-
+            
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_min_val(self.transform.minVal)
@@ -659,7 +666,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
-
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
                     out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
@@ -668,7 +674,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                 elif self.transform.sliceDim==2:
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
-                # self.sliceOutput = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
 
@@ -835,9 +840,26 @@ def test_demo():
     sys.exit(app.exec_())
 
 
+def test_demo_simple():
+
+    from data_model import DataModel, DemoData
+    
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+    win.setModel(DataModel(DemoData()))
+    
+    win.show()
+
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
 
     # test_sphere()
 
-    test_demo()
+    test_demo_simple()

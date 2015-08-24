@@ -53,9 +53,6 @@ from spimagine.imgutils import write3dTiff
 import logging
 logger = logging.getLogger(__name__)
 
-# logger.setLevel(logging.DEBUG)
-
-
 
 # the default number of data timeslices to prefetch
 N_PREFETCH = 10
