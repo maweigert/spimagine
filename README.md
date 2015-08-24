@@ -5,38 +5,23 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 [![Alt text for your video](poster_vimeo.png)](https://vimeo.com/126597994)
 
-## Installing
+# Installing
 
-### Mac
+## Mac
 
 #### as app bundle
 
 just find the dmg in the download section, open and drag to Applications
-
-you wanna install libtiff to speed up opening of tiff files   
-> brew install libtiff
-
 The app essentially bundles all dependencies and extracts them on the fly  so startup might be slow
 
 #### as python package
   
-On Mac, clang might complain about non supported compiler flags, a quick fix to which is
-
-> export CFLAGS=-Qunused-arguments
-
-> export CPPFLAGS=-Qunused-arguments
-
-
 install PyQt4, e.g. with homebrew:
 > brew install pyqt
 
-install libtiff (optional)
-> brew install libtiff
-
-
 then with pip
 
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/pyocl
+> pip install --user git+https://github.com/maweigert/gputools
 
 > pip install --user git+https://github.com/maweigert/spimagine
 
