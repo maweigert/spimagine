@@ -9,54 +9,50 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 A working OpenCL environment
 
-### Mac
+* Mac
 
-should be provided by default :)
+	should be provided by default :)
 
-### Linux
+* Linux
+	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
+	```
+	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+	```
+
+
+	
 
 ## Installing
 
-e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
-
-```
-apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
-```
 
 
+* Mac
 
-### Mac
+	install PyQt4, e.g. with homebrew:
+	```
+	brew install pyqt
+	```
 
-#### python package
-  
-install PyQt4, e.g. with homebrew:
-> brew install pyqt
+	then with pip
+	```
+	pip install --user git+https://github.com/maweigert/gputools
+	pip install --user git+https://github.com/maweigert/spimagine
+	```
 
-then with pip
+	or the developmental branch
+	```
+	pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
+	```
+	
+* Linux
 
-> pip install --user git+https://github.com/maweigert/gputools
+	```
+	apt-get install python-qt4 python-qt4-gl
 
-> pip install --user git+https://github.com/maweigert/spimagine
-
-or the developmental branch
-
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
-
-#### as app bundle [currently not working :( ]
-
-just find the dmg in the download section, open and drag to Applications
-The app essentially bundles all dependencies and extracts them on the fly  so startup might be slow
-
-
-### Linux
-
-> apt-get install python-qt4 python-qt4-gl
-
-> pip install --user git+https://github.com/maweigert/gputools
-
-> pip install --user git+https://github.com/maweigert/spimagine
-
+	pip install --user git+https://github.com/maweigert/gputools
+	pip install --user git+https://github.com/maweigert/spimagine
+	```
 
 ## Usage
 
@@ -64,15 +60,14 @@ The app essentially bundles all dependencies and extracts them on the fly  so st
 
 pip should install the standalone viewer in the local bin folder (e.g. "~/.local/bin" on Linux), run it from the command line like that
 
-> spimagine [fname/folder]
+```
+spimagine [input]
+```
 
-or via the app bundle (for Mac OSX) 
-
-> SpImagine.app
-
-Right now the following formats are supported
+Right now the following formats are supported as input 
 
 - tiff files
+- a folder containing tiff files
 - 16 bit unsigned raw data in the format used by the Myers Group at mpi-cbg
 
 
