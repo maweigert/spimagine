@@ -1,8 +1,11 @@
 import sys
+
+import numpy as np
+
 from PyQt4 import QtCore, QtGui, Qt
 from sortedcontainers import SortedDict
 
-from imageprocessor import *
+import spimagine.imageprocessor as imageprocessor 
 
 import gui_utils
 
@@ -201,17 +204,20 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(300, 200)
         self.setWindowTitle('Test')
 
-        foo  = ImageProcessorListView([BlurProcessor(),FFTProcessor()])
+        foo  = ImageProcessorListView([
+            imageprocessor.BlurProcessor(),
+            imageprocessor.FFTProcessor()
+        ])
 
         
-        foo.add_image_processor(BlurProcessor())
+        foo.add_image_processor(imageprocessor.BlurProcessor())
 
 
         def myfunc(data,para=1.):
             print "myfunc with para", para
             return data*para
 
-        imp = FuncProcessor(myfunc,"myfunc",para=.1)
+        imp = imageprocessor.FuncProcessor(myfunc,"myfunc",para=.1)
         foo.add_image_processor(imp)
 
         

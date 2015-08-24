@@ -62,16 +62,15 @@ from spimagine.data_model import DataModel
 
 from spimagine.transform_model import TransformModel
 
-from numpy import *
 import numpy as np
-
 from spimagine.gui_utils import *
 
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
 if os.name == "nt":
     from scipy import linalg
-
+else:
+    from numpy import linalg
 
 import time
 from spimagine.quaternion import Quaternion
@@ -122,6 +121,24 @@ void main()
 
 }
 """
+
+fragShaderStereo = """
+uniform sampler2D texture;
+uniform vec4 col0;
+varying vec2 mytexcoord;
+
+void main()
+{
+  vec4 col = texture2D(texture,mytexcoord);
+  
+  gl_FragColor = col0*col.x;
+
+  gl_FragColor.w = 1.0*length(col.xyz);
+
+
+}
+"""
+
 vertShaderSliceTex ="""
 attribute vec3 position;
 uniform mat4 mvpMatrix;
@@ -235,8 +252,8 @@ void main()
 """
 
 def _next_golden(n):
-    res = round((sqrt(5)-1.)/2.*n)
-    return int(round((sqrt(5)-1.)/2.*n))
+    res = round((np.sqrt(5)-1.)/2.*n)
+    return int(round((np.sqrt(5)-1.)/2.*n))
 
 
 
@@ -271,10 +288,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
-        self.output = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-        self.output_alpha = zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output = np.zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
+        self.output_alpha = np.zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
 
-        self.sliceOutput = zeros((100,100),dtype = np.float32)
+        self.sliceOutput = np.zeros((100,100),dtype = np.float32)
 
         self.setTransform(TransformModel())
 
@@ -347,7 +364,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
-        self._set_colormap_array(outer(linspace(0,1.,255),np.array(color)))
+        self._set_colormap_array(np.outer(np.linspace(0,1.,255),np.array(color)))
 
 
     def _set_colormap_array(self,arr):
@@ -371,6 +388,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.link()
         self.programTex.bind()
         logger.debug("GLSL programTex log:%s",self.programTex.log())
+
+
+        self.programStereo = QtOpenGL.QGLShaderProgram()
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
+        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStereo)
+        self.programStereo.link()
+        self.programStereo.bind()
+        logger.debug("GLSL programStereo log:%s",self.programStereo.log())
 
         self.programCube = QtOpenGL.QGLShaderProgram()
         self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
@@ -420,11 +445,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glEnable( GL_BLEND )
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
-        glLineWidth(1.0);
-        # glBlendFunc(GL_ONE,GL_ONE)
+        # glLineWidth(1.0);
+        glBlendFunc(GL_ONE,GL_ONE)
 
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
@@ -445,8 +470,8 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dataModelChanged(self):
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
-            self.transform.reset(minVal = amin(self.dataModel[0]),
-                                 maxVal = amax(self.dataModel[0]),
+            self.transform.reset(minVal = np.amin(self.dataModel[0]),
+                                 maxVal = np.amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
 
             self.refresh()
@@ -459,9 +484,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataSourceChanged(self):
+        # print "SETDATA: ", self.dataModel[0].shape
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
-        self.transform.reset(minVal = amin(self.dataModel[0]),
-                             maxVal = amax(self.dataModel[0]),
+        self.transform.reset(minVal = np.amin(self.dataModel[0]),
+                             maxVal = np.amax(self.dataModel[0]),
                              stackUnits= self.dataModel.stackUnits())
         self.refresh()
 
@@ -483,6 +509,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def refresh(self):
         # if self.parentWidget() and self.dataModel:
         #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
+        
         self.renderUpdate = True
         self.renderedSteps = 0
 
@@ -521,7 +548,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             proj = self.transform.getProjection()
 
-            self.finalMat = dot(proj,modelView)
+            self.finalMat = np.dot(proj,modelView)
 
 
             self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
@@ -585,20 +612,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
                 glDrawArrays(GL_TRIANGLES,0,len(coords))
 
-                # OLD
-                # draw the slice
-                # self.programCube.bind()
-                # self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                # self.programCube.enableAttributeArray("position")
-
-                # self.programCube.setUniformValue("color",QtGui.QVector4D(1.,1.,1.,.6))
-
-
-                # pos, dim = self.transform.slicePos,self.transform.sliceDim
-
-                # coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-                # self.programCube.setAttributeArray("position", coords)
-                # glDrawArrays(GL_TRIANGLES,0,len(coords))
 
 
             # Draw the render texture
@@ -629,19 +642,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-            # glBlendFunc(GL_ONE, GL_ONE)
-
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
-
-
 
 
     def render(self):
         logger.debug("render")
-        if self.dataModel:
-            # import time
-            # t = time.time()
 
+        if self.dataModel:
+            
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
             self.renderer.set_min_val(self.transform.minVal)
@@ -658,7 +666,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
-
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
                     out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
@@ -667,7 +674,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                 elif self.transform.sliceDim==2:
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
-                # self.sliceOutput = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
 
@@ -707,7 +713,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
         newZoom = self.transform.zoom * 1.2**(event.delta()/1400.)
-        newZoom = clip(newZoom,.4,3)
+        newZoom = np.clip(newZoom,.4,3)
         self.transform.setZoom(newZoom)
 
         logger.debug("newZoom: %s",newZoom)
@@ -716,13 +722,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def posToVec3(self,x,y, r0 = .8, isRot = True ):
         x, y = 2.*x/self.width-1.,1.-2.*y/self.width
-        r = sqrt(x*x+y*y)
+        r = np.sqrt(x*x+y*y)
         if r>r0-1.e-7:
             x,y = 1.*x*r0/r, 1.*y*r0/r
-        z = sqrt(max(0,r0**2-x*x-y*y))
+        z = np.sqrt(max(0,r0**2-x*x-y*y))
         if isRot:
-            M = linalg.inv(self.transform.quatRot.toRotation3())
-            x,y,z = dot(M,[x,y,z])
+            M = np.linalg.inv(self.transform.quatRot.toRotation3())
+            x,y,z = np.dot(M,[x,y,z])
 
         return x,y,z
 
@@ -758,11 +764,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.buttons() == QtCore.Qt.LeftButton:
 
             x1,y1,z1 = self.posToVec3(event.x(),event.y())
-            n = cross(array([self._x0,self._y0,self._z0]),array([x1,y1,z1]))
+            n = np.cross(np.array([self._x0,self._y0,self._z0]),np.array([x1,y1,z1]))
             nnorm = linalg.norm(n)
-            if abs(nnorm)>=1.:
-                nnorm *= 1./abs(nnorm)
-            w = arcsin(nnorm)
+            if np.abs(nnorm)>=1.:
+                nnorm *= 1./np.abs(nnorm)
+            w = np.arcsin(nnorm)
             n *= 1./(nnorm+1.e-10)
             q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
             self.transform.setQuaternion(self.transform.quatRot*q)
@@ -771,7 +777,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(),event.y())
 
-            dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
+            dx, dy, foo = np.dot(self._invRotM,[x-self._x0, y-self._y0,0])
 
             self.transform.addTranslate(dx,dy,foo)
             self._x0,self._y0 = x,y
@@ -799,10 +805,10 @@ def test_sphere():
 
     Ns = 5
     r = .6
-    phi = linspace(0,2*pi,Ns+1)[:-1]
-    d = zeros_like(X)
+    phi = np.linspace(0,2*pi,Ns+1)[:-1]
+    d = np.zeros_like(X)
     for p in phi:
-        d += 100.*exp(-10*(Z**2+(Y-r*sin(p))**2+(X-r*cos(p))**2))
+        d += 100.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
 
 
     win.setModel(DataModel(NumpyData(d)))
@@ -819,26 +825,12 @@ def test_sphere():
 def test_demo():
 
     from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-    import imgtools
     
     app = QtGui.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800,800))
 
-    N = 256
-
-    d = imgtools.ZYX(N)[0]
-    
-    d = 100*exp(-100*d**2)
-    win.NSubrenderSteps = 1
-    
-    win.setModel(DataModel(NumpyData(d)))
-    
-    # win.setModel(DataModel(DemoData()))
-
-
-    # win.transform.setValueScale(0,10000.)
-    # win.transform.setBox(False)
+    win.setModel(DataModel(DemoData()))
 
     win.show()
 
@@ -848,9 +840,26 @@ def test_demo():
     sys.exit(app.exec_())
 
 
+def test_demo_simple():
+
+    from data_model import DataModel, DemoData
+    
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+    win.setModel(DataModel(DemoData()))
+    
+    win.show()
+
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
 
     # test_sphere()
 
-    test_demo()
+    test_demo_simple()

@@ -66,7 +66,19 @@ class TransformData(object):
 
 
     def __repr__(self):
-        return "TransformData:\n%s \t %s \t %s \t%s \t%s \t%s \t%s \t%s\t%s\t%s"%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        return """TransformData:
+        quatRot\t %s
+        zoom\t%s
+        datapos\t%s
+        minVal\t%s
+        maxVal\t%s
+        gamma\t%s
+        bounds\t%s
+        isBox\t%s
+        isIso\t%s
+        alphaPow\t%s"""%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+
+        
 
     def setData(self,quatRot,zoom, dataPos, minVal, maxVal,
                 gamma, translate, bounds,isBox,isIso, alphaPow):
@@ -123,7 +135,7 @@ class KeyFrame(object):
 
 
     def __repr__(self):
-        return "t = %.3f \t %s"%(self.pos,self.transformData)
+        return "Keyframe at t = %.3f \n%s"%(self.pos,self.transformData)
 
 
 """ the keyframe model """
@@ -214,11 +226,15 @@ class KeyFrameList(QtCore.QObject):
         frame.pos = pos
         self.posdict[pos] = ID
 
-
+    def distribute(self,pos_start,pos_end):
+        """distributes the internal data positions linearly according to their nodes position"""
+        for it in self.items.values():
+            print it.pos, it.transformData.dataPos 
+            it.transformData.dataPos = int(pos_start+(pos_end-pos_start)*it.pos)
+            # it.transformData.dataPos = pos_start+(pos_end-pos_start)*it.pos
+            
     def getTransform(self,pos):
         logger.debug("getTransform")
-
-        print pos
 
         if pos<self.pos_at(0):
             return self.item_at(0).transformData

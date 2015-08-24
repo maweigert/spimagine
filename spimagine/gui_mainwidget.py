@@ -24,21 +24,27 @@ from spimagine.gui_glwidget import GLWidget
 from spimagine.keyframe_model import KeyFrameList, KeyFrame
 
 from spimagine.keyframe_view import KeyFramePanel
-from spimagine.gui_settings import SettingsPanel
+from spimagine.gui_mainsettings import MainSettingsPanel
+from spimagine.gui_volsettings import VolumeSettingsPanel
+
 from spimagine.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-from spimagine import egg3d
+
 
 from spimagine.gui_slice_view import SliceWidget
 
+
 from spimagine.imageprocessor_view import ImageProcessorListView
+
+import spimagine.egg3d as egg3d
 from spimagine.imageprocessor import *
+
 
 from spimagine.floatslider import FloatSlider
 
 from spimagine.transform_model import TransformModel
 
 
-from spimagine.gui_utils import *
+from spimagine.gui_utils import  createStandardCheckbox,createStandardButton
 
 from spimagine.imgutils import write3dTiff
 
@@ -46,9 +52,6 @@ from spimagine.imgutils import write3dTiff
 
 import logging
 logger = logging.getLogger(__name__)
-
-# logger.setLevel(logging.DEBUG)
-
 
 
 # the default number of data timeslices to prefetch
@@ -125,8 +128,10 @@ class MainWidget(QtGui.QWidget):
                         fName = absPath("images/icon_rotate.png"),
                         method = self.rotate, tooltip = "spin current view")
 
-        self.screenshotButton = createStandardButton(self, fName = absPath("images/icon_camera.png"),
-                                                method = self.screenShot, tooltip = "save as png")
+        self.screenshotButton = createStandardButton(self,
+                        fName = absPath("images/icon_camera.png"),
+                        method = self.screenShot,
+                        tooltip = "save as png")
 
         self.fileOpenButton = createStandardButton(self,
                         fName = absPath("images/icon_open.png"),
@@ -136,9 +141,15 @@ class MainWidget(QtGui.QWidget):
                         fName = absPath("images/icon_filesave.png"),
                         method = self.saveFile, tooltip = "save file as tif")
         
+        self.checkVolSettings = createStandardCheckbox(self,
+            absPath("images/icon_volsettings_active.png"),
+            absPath("images/icon_volsettings_inactive.png"),
+                tooltip="volume settings")
+
         self.checkSettings = createStandardCheckbox(self,
-                absPath("images/settings.png"),
-                absPath("images/settings_inactive.png"), tooltip="settings")
+                absPath("images/icon_mainsettings_active.png"),
+                absPath("images/icon_mainsettings_inactive.png"),
+                tooltip="general settings")
 
 
         self.checkKey = createStandardCheckbox(self,absPath("images/video.png"),absPath("images/video_inactive.png"), tooltip="keyframe editor")
@@ -169,7 +180,7 @@ class MainWidget(QtGui.QWidget):
 
 
         self.spinTime = QtGui.QSpinBox()
-        self.spinTime.setStyleSheet("color:white;")
+        self.spinTime.setStyleSheet("color:white;border:0px solid black;background-color:black;")
         self.spinTime.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         self.spinTime.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.spinTime.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
@@ -178,12 +189,6 @@ class MainWidget(QtGui.QWidget):
         self.sliderTime.valueChanged.connect(self.spinTime.setValue)
         self.spinTime.valueChanged.connect(self.sliderTime.setValue)
 
-
-        # self.scaleSlider = QtGui.QSlider(QtCore.Qt.Vertical)
-
-        # self.scaleSlider.setRange(1, self.N_SCALE_SLIDER)
-        # self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
-        # self.scaleSlider.setToolTip("value scale")
 
         self.scaleSlider = FloatSlider(QtCore.Qt.Vertical)
 
@@ -251,13 +256,15 @@ class MainWidget(QtGui.QWidget):
 
         self.impListView.hide()
 
+        self.volSettingsView = VolumeSettingsPanel()
+        self.volSettingsView.hide()
 
-        self.settingsView = SettingsPanel()
+        self.settingsView = MainSettingsPanel()
         self.settingsView.hide()
 
         self.setStyleSheet("""
         background-color:black;
-        color:white;
+        color:black;
         """)
 
         hbox0 = QtGui.QHBoxLayout()
@@ -274,6 +281,7 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.impListView)
 
 
+        hbox0.addWidget(self.volSettingsView)
         hbox0.addWidget(self.settingsView)
 
         hbox = QtGui.QHBoxLayout()
@@ -300,8 +308,11 @@ class MainWidget(QtGui.QWidget):
 
         hbox.addSpacing(10)
         hbox.addWidget(self.checkProcView)
-        hbox.addSpacing(10)
 
+        hbox.addSpacing(10)
+        hbox.addWidget(self.checkVolSettings)
+
+        hbox.addSpacing(5)
         hbox.addWidget(self.checkSettings)
 
         vbox = QtGui.QVBoxLayout()
@@ -344,7 +355,7 @@ class MainWidget(QtGui.QWidget):
                 return objFunc(x!=0)
             return _foo
 
-        self.settingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+        self.volSettingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
 
         self.settingsView._substepsChanged.connect(self.substepsChanged)
 
@@ -355,21 +366,24 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)
 
-        self.settingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
+        self.volSettingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
 
-        self.settingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
+        self.volSettingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
 
-        self.glWidget.transform._alphaPowChanged.connect(self.settingsView.sliderAlphaPow.setValue)
+        self.glWidget.transform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
 
-        self.glWidget.transform._boundsChanged.connect(self.settingsView.setBounds)
+        self.glWidget.transform._boundsChanged.connect(self.volSettingsView.setBounds)
 
-        self.transform._boxChanged.connect(self.settingsView.checkBox.setChecked)
+        self.transform._boxChanged.connect(self.volSettingsView.checkBox.setChecked)
 
 
-        self.settingsView.checkProj.stateChanged.connect(self.transform.setPerspective)
-        self.transform._perspectiveChanged.connect(self.settingsView.checkProj.setChecked)
+        self.volSettingsView.checkProj.stateChanged.connect(self.transform.setPerspective)
+        self.transform._perspectiveChanged.connect(self.volSettingsView.checkProj.setChecked)
 
         self.checkKey.stateChanged.connect(self.keyPanel.setVisible)
+
+        self.checkVolSettings.stateChanged.connect(self.volSettingsView.setVisible)
+
         self.checkSettings.stateChanged.connect(self.settingsView.setVisible)
 
         self.checkSliceView.stateChanged.connect(self.sliceWidget.setVisible)
@@ -379,13 +393,13 @@ class MainWidget(QtGui.QWidget):
 
         self.settingsView.checkLoopBounce.stateChanged.connect(self.setLoopBounce)
 
-        self.settingsView._stackUnitsChanged.connect(self.transform.setStackUnits)
-        self.transform._stackUnitsChanged.connect(self.settingsView.setStackUnits)
+        self.volSettingsView._stackUnitsChanged.connect(self.transform.setStackUnits)
+        self.transform._stackUnitsChanged.connect(self.volSettingsView.setStackUnits)
 
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
 
-        self.settingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
-        self.settingsView._rgbColorChanged.connect(self.onRgbColorChanged)
+        self.volSettingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
+        self.volSettingsView._rgbColorChanged.connect(self.onRgbColorChanged)
         self.impListView._stateChanged.connect(self.impStateChanged)
 
         self.settingsView._dirNameChanged.connect(self.keyPanel.setDirName)
@@ -398,7 +412,7 @@ class MainWidget(QtGui.QWidget):
 
         self.checkSliceView.setChecked(False)
 
-        self.hiddableControls = [self.checkSettings,
+        self.hiddableControls = [self.checkSettings,self.checkVolSettings,
                                  self.startButton,self.sliderTime,self.spinTime,
                                  self.checkKey,self.screenshotButton ]
 
@@ -417,10 +431,10 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.refresh()
 
     def onColormapChanged(self,index):
-        self.glWidget.set_colormap(self.settingsView.colormaps[index])
+        self.glWidget.set_colormap(self.volSettingsView.colormaps[index])
         self.glWidget.refresh()
 
-        self.sliceWidget.glSliceWidget.set_colormap(self.settingsView.colormaps[index])
+        self.sliceWidget.glSliceWidget.set_colormap(self.volSettingsView.colormaps[index])
         self.sliceWidget.glSliceWidget.refresh()
 
 
@@ -519,7 +533,7 @@ class MainWidget(QtGui.QWidget):
         self.sliderTime.setValue(0)
         self.spinTime.setRange(0,self.glWidget.dataModel.sizeT()-1)
 
-        self.settingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
+        self.volSettingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
         if self.myparent:
             self.myparent.setWindowTitle(self.glWidget.dataModel.name())
@@ -531,7 +545,7 @@ class MainWidget(QtGui.QWidget):
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
         minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
-        self.settingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
+        self.volSettingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
 
 
 
@@ -649,9 +663,12 @@ class MainWidget(QtGui.QWidget):
 
             if self.rotateTimer.isActive():
                 self.rotateTimer.stop()
-
+                
+            self.glWidget.renderTimer.stop()
+            
             # self.glWidget.setParent(None)
-            # del self.glWidget
+            # free the gpu resources....
+            del self.glWidget.renderer
             event.accept()
 
 
