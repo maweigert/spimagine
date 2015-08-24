@@ -8,8 +8,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-print "phhhh:",__name__, logger.name
-
 
 global __OPENCLDEVICE__
 global __DEFAULTCOLORMAP__
@@ -41,10 +39,10 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
     def get(self,key, defaultValue = None):
         try:
             val =  ConfigParser.ConfigParser.get(self,self.dummySection,key)
-            logger.info("from config file: %s = %s "%(key,val))
+            logger.debug("from config file: %s = %s "%(key,val))
             return val
         except Exception as e:
-            logger.info("%s (%s)"%(e,key))
+            logger.debug("%s (%s)"%(e,key))
             return defaultValue
         
         
