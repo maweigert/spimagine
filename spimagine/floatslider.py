@@ -50,17 +50,17 @@ class MainWindow(QtGui.QWidget):
         super(MainWindow,self).__init__()
 
         self.slide = FloatSlider(QtCore.Qt.Horizontal)
-        self.slide.setRange(-1.,6.)
+        self.slide.setRange(-12.,10.,400)
         self.slide.valueChanged.connect(self.onSlide)
         self.slide.floatValueChanged.connect(self.onSlideFloat)
 
 
-        self.slide.setValue(.3)
+        self.slide.setValue(7.)
         self.setWindowTitle("Key Frame View")
 
 
-        self.edit = QtGui.QLineEdit("1.")
-        self.edit.setValidator(QtGui.QDoubleValidator(bottom=1))
+        self.edit = QtGui.QLineEdit("")
+        self.edit.setValidator(QtGui.QDoubleValidator())
         self.edit.returnPressed.connect(lambda: self.slide.setValue(float(self.edit.text())))
 
 

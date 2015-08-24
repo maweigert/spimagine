@@ -6,8 +6,10 @@
   mweigert@mpi-cbg.de
  */
 
-
+#ifndef maxSteps
 #define maxSteps 200
+#endif
+
 #define tstep 0.01f
 
 
@@ -1253,7 +1255,7 @@ __kernel void blur_normals_x(__global float *d_input,
   // 	  printf("%.2f \n",hsum);
 
 
-  res *= 1./hsum;
+  res *= 1.f/hsum;
 
   //res = normalize(res);
 
@@ -1295,7 +1297,7 @@ __kernel void blur_normals_y(__global float *d_input,
   // 	  printf("%.2f \n",hsum);
 
 
-  res *= 1./hsum;
+  res *= 1.f/hsum;
 
   //res = normalize(res);
 

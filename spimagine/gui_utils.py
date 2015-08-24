@@ -3,31 +3,36 @@ import numpy as np
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from OpenGL.GL import *
+import OpenGL.GL as GL
 
 N_PREFETCH = 10
 
 checkBoxStyleStr = """
 QCheckBox::indicator:checked {
 background:black;
+color:black;
 border-image: url(%s);
 }
 QCheckBox::indicator:unchecked {
 background:black;
+color:black;
 border-image: url(%s);}
 """
 
 checkBoxTristateStyleStr = """
 QCheckBox::indicator:unchecked {
 background:black;
+color:black;
 border-image: url(%s);}
 
 QCheckBox::indicator:indeterminate {
 background:black;
+color:black;
 border-image: url(%s);}
 
 QCheckBox::indicator:checked {
 background:black;
+color:black;
 border-image: url(%s);
 }
 
@@ -51,11 +56,12 @@ def absPath(myPath):
 
 def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
     but = QtGui.QPushButton("",parent)
-    but.setStyleSheet("background-color: black")
+    but.setStyleSheet("background-color: black;color:black;")
     if fName:
         but.setIcon(QtGui.QIcon(fName))
     but.setIconSize(QtCore.QSize(width,width))
-    but.clicked.connect(method)
+    if method:
+        but.clicked.connect(method)
     but.setMaximumWidth(width)
     but.setMaximumHeight(width)
     but.setToolTip(tooltip)
@@ -99,27 +105,27 @@ def fillTexture2d(data,tex = None):
     """
 
     if tex is None:
-        tex = glGenTextures(1)
+        tex = GL.glGenTextures(1)
 
-    glBindTexture(GL_TEXTURE_2D, tex)
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-    glTexParameterf (GL_TEXTURE_2D,
-                     GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameterf (GL_TEXTURE_2D,
-                     GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    GL.glBindTexture(GL.GL_TEXTURE_2D, tex)
+    GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT,1)
+    GL.glTexParameterf (GL.GL_TEXTURE_2D,
+                     GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+    GL.glTexParameterf (GL.GL_TEXTURE_2D,
+                     GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
 
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+    GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
 
     if data.ndim == 2:
         Ny,Nx = data.shape
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
-                     0, GL_RED, GL_FLOAT, data.astype(np.float32))
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGB, Nx, Ny,
+                     0, GL.GL_RED, GL.GL_FLOAT, data.astype(np.float32))
 
     elif data.ndim == 3 and data.shape[2]==3:
         Ny,Nx = data.shape[:2]
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Nx, Ny,
-                         0, GL_RGB, GL_FLOAT, data.astype(np.float32))
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGB, Nx, Ny,
+                         0, GL.GL_RGB, GL.GL_FLOAT, data.astype(np.float32))
 
     else:
         raise Exception("data format not supported! \ndata.shape should be either (Ny,Nx) or (Ny,Nx,3)")

@@ -6,7 +6,6 @@ from PyQt4 import QtOpenGL
 from OpenGL import GLU
 from OpenGL.GL import *
 
-from PyOCL import *
 from volume_render import *
 import SpimUtils
 
@@ -22,6 +21,8 @@ quatRot = array([1,0,0,0])
 zoomVal = 1.
 isAppRunning = True
 isSocket = False
+
+
 
 
 def getEggData(s):

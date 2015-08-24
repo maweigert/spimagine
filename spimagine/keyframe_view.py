@@ -15,7 +15,7 @@ from PyQt4.QtGui import *
 
 from keyframe_model import KeyFrame, KeyFrameList
 
-
+from collections import OrderedDict 
 
 from data_model import DataModel, DemoData
 from transform_model import TransformModel
@@ -198,7 +198,6 @@ class KeyNode(QGraphicsItem):
             # self.keyList[self.ID].tFrame = tFrame
 
             self.keyList.update_pos(self.ID, tpos)
-            print self.keyList
             self.setPos(pos)
             for edge in self.edgeList:
                 edge.adjust()
@@ -230,6 +229,8 @@ class KeyNode(QGraphicsItem):
         # self.graph.resetScene()
 
 
+    def showProperties(self):
+        QMessageBox.about(None, "KeyFrame", str(self.keyList[self.ID]))
 
 
     def updateTransformData(self):
@@ -242,8 +243,11 @@ class KeyNode(QGraphicsItem):
         self.transformModel.fromTransformData(self.keyList[self.ID].transformData)
 
     def contextMenuEvent(self, contextEvent):
-        actionMethods = {"delete" : self.delete, "update" : self.updateTransformData}
-        actions = {}
+        actionMethods = OrderedDict((("update",self.updateTransformData),
+                                     ("delete",self.delete),
+                                     ("properties" ,self.showProperties)))
+
+        actions = OrderedDict()
 
         object_cntext_Menu = QMenu()
         for k, meth in actionMethods.iteritems():
@@ -441,22 +445,6 @@ class KeyListView(QGraphicsView):
 
 
 
-class RecordThread(QThread):
-    notifyProgress = pyqtSignal(int)
-    def __init__(self,glWidget,keyView):
-        super(RecordThread,self).__init__()
-        self.glWidget = glWidget
-        self.keyView = keyView
-
-    def run(self):
-        for i in range(100):
-            logger.debug("thread: %s",i )
-            trans = self.keyView.keyList.getTransform(1.*i/100.)
-            self.keyView.transformModel.fromTransformData(trans)
-            self.notifyProgress.emit(i)
-            self.glWidget.saveFrame("output.png")
-            sleep(0.1)
-
 class KeyFramePanel(QWidget):
     _keyTimeChanged = pyqtSignal(float)
 
@@ -483,7 +471,6 @@ class KeyFramePanel(QWidget):
 
         self.playButton = QPushButton("",self)
         self.playButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
         self.playButton.setIconSize(QSize(24,24))
         self.playButton.clicked.connect(self.onPlay)
@@ -499,8 +486,18 @@ class KeyFramePanel(QWidget):
         self.recordButton.setMaximumWidth(24)
         self.recordButton.setMaximumHeight(24)
 
+        self.distributeButton = QPushButton("",self)
+        self.distributeButton.setToolTip("distribute data times according to keyframes")
+        self.distributeButton.setStyleSheet("background-color: black; color:black")
+        self.distributeButton.setIcon(QIcon(absPath("images/icon_distribute.png")))
+        self.distributeButton.setIconSize(QSize(24,24))
+        self.distributeButton.clicked.connect(self.onDistribute)
+        self.distributeButton.setMaximumWidth(24)
+        self.distributeButton.setMaximumHeight(24)
+
         self.saveButton = QPushButton("",self)
-        self.saveButton.setStyleSheet("background-color: black")
+        self.saveButton.setToolTip("save keyframes as json")
+        self.saveButton.setStyleSheet("background-color: black; color:black")
         # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.saveButton.setIcon(QIcon(absPath("images/icon_save.png")))
         self.saveButton.setIconSize(QSize(24,24))
@@ -517,16 +514,12 @@ class KeyFramePanel(QWidget):
         self.trashButton.setMaximumWidth(24)
         self.trashButton.setMaximumHeight(24)
 
-        self.progressBar = QProgressBar(self)
-        self.progressBar.setRange(0,100)
-        # self.recordThread = RecordThread(self.glWidget,self.keyView)
-        # self.recordThread.notifyProgress.connect(self.onRecordProgress)
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setTickPosition(QSlider.TicksBothSides)
         self.slider.setTickInterval(1)
         self.slider.setFocusPolicy(Qt.ClickFocus)
-        self.slider.setTracking(True)
+        self.slider.setTracking(False)
 
         self.slider.setRange(0,100)
         self.slider.setStyleSheet("height: 12px; border = 0px;")
@@ -537,17 +530,23 @@ class KeyFramePanel(QWidget):
 
         hbox.addWidget(self.playButton)
         hbox.addWidget(self.recordButton)
+        hbox.addWidget(self.distributeButton)
         hbox.addWidget(self.saveButton)
+
         hbox.addWidget(self.trashButton)
         hbox.addWidget(self.keyView)
 
         vbox = QVBoxLayout()
-        # vbox.addWidget(self.keyView)
-        # vbox.addWidget(self.progressBar)
         vbox.addLayout(hbox)
         vbox.addWidget(self.slider)
 
-        # self._keyTimeChanged.connect(lambda x:self.slider.setValue(int(100*x)))
+        def _set_value_without_emitting(val):
+            old = self.slider.blockSignals(True)
+            self.slider.setValue(int(100*val))
+            self.slider.blockSignals(old)
+            
+        self._keyTimeChanged.connect(_set_value_without_emitting)
+        
         self.slider.valueChanged.connect(lambda x:self.setKeyTime(x/100.))
 
         self.setLayout(vbox)
@@ -583,6 +582,15 @@ class KeyFramePanel(QWidget):
             self.playTimer.start()
             self.playButton.setIcon(QIcon(absPath("images/icon_pause.png")))
 
+
+    def onDistribute(self,e):
+        if self.keyView.transformModel:
+            pos1 = self.keyView.keyList.getTransform(0).dataPos
+            pos2 = self.keyView.keyList.getTransform(1.).dataPos
+            self.keyView.keyList.distribute(pos1, pos2)
+            # self.keyView.keyList.distribute()
+
+            
     def onRecord(self,evt):
         if self.recordTimer.isActive():
             self.recordTimer.stop()
@@ -607,11 +615,9 @@ class KeyFramePanel(QWidget):
             self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
             return
 
+        self.setKeyTime(1.*self.recordPos/self.nFrames)
 
-        trans = self.keyView.keyList.getTransform(1.*self.recordPos/self.nFrames)
-        self.keyView.transformModel.fromTransformData(trans)
         self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
-        self.progressBar.setValue(100*self.recordPos/self.nFrames)
 
 
 
@@ -621,10 +627,6 @@ class KeyFramePanel(QWidget):
 
         if self.keyView.transformModel:
             self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
-
-            print self.keyView.keyList.getTransform(newTime)
-
-
 
 
         self._keyTimeChanged.emit(self.t)

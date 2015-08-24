@@ -15,6 +15,7 @@ email: mweigert@mpi-cbg.de
 import logging
 logger = logging.getLogger(__name__)
 
+
 import os
 import numpy as np
 from PyQt4 import QtCore
@@ -200,7 +201,9 @@ class TiffFolderData(GenericData):
             self.fNames = glob.glob(os.path.join(fName,"*.tif"))
             if len(self.fNames) == 0:
                 raise Exception("folder %s seems to be empty"%fName)
-
+            else:
+                self.fNames.sort()
+            
             try:
                 _tmp = imgutils.read3dTiff(self.fNames[0])
                 self.stackSize = (len(self.fNames),)+ _tmp.shape
@@ -371,6 +374,8 @@ class DataLoadThread(QtCore.QThread):
     def run(self):
         self.stopped = False
         while not self.stopped:
+            self._rwLock.lockForWrite()
+
             kset = set(self.data.keys())
             dkset = kset.difference(set(self.nset))
             dnset = set(self.nset).difference(kset)
@@ -378,6 +383,8 @@ class DataLoadThread(QtCore.QThread):
             for k in dkset:
                 del(self.data[k])
 
+            self._rwLock.unlock()
+            
             if dnset:
                 logger.debug("preloading %s", list(dnset))
                 for k in dnset:
@@ -388,6 +395,8 @@ class DataLoadThread(QtCore.QThread):
                     logger.debug("preload: %s",k)
                     time.sleep(.0001)
 
+            # print "load thead dict length: ", len(self.data.keys())
+            
             time.sleep(.0001)
 
 
@@ -401,6 +410,8 @@ class DataModel(QtCore.QObject):
     _rwLock = QtCore.QReadWriteLock()
 
     def __init__(self, dataContainer = None, prefetchSize = 0):
+        assert prefetchSize>=0
+        
         super(DataModel,self).__init__()
         self.dataLoadThread = DataLoadThread(self._rwLock)
         self._dataSourceChanged.connect(self.dataSourceChanged)
@@ -417,14 +428,13 @@ class DataModel(QtCore.QObject):
     def setContainer(self,dataContainer = None, prefetchSize = 0):
         self.dataContainer = dataContainer
         self.prefetchSize = prefetchSize
-        self.nset = []
+        self.nset = [0]
         self.data = defaultdict(lambda: None)
 
         if self.dataContainer:
-            if prefetchSize > 0:
-                self.stopDataLoadThread()
-                self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
-                self.dataLoadThread.start(priority=QtCore.QThread.LowPriority)
+            self.stopDataLoadThread()
+            self.dataLoadThread.load(self.nset,self.data, self.dataContainer)
+            self.dataLoadThread.start(priority=QtCore.QThread.LowPriority)
             self._dataSourceChanged.emit()
             self.setPos(0)
 
@@ -478,20 +488,24 @@ class DataModel(QtCore.QObject):
     def __getitem__(self,pos):
         # self._rwLock.lockForRead()
         if not hasattr(self,"data"):
+            print "something is wrong in datamodel as its lacking a 'data' atttribute!"
             return None
 
+
+        # switching of the prefetched version for now...
+        # as for some instances there seems to be a race condition still
+        
         if not self.data.has_key(pos):
             newdata = self.dataContainer[pos]
             self._rwLock.lockForWrite()
             self.data[pos] = newdata
             self._rwLock.unlock()
 
-
-
-        if self.prefetchSize > 0:
-            self.prefetch(pos)
+        self.prefetch(pos)
 
         return self.data[pos]
+
+        # return self.dataContainer[pos]
 
 
 
@@ -513,7 +527,7 @@ class DataModel(QtCore.QObject):
             if os.path.exists(os.path.join(fName,"metadata.txt")):
                 self.setContainer(SpimData(fName),prefetchSize)
             else:
-                self.setContainer(TiffFolderData(fName),prefetchSize = 0)            
+                self.setContainer(TiffFolderData(fName),prefetchSize = prefetchSize)            
 
 
 
@@ -607,6 +621,8 @@ if __name__ == '__main__':
     # test_frompath()
 
 
-    d = TiffFolderData("/Users/mweigert/python/bpm_projects/retina/mie_compare/output_dn")
+    d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize= 0)
 
-    print d[0].shape
+    for i in np.random.randint(0,d.sizeT(),100):
+        print i
+        a = d[i]
