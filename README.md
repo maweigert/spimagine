@@ -16,10 +16,9 @@ A working OpenCL environment
 * Linux
 	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
-	```
+	```bash
 	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
 	```
-
 
 	
 
