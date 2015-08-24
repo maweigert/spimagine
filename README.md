@@ -86,10 +86,11 @@ volshow(data)       #render the data
 
 the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
 
-```opencldevice = 0
-   max_steps  = 200
-   width = 600
-   colormap = hot
+```
+opencldevice = 0
+max_steps  = 200
+width = 600
+colormap = hot
 ```
 
 ### setting the GPU to be used:
