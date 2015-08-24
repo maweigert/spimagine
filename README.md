@@ -42,7 +42,7 @@ A working OpenCL environment
 
 	or the developmental branch
 	```
-	pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
+	pip install --user git+https://github.com/maweigert/spimagine@develop
 	```
 	
 * Linux
