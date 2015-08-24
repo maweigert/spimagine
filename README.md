@@ -7,8 +7,24 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 ## Requirements
 
+A working OpenCL environment
+
+### Mac
+
+should be provided by default :)
+
+### Linux
+
 
 ## Installing
+
+e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
+
+```
+apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+```
+
+
 
 ### Mac
 
