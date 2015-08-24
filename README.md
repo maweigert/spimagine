@@ -27,7 +27,7 @@ or the developmental branch
 
 > pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
 
-#### as app bundle
+#### as app bundle [currently not working :( ]
 
 just find the dmg in the download section, open and drag to Applications
 The app essentially bundles all dependencies and extracts them on the fly  so startup might be slow
