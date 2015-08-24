@@ -24,23 +24,43 @@ from PyQt4 import QtGui
 
 import argparse
 
+import logging
 
-from spimagine.gui_mainwidget import MainWidget
-from spimagine.data_model import DemoData, DataModel
-
-
+    
 def main():
 
     parser = argparse.ArgumentParser(description='spimagine rendering application ')
-    parser.add_argument('fname', metavar='fname', type=str, nargs='?',
-                        help='the file/folder to open (e.g. tif, folder of tif) ', default = None)
-    parser.add_argument('-p', dest='prefetch', type = int,
-                    default=0,
+    parser.add_argument('fname',
+                        type=str,
+                        nargs='?',
+                        help='the file/folder to open (e.g. tif, folder of tif) ',
+                        default = None)
+    
+    parser.add_argument('-p',
+                        dest='prefetch',
+                        type = int,
+                        default=0,
                         help='prefetch size (should not be negative, e.g. -p 2)')
 
-    args = parser.parse_args()
-    print args.fname, args.prefetch
-    
+    parser.add_argument('-D',
+                        action='store_true',
+                        help = "output DEBUG messages")
+
+    try:
+        args = parser.parse_args()
+    except:
+        parser.print_help()
+        sys.exit(0)
+
+
+    from spimagine.gui_mainwidget import MainWidget
+    from spimagine.data_model import DemoData, DataModel
+        
+        
+    if args.D:
+        logger = logging.getLogger("spimagine")
+        logger.setLevel(logging.DEBUG)
+
     app = QtGui.QApplication(sys.argv)
 
     if sys.platform.startswith("win"):

@@ -6,8 +6,9 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)
 
+
+print "phhhh:",__name__, logger.name
 
 
 global __OPENCLDEVICE__
@@ -43,35 +44,17 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
             logger.info("from config file: %s = %s "%(key,val))
             return val
         except Exception as e:
-            print e
+            logger.info("%s (%s)"%(e,key))
             return defaultValue
         
         
     
+__spimagine_config_parser = MyConfigParser(__CONFIGFILE__)
 
-
-
-# try:
-#     __spimagine_config_parser = MyConfigParser(__CONFIGFILE__,{"opencldevice":"0","colormap":"coolwarm"})
-#     __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
-#     __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
-# except:
-#     __OPENCLDEVICE__ = 0
-#     __DEFAULTCOLORMAP__ = "coolwarm"
-
-__spimagine_config_parser = MyConfigParser(__CONFIGFILE__,
-                                           {
-                                               "opencldevice":"0",
-                                               "colormap":"matlab",
-                                               "width":"800",
-                                               "max_steps":"200"
-                                           }
-                                       )
-
-__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice"))
-__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap")
-__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width"))
-__DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps"))
+__OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
+__DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","viridis")
+__DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
+__DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps",200))
 
 
 
@@ -124,26 +107,13 @@ def setOpenCLDevice(num):
     __OPENCLDEVICE__ = num
 
 
-
-
-
-# from spimagine.volume_render import VolumeRenderer
-
-
-
-from data_model import SpimData, TiffData, NumpyData
+from data_model import SpimData, TiffData, TiffFolderData, NumpyData
 
 from imgutils import read3dTiff, write3dTiff
 
 
 from volshow import volshow, volfig, TimeData
 
-# from imgtools import denoise_filter2,denoise_filter3
-# this should not be in the develop
-# import sys
-# sys.path.append("/Users/mweigert/python/deconv_new")
-# from rl_deconv import deconv_RL
-# from tv_deconv import deconv_tv3_gpu
 
 
 #this should fix an annoying file url drag drop bug in mac yosemite

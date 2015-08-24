@@ -4,7 +4,7 @@ Implements generic classes for processing of volumetric data
 
 import sys
 import numpy as np
-import PyOCL
+import gputools
 
 
 
@@ -52,7 +52,7 @@ class BlurProcessor(ImageProcessor):
         h = np.exp(-4.*x**2)
         h *= 1./sum(h)
         print "datatype: ",data.dtype
-        return imgtools.convolve_sep3(data, h, h, h)
+        return gputools.convolve_sep3(data, h, h, h)
 
 class NoiseProcessor(ImageProcessor):
 
@@ -70,9 +70,9 @@ class FFTProcessor(ImageProcessor):
 
     def apply(self,data):
         #normalized fft
-        res = 1./np.sqrt(data.size)*np.fft.fftshift(abs(imgtools.ocl_fft(imgtools.pad_to_power2(data,mode="wrap"))))
-        res = imgtools.pad_to_shape(res,data.shape)
-
+        # res = 1./np.sqrt(data.size)*np.fft.fftshift(abs(imgtools.ocl_fft(imgtools.pad_to_power2(data,mode="wrap"))))
+        # res = imgtools.pad_to_shape(res,data.shape)
+        res = 1.*data
         if self.log:
             return np.log2(0.001+res)
         else:
@@ -88,16 +88,16 @@ class LucyRichProcessor(ImageProcessor):
         self.hshape = (1,)*3
 
     def reset_psf(self,dshape):
-        self.h = imgtools.blur_psf(dshape,self.rad)
-
+        # self.h = imgtools.blur_psf(dshape,self.rad)
+        pass
 
     def apply(self,data):
         if self.hshape != data.shape or self.rad != self.rad0:
             self.reset_psf(data.shape)
             self.rad0 = self.rad
 
-
-        return lucy_richardson_gpu.lucy_richardson(data, self.h,self.niter)
+        return data
+        # return lucy_richardson_gpu.lucy_richardson(data, self.h,self.niter)
 
 
 class FuncProcessor(ImageProcessor):
