@@ -105,7 +105,7 @@ def setOpenCLDevice(num):
     __OPENCLDEVICE__ = num
 
 
-from data_model import SpimData, TiffData, TiffFolderData, NumpyData
+from data_model import DemoData, SpimData, TiffData, TiffFolderData, NumpyData
 
 from imgutils import read3dTiff, write3dTiff
 
