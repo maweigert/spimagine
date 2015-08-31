@@ -8,10 +8,10 @@ from collections import OrderedDict
 
 import spimagine
 
-from spimagine.gui_mainwidget import MainWidget
+from spimagine.gui.gui_mainwidget import MainWidget
 
 
-from spimagine.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
+from spimagine.datamodel.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
