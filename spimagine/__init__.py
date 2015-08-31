@@ -57,7 +57,7 @@ __DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps",200))
 
 
 
-from spimagine.gui_utils import arrayFromImage
+from spimagine.gui.gui_utils import arrayFromImage
 
 
 def absPath(myPath):
@@ -84,7 +84,7 @@ def _load_colormaps():
     try:
         basePath = sys._MEIPASS
     except:
-        basePath = absPath("colormaps/")
+        basePath = absPath("gui/colormaps/")
 
     reg = re.compile("cmap_(.*)\.png")
     for fName in os.listdir(basePath):
@@ -105,9 +105,9 @@ def setOpenCLDevice(num):
     __OPENCLDEVICE__ = num
 
 
-from data_model import SpimData, TiffData, TiffFolderData, NumpyData
+from datamodel.data_model import SpimData, TiffData, TiffFolderData, NumpyData
 
-from imgutils import read3dTiff, write3dTiff
+from utils.imgutils import read3dTiff, write3dTiff
 
 
 from volshow import volshow, volfig, TimeData

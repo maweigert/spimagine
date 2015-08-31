@@ -13,13 +13,12 @@ import math
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-# from keyframe_model import KeyFrame, KeyFrameList
-from test2 import KeyFrame, KeyFrameList
+from spimagine.keyframemodel.keyframe_model import KeyFrame, KeyFrameList
 
+from collections import OrderedDict 
 
-
-from data_model import DataModel, DemoData
-from transform_model import TransformModel
+from spimagine.datamodel.data_model import DataModel, DemoData
+from spimagine.transforms.transform_model import TransformModel
 
 from time import sleep, time
 
@@ -68,6 +67,7 @@ class KeyEdge(QGraphicsItem):
         self.source.addKeyEdge(self)
         self.dest.addKeyEdge(self)
         self.adjust()
+
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -147,6 +147,7 @@ class KeyNode(QGraphicsItem):
         else:
             self.setZValue(1)
         self.setToolTip("Keynode")
+        # self.updateTransformData()
 
     def addKeyEdge(self, edge):
         self.edgeList.append(edge)
@@ -181,7 +182,10 @@ class KeyNode(QGraphicsItem):
         painter.setPen(QPen(Qt.transparent, 0))
 
         # painter.drawEllipse(*self.shapeSize)
-        painter.drawRect(*self.shapeSize)
+        rect = QRect(*self.shapeSize)
+        # painter.drawRect(rect)
+        painter.drawRoundedRect(rect,70.,70.,mode=Qt.RelativeSize)
+
         # painter.drawPie(*(list(self.shapeSize)+[0,180*16]))
 
     def itemChange(self, change, value):
@@ -194,7 +198,6 @@ class KeyNode(QGraphicsItem):
             # self.keyList[self.ID].tFrame = tFrame
 
             self.keyList.update_pos(self.ID, tpos)
-            print self.keyList
             self.setPos(pos)
             for edge in self.edgeList:
                 edge.adjust()
@@ -223,18 +226,28 @@ class KeyNode(QGraphicsItem):
 
     def delete(self):
         self.keyList.removeItem(self.ID)
-        # self.graph.scene.removeItem(self)
+        # self.graph.resetScene()
+
+
+    def showProperties(self):
+        QMessageBox.about(None, "KeyFrame", str(self.keyList[self.ID]))
 
 
     def updateTransformData(self):
-        self.keyList[self.ID].transformData = self.transformModel.toTransformData()
+        if self.transformModel is None:
+            self.keyList[self.ID].transformData = TransformData()
+        else:
+            self.keyList[self.ID].transformData = self.transformModel.toTransformData()
 
     def setTransformData(self):
         self.transformModel.fromTransformData(self.keyList[self.ID].transformData)
 
     def contextMenuEvent(self, contextEvent):
-        actionMethods = {"delete" : self.delete, "update" : self.updateTransformData}
-        actions = {}
+        actionMethods = OrderedDict((("update",self.updateTransformData),
+                                     ("delete",self.delete),
+                                     ("properties" ,self.showProperties)))
+
+        actions = OrderedDict()
 
         object_cntext_Menu = QMenu()
         for k, meth in actionMethods.iteritems():
@@ -296,31 +309,54 @@ class KeyListView(QGraphicsView):
         self.relativeAspect = 1.
         self.isListening = True
 
-        # self.setTransformModel(TransformModel())
+        self.connect_to_transform(None)
+        self.setModel(KeyFrameList())
 
-        # self.setKeyListModel(KeyFrameList())
-
-        self.resetModels(TransformModel(),KeyFrameList())
-
-    def resetModels(self,transformModel,keyList= KeyFrameList):
-        self.keyList = keyList
-        logger.debug("resetModels, : keyList = %s"%self.keyList)
+    def connect_to_transform(self,transformModel):
         self.transformModel = transformModel
+
+    # def reset(self,transformModel):
+    #     self.keyList = KeyFrameList()
+
+    #     self.keyList.addItem(KeyFrame(0.))
+    #     self.keyList.addItem(KeyFrame(1.))
+
+    #     print self.keyList
+
+    #     logger.debug("reset, : keyList = %s"%self.keyList)
+    #     self.transformModel = transformModel
+    #     self.resetScene()
+    #     self.keyList._modelChanged.connect(self.modelChanged)
+
+
+    # def resetModels(self,transformModel,keyList= KeyFrameList):
+    #     self.keyList = keyList
+    #     logger.debug("resetModels, : keyList = %s"%self.keyList)
+    #     self.transformModel = transformModel
+    #     self.resetScene()
+    #     self.keyList._modelChanged.connect(self.modelChanged)
+
+    def setModel(self,keyList = KeyFrameList()):
+        logger.debug("setModel: %s",keyList)
+        self.keyList = keyList
         self.resetScene()
+        # for it in self.scene.items():
+        #     it.updateTransformData()
+
         self.keyList._modelChanged.connect(self.modelChanged)
 
-
-    def setKeyListModel(self,keyList):
-        self.keyList = keyList
-        self.resetScene()
-        self.keyList._modelChanged.connect(self.modelChanged)
+    # def setKeyListModel(self,keyList):
+    #     self.keyList = keyList
+    #     self.resetScene()
+    #     self.keyList._modelChanged.connect(self.modelChanged)
         # self.keyList._itemChanged.connect(self.itemChanged)
 
-    def setTransformModel(self,transformModel):
-        self.transformModel = transformModel
-        self.resetScene()
-        # self.keyList._modelChanged.connect(self.modelChanged)
-        # self.keyList._itemChanged.connect(self.itemChanged)
+
+    # def setTransformModel(self,transformModel):
+    #     self.transformModel = transformModel
+    #     self.resetScene()
+    #     # self.keyList._modelChanged.connect(self.modelChanged)
+    #     # self.keyList._itemChanged.connect(self.itemChanged)
 
     def resetScene(self):
         logger.debug("resetScene: %s",self.keyList)
@@ -331,6 +367,7 @@ class KeyListView(QGraphicsView):
 
 
     def modelChanged(self):
+        logger.debug("model Changed")
         self.resetScene()
 
 
@@ -339,7 +376,7 @@ class KeyListView(QGraphicsView):
 
     def itemMoved(self):
         pass
-    
+
     def keyPressEvent(self, event):
         key = event.key()
 
@@ -387,10 +424,13 @@ class KeyListView(QGraphicsView):
     def load_from_JSON(self,fName):
         with open(fName,"r") as f:
             try:
-                newKeyList = KeyFrameList._from_JSON(f.read())
-                self.setKeyListModel(newKeyList)
-            except:
+                k = KeyFrameList._from_JSON(f.read())
+                self.setModel(k)
+                
+            except Exception as e:
+                print e
                 print "not a valid keyframe json file: %s"%fName
+                
 
     def dropEvent(self, event):
         logger.debug("dropping...")
@@ -398,28 +438,12 @@ class KeyListView(QGraphicsView):
             event.accept()
             path = url.toLocalFile().toLocal8Bit().data()
 
-            if spimagine._SYSTEM_DARWIN_14:
+            if spimagine._SYSTEM_DARWIN_14_AND_FOUNDATION_:
                 path = spimagine._parseFileNameFix(path)
 
             self.load_from_JSON(path)
 
 
-
-class RecordThread(QThread):
-    notifyProgress = pyqtSignal(int)
-    def __init__(self,glWidget,keyView):
-        super(RecordThread,self).__init__()
-        self.glWidget = glWidget
-        self.keyView = keyView
-
-    def run(self):
-        for i in range(100):
-            logger.debug("thread: %s",i )
-            trans = self.keyView.keyList.getTransform(1.*i/100.)
-            self.keyView.transformModel.fromTransformData(trans)
-            self.notifyProgress.emit(i)
-            self.glWidget.saveFrame("output.png")
-            sleep(0.1)
 
 class KeyFramePanel(QWidget):
     _keyTimeChanged = pyqtSignal(float)
@@ -447,7 +471,6 @@ class KeyFramePanel(QWidget):
 
         self.playButton = QPushButton("",self)
         self.playButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
         self.playButton.setIconSize(QSize(24,24))
         self.playButton.clicked.connect(self.onPlay)
@@ -463,8 +486,18 @@ class KeyFramePanel(QWidget):
         self.recordButton.setMaximumWidth(24)
         self.recordButton.setMaximumHeight(24)
 
+        self.distributeButton = QPushButton("",self)
+        self.distributeButton.setToolTip("distribute data times according to keyframes")
+        self.distributeButton.setStyleSheet("background-color: black; color:black")
+        self.distributeButton.setIcon(QIcon(absPath("images/icon_distribute.png")))
+        self.distributeButton.setIconSize(QSize(24,24))
+        self.distributeButton.clicked.connect(self.onDistribute)
+        self.distributeButton.setMaximumWidth(24)
+        self.distributeButton.setMaximumHeight(24)
+
         self.saveButton = QPushButton("",self)
-        self.saveButton.setStyleSheet("background-color: black")
+        self.saveButton.setToolTip("save keyframes as json")
+        self.saveButton.setStyleSheet("background-color: black; color:black")
         # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
         self.saveButton.setIcon(QIcon(absPath("images/icon_save.png")))
         self.saveButton.setIconSize(QSize(24,24))
@@ -481,16 +514,12 @@ class KeyFramePanel(QWidget):
         self.trashButton.setMaximumWidth(24)
         self.trashButton.setMaximumHeight(24)
 
-        self.progressBar = QProgressBar(self)
-        self.progressBar.setRange(0,100)
-        # self.recordThread = RecordThread(self.glWidget,self.keyView)
-        # self.recordThread.notifyProgress.connect(self.onRecordProgress)
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setTickPosition(QSlider.TicksBothSides)
         self.slider.setTickInterval(1)
         self.slider.setFocusPolicy(Qt.ClickFocus)
-        self.slider.setTracking(True)
+        self.slider.setTracking(False)
 
         self.slider.setRange(0,100)
         self.slider.setStyleSheet("height: 12px; border = 0px;")
@@ -501,17 +530,23 @@ class KeyFramePanel(QWidget):
 
         hbox.addWidget(self.playButton)
         hbox.addWidget(self.recordButton)
+        hbox.addWidget(self.distributeButton)
         hbox.addWidget(self.saveButton)
+
         hbox.addWidget(self.trashButton)
         hbox.addWidget(self.keyView)
 
         vbox = QVBoxLayout()
-        # vbox.addWidget(self.keyView)
-        # vbox.addWidget(self.progressBar)
         vbox.addLayout(hbox)
         vbox.addWidget(self.slider)
 
-        # self._keyTimeChanged.connect(lambda x:self.slider.setValue(int(100*x)))
+        def _set_value_without_emitting(val):
+            old = self.slider.blockSignals(True)
+            self.slider.setValue(int(100*val))
+            self.slider.blockSignals(old)
+            
+        self._keyTimeChanged.connect(_set_value_without_emitting)
+        
         self.slider.valueChanged.connect(lambda x:self.setKeyTime(x/100.))
 
         self.setLayout(vbox)
@@ -521,15 +556,22 @@ class KeyFramePanel(QWidget):
         self.t = 0
 
 
+    def connect_to_transform(self, transform = TransformModel() ):
+        logger.debug("keyPanel.connect_to_transform\n")
+        self.keyView.connect_to_transform(transform)
 
-    def resetModels(self,transformModel,keyList=KeyFrameList()):
-        logger.debug("keyPanel.resetModel: keyList = %s\n"%keyList)
-        self.transformModel = transformModel
-        self.keyView.resetModels(transformModel,keyList)
+    def setModel(self,keyList=KeyFrameList()):
+        logger.debug("keyPanel.setModel: keyList = %s\n"%keyList)
+        self.keyView.setModel(keyList)
 
-    def setTransformModel(self,transformModel):
-        self.transformModel = transformModel
-        self.keyView.setTransformModel(transformModel)
+    # def resetModels(self,transformModel,keyList=KeyFrameList()):
+    #     logger.debug("keyPanel.resetModel: keyList = %s\n"%keyList)
+    #     self.transformModel = transformModel
+    #     self.keyView.resetModels(transformModel,keyList)
+
+    # def reset(self,transformModel):
+    #     self.transformModel = transformModel
+    #     self.keyView.reset(transformModel)
 
     def onPlay(self,evt):
         if self.playTimer.isActive():
@@ -540,6 +582,15 @@ class KeyFramePanel(QWidget):
             self.playTimer.start()
             self.playButton.setIcon(QIcon(absPath("images/icon_pause.png")))
 
+
+    def onDistribute(self,e):
+        if self.keyView.transformModel:
+            pos1 = self.keyView.keyList.getTransform(0).dataPos
+            pos2 = self.keyView.keyList.getTransform(1.).dataPos
+            self.keyView.keyList.distribute(pos1, pos2)
+            # self.keyView.keyList.distribute()
+
+            
     def onRecord(self,evt):
         if self.recordTimer.isActive():
             self.recordTimer.stop()
@@ -564,11 +615,9 @@ class KeyFramePanel(QWidget):
             self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
             return
 
+        self.setKeyTime(1.*self.recordPos/self.nFrames)
 
-        trans = self.keyView.keyList.getTransform(1.*self.recordPos/self.nFrames)
-        self.keyView.transformModel.fromTransformData(trans)
         self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
-        self.progressBar.setValue(100*self.recordPos/self.nFrames)
 
 
 
@@ -576,35 +625,15 @@ class KeyFramePanel(QWidget):
         self.t = np.clip(newTime,0,1.)
         logger.debug("set key time to %s"%self.t)
 
-        self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
+        if self.keyView.transformModel:
+            self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
+
 
         self._keyTimeChanged.emit(self.t)
 
 
     def onPlayTimer(self):
         self.setKeyTime((self.t+0.01)%1.)
-
-
-        # self.t = (self.t+0.01)%1.
-
-        # trans = self.keyView.keyList.getTransform(self.t)
-        # # print self.t,trans
-
-        # self.keyView.transformModel.fromTransformData(trans)
-
-
-        # print "TIME to set ", time()-self.a
-
-        # self.a = time()
-
-        # if self.glWidget.dataModel.pos == self.glWidget.dataModel.sizeT()-1:
-        #     self.playDir = 1-2*self.loopBounce
-        # if self.glWidget.dataModel.pos == 0:
-        #     self.playDir = 1
-
-        # newpos = (self.glWidget.dataModel.pos+self.playDir)%self.glWidget.dataModel.sizeT()
-        # self.glWidget.transform.setPos(newpos)
-        # self.glWidget.dataModel.setPos(newpos)
 
     def onSave(self):
         fName = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
@@ -613,38 +642,15 @@ class KeyFramePanel(QWidget):
 
 
     def onTrash(self):
-        self.keyView.setKeyListModel(KeyFrameList())
+        self.keyView.setModel(KeyFrameList())
 
     def save_to_JSON(self,fName):
         with open(fName,"w") as f:
             f.write(self.keyView.keyList._to_JSON())
 
     def load_from_JSON(self,fName):
-        with open(fName,"r") as f:
-            try:
-                newKeyList = KeyFrameList._from_JSON(f.read())
-                self.keyView.setKeyListModel(newKeyList)
-            except:
-                print "not a valid keyframe json file: %s"%fName
-
-
-    # def dragEnterEvent(self, event):
-    #     if event.mimeData().hasUrls():
-    #         event.accept()
-    #     else:
-    #         event.ignore()
-
-
-    # def dropEvent(self, event):
-
-    #     for url in event.mimeData().urls():
-    #         event.accept()
-    #         path = url.toLocalFile().toLocal8Bit().data()
-
-    #         if _SYSTEM_DARWIN_14:
-    #             path = spimagine._parseFileNameFix(path)
-
-    #         self.load_from_JSON(path)
+        self.keyView.load_from_JSON(fName)
+            
 
 class MainWindow(QMainWindow):
 
@@ -662,18 +668,22 @@ class MainWindow(QMainWindow):
         transModel = TransformModel()
         transModel.setModel(dataModel)
 
+        transModel.setValueScale(0,200)
         dataModel.setPos(2)
+        self.keyPanel.connect_to_transform(transModel)
 
-        self.keyPanel.keyView.setTransformModel(transModel)
 
         k = KeyFrameList()
-        k.addItem(KeyFrame(0.4))
-        # k.addItem(KeyFrame(0.9))
+        k.addItem(KeyFrame(0.1))
+        k.addItem(KeyFrame(0.9))
 
+        # k = KeyFrameList._from_JSON(open("test.json").read())
 
+        # print k
 
-        self.keyPanel.keyView.setKeyListModel(k)
+        # self.keyPanel.setModel(k)
 
+        self.keyPanel.load_from_JSON("test.json")
 
         self.setCentralWidget(self.keyPanel)
 
@@ -684,6 +694,7 @@ class MainWindow(QMainWindow):
     #     newSize = event.size()
     #     newSize.setHeight(10)
     #     self.resize(newSize)
+
 
 
 class FooWidget(QWidget):
