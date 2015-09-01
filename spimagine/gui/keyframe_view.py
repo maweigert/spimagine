@@ -13,14 +13,14 @@ import math
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from keyframe_model import KeyFrame, KeyFrameList
+from time import sleep, time
 
 from collections import OrderedDict 
 
-from data_model import DataModel, DemoData
-from transform_model import TransformModel
+from spimagine.models.keyframe_model import KeyFrame, KeyFrameList
+from spimagine.models.data_model import DataModel, DemoData
+from spimagine.models.transform_model import TransformModel
 
-from time import sleep, time
 
 import spimagine
 

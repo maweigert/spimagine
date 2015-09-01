@@ -9,11 +9,11 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 
-from spimagine.floatslider import FloatSlider
-
 import numpy as np
 
-from gui_utils import createStandardCheckbox,createStandardButton
+from spimagine.gui.floatslider import FloatSlider
+
+from spimagine.gui.gui_utils import createStandardCheckbox,createStandardButton
 
 import spimagine
 

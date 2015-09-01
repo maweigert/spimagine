@@ -58,7 +58,7 @@ __DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps",200))
 
 
 
-from spimagine.gui_utils import arrayFromImage
+from spimagine.gui.utils import arrayFromImage
 
 
 def absPath(myPath):
@@ -106,12 +106,12 @@ def setOpenCLDevice(num):
     __OPENCLDEVICE__ = num
 
 
-from data_model import DemoData, SpimData, TiffData, TiffFolderData, NumpyData
+from spimagine.models.data_model import DemoData, SpimData, TiffData, TiffFolderData, NumpyData
 
-from imgutils import read3dTiff, write3dTiff
+from spimagine.utils.imgutils import read3dTiff, write3dTiff
 
 
-from volshow import volshow, volfig, TimeData
+from spimagine.gui.volshow import volshow, volfig, TimeData
 
 
 

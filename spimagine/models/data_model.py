@@ -29,7 +29,7 @@ import glob
 
 from collections import defaultdict
 
-import spimagine.imgutils as imgutils
+import spimagine.utils.imgutils as imgutils
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
