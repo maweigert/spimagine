@@ -50,7 +50,7 @@ from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
 
 from gputools.core.config import cl_datatype_dict
 
-import spimagine.transform_matrices as transmat
+import spimagine.utils.transform_matrices as transmat
 
 
 def absPath(myPath):

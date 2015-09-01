@@ -18,35 +18,35 @@ import sys
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from spimagine.quaternion import Quaternion
-from spimagine.gui_glwidget import GLWidget
+from spimagine.utils.quaternion import Quaternion
+from spimagine.gui.glwidget import GLWidget
 
-from spimagine.keyframe_model import KeyFrameList, KeyFrame
+from spimagine.models.keyframe_model import KeyFrameList, KeyFrame
 
-from spimagine.keyframe_view import KeyFramePanel
-from spimagine.gui_mainsettings import MainSettingsPanel
-from spimagine.gui_volsettings import VolumeSettingsPanel
+from spimagine.gui.keyframe_view import KeyFramePanel
+from spimagine.gui.mainsettings import MainSettingsPanel
+from spimagine.gui.volsettings import VolumeSettingsPanel
 
-from spimagine.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-
-
-from spimagine.gui_slice_view import SliceWidget
+from spimagine.models.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 
 
-from spimagine.imageprocessor_view import ImageProcessorListView
-
-import spimagine.egg3d as egg3d
-from spimagine.imageprocessor import *
+from spimagine.gui.slice_view import SliceWidget
 
 
-from spimagine.floatslider import FloatSlider
+from spimagine.gui.imageprocessor_view import ImageProcessorListView
 
-from spimagine.transform_model import TransformModel
+import spimagine.utils.egg3d as egg3d
+from spimagine.models.imageprocessor import *
 
 
-from spimagine.gui_utils import  createStandardCheckbox,createStandardButton
+from spimagine.gui.floatslider import FloatSlider
 
-from spimagine.imgutils import write3dTiff
+from spimagine.models.transform_model import TransformModel
+
+
+from spimagine.gui.gui_utils import  createStandardCheckbox,createStandardButton
+
+from spimagine.utils.imgutils import write3dTiff
 
 # from spimagine.jack_plugin import JackPlugin
 

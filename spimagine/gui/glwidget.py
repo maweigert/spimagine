@@ -54,16 +54,16 @@ from OpenGL.GL import shaders
 
 import spimagine
 
-from spimagine.volume_render import VolumeRenderer
+from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.utils.transform_matrices import *
+from spimagine.utils.transform_model import TransformModel
 
-from spimagine.transform_matrices import *
-from spimagine.data_model import DataModel
+from spimagine.models.data_model import DataModel
 
 
-from spimagine.transform_model import TransformModel
 
 import numpy as np
-from spimagine.gui_utils import *
+from spimagine.gui.utils import *
 
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
@@ -73,7 +73,7 @@ else:
     from numpy import linalg
 
 import time
-from spimagine.quaternion import Quaternion
+from spimagine.utils.quaternion import Quaternion
 
 # from spimagine.shaders import vertShaderTex, fragShaderTex, vertShaderCube, fragShaderCube
 
