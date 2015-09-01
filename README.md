@@ -5,95 +5,103 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 [![Alt text for your video](poster_vimeo.png)](https://vimeo.com/126597994)
 
+## Requirements
+
+A working OpenCL environment
+
+* Mac
+
+	should be provided by default :)
+
+* Linux
+	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
+
+	```bash
+	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+	```
+
+	
+
 ## Installing
 
-### Mac
-
-#### as app bundle
-
-just find the dmg in the download section, open and drag to Applications
-
-you wanna install libtiff to speed up opening of tiff files   
-> brew install libtiff
-
-The app essentially bundles all dependencies and extracts them on the fly  so startup might be slow
-
-#### as python package
-  
-On Mac, clang might complain about non supported compiler flags, a quick fix to which is
-
-> export CFLAGS=-Qunused-arguments
-
-> export CPPFLAGS=-Qunused-arguments
 
 
-install PyQt4, e.g. with homebrew:
-> brew install pyqt
+* Mac
 
-install libtiff (optional)
-> brew install libtiff
+	install PyQt4, e.g. with homebrew:
+	```
+	brew install pyqt
+	```
 
+	then with pip
+	```
+	pip install --user git+https://github.com/maweigert/gputools
+	pip install --user git+https://github.com/maweigert/spimagine
+	```
 
-then with pip
+	or the developmental branch
+	```
+	pip install --user git+https://github.com/maweigert/spimagine@develop
+	```
+	
+* Linux
 
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/pyocl
+	```
+	apt-get install python-qt4 python-qt4-gl
 
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine
-
-or the developmental branch
-
-> pip install --user git+http://mweigert@bitbucket.org/mweigert/spimagine@develop
-
+	pip install --user git+https://github.com/maweigert/gputools
+	pip install --user git+https://github.com/maweigert/spimagine
+	```
 
 ## Usage
 
 ### Gui Application
 
-Run the  Qt Gui Application to render 3d/4d Data either via  
+pip should install the standalone viewer in the local bin folder (e.g. "~/.local/bin" on Linux), run it from the command line like that
 
+```
+spimagine [input]
+```
 
-> python -m spimagine
-
-or via the app bundle in the binary folder (currently only for Mac OSX 10.9) 
-
-> SpImagine.app
-
-
-Right now the following formats are supported
+Right now the following formats are supported as input 
 
 - tiff files
+- a folder containing tiff files
 - 16 bit unsigned raw data in the format used by the Myers Group at mpi-cbg
-
-### Command line
-
-> spimagine_render -h
-
-list the options for the command line tool
-
 
 
 ### interactive usage
 
 the package provides interactive visualisation to be used e.g. within IPython
 
-    :::python 
-	from spimagine import volshow, volfig
+```python 
+from spimagine import volshow, volfig
 
-	data = ...          #3d or 4d numpy array
+data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
 	
-	volfig(0)           #optional: similar behaviour like matplotlib.figure, e.g. can be omitted
-	
-	volshow(data)       #render the data
+volshow(data)       #render the data
+````
+
+### basic configuration 
+
+the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
+
+```
+opencldevice = 0
+max_steps  = 200
+width = 600
+colormap = hot
+```
 
 ### setting the GPU to be used:
 
 interactively:
 
-    :::python 
-	import spimagine 
-	spimagine.setOpenCLDevice(1)  #optional: set the GPU to use
+```python 
+	import gputools
+	gputools.init_device(useDevice = 1)
+```
 
-
-or put a config file ".spimagine" in your home folder
+or in the config file ".spimagine" in your home folder
 
     OPENCLDEVICE = 1

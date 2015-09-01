@@ -44,18 +44,17 @@ class CopyProcessor(ImageProcessor):
 
 class BlurProcessor(ImageProcessor):
 
-    def __init__(self,size = 7):
-        super(BlurProcessor,self).__init__("blur",size = size)
+    def __init__(self,sigma = 4.):
+        super(BlurProcessor,self).__init__("blur",sigma = sigma)
 
     def apply(self,data):
-        x = np.linspace(-1.,1.,self.size)
-        h = np.exp(-4.*x**2)
+        N  = 2*self.sigma+1
+        x = np.arange(-N,N+1)
+        h = np.exp(-x**2/2./self.sigma**2)
         h *= 1./sum(h)
-        print "datatype: ",data.dtype
         return gputools.convolve_sep3(data, h, h, h)
 
 class NoiseProcessor(ImageProcessor):
-
     def __init__(self,sigma = 10):
         super(NoiseProcessor,self).__init__("noise",sigma = sigma)
 
@@ -69,10 +68,14 @@ class FFTProcessor(ImageProcessor):
         self.log = log
 
     def apply(self,data):
-        #normalized fft
-        # res = 1./np.sqrt(data.size)*np.fft.fftshift(abs(imgtools.ocl_fft(imgtools.pad_to_power2(data,mode="wrap"))))
-        # res = imgtools.pad_to_shape(res,data.shape)
-        res = 1.*data
+        dshape = data.shape
+        
+        res = gputools.pad_to_power2(data.astype(np.complex64), mode = "wrap")
+
+        res = 1./np.sqrt(res.size)*np.fft.fftshift(abs(gputools.fft(res)))
+        
+        res = gputools.pad_to_shape(res,dshape)
+        
         if self.log:
             return np.log2(0.001+res)
         else:
