@@ -12,10 +12,11 @@ def addAll(folderPath,attrib = "Data", prefix = ""):
 
 
 a = Analysis(['../spimagine/spimagine_gui.py'],
-             pathex=['/Users/mweigert/python/spimagine/spimagine',
-                     '/Library/Python/2.7/site-packages/libtiff'],
+             pathex=['/Users/mweigert/python/spimagine/spimagine'],
              hiddenimports=[
                  'scipy.special._ufuncs_cxx',
+                 'scipy.linalg.cython_blas',
+                 'scipy.linalg.cython_lapack',
                  "pyfft"],
              hookspath=None,
              runtime_hooks=None)
@@ -28,20 +29,15 @@ a.datas += addAll("../spimagine/images")
 a.datas += addAll("../spimagine/colormaps")
 
 
-a.datas += addAll("/Users/mweigert/python/imgtools/imgtools/convolve/kernels")
-a.datas += addAll("/Users/mweigert/python/imgtools/imgtools/convolve/kernels")
-
+a.datas += addAll("/Users/mweigert/python/gputools/gputools/convolve/kernels")
+a.datas += addAll("/Users/mweigert/python/gputools/gputools/transforms/kernels")
 a.datas += addAll("/Users/mweigert/python/pyopencl/build/lib.macosx-10.9-x86_64-2.7/pyopencl/cl")
 
 
-
-
-a.datas += [("lucy_richardson.cl","/Users/mweigert/python/Deconvolution/lucy_richardson.cl","Data")]
+# a.datas += [("lucy_richardson.cl","/Users/mweigert/python/Deconvolution/lucy_richardson.cl","Data")]
 
 
 # include the libtiff dylib and all the py files (work around)
-a.datas += addAll("/Library/Python/2.7/site-packages/libtiff")
-
 a.datas += addAll("/Library/Python/2.7/site-packages/pyfft", prefix="pyfft/")
 
 print a.datas
