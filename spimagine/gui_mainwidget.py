@@ -668,6 +668,7 @@ class MainWidget(QtGui.QWidget):
             
             # self.glWidget.setParent(None)
             # free the gpu resources....
+            logger.debug("deleteing the renderer")
             del self.glWidget.renderer
             event.accept()
 

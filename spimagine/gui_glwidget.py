@@ -677,6 +677,21 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
 
+    def getFrame(self):
+        self.render()
+        self.paintGL()
+        glFlush()
+        im = self.grabFrameBuffer()
+        im = im.convertToFormat(QtGui.QImage.Format_RGB32)
+
+        width = im.width()
+        height = im.height()
+
+        ptr = im.bits()
+        ptr.setsize(im.byteCount())
+        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
+        return arr[...,[2,1,0,3]].copy()
+
 
     def saveFrame(self,fName):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""

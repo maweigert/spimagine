@@ -248,8 +248,6 @@ class TransformModel(QtCore.QObject):
         return modelView
 
 
-
-
     def getUnscaledModelView(self):
         view  = mat4_translate(0,0,-self.cameraZ)
 
