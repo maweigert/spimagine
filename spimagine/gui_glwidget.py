@@ -727,20 +727,20 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.renderer.set_modelView(np.dot(
                 spimagine.transform_matrices.mat4_translate(
-                    self.transform.eye_dist_cam,0,0),
+                    -self.transform.eye_dist_cam,0,0),
                 self.transform.getUnscaledModelView()))
 
             self.renderer.set_projection(
-                mat4_stereo_perspective(60,1.,.1,100,self.transform.eye_dist_proj))
+                mat4_stereo_perspective(60,1.,.1,100,-self.transform.eye_dist_proj))
         
             self.output_left, self.output_alpha_left = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
             self.renderer.set_projection(
-                mat4_stereo_perspective(60,1.,.1,100,-self.transform.eye_dist_proj))
+                mat4_stereo_perspective(60,1.,.1,100,self.transform.eye_dist_proj))
 
             self.renderer.set_modelView(np.dot(
                 spimagine.transform_matrices.mat4_translate(
-                    -self.transform.eye_dist_cam,0,0),
+                    self.transform.eye_dist_cam,0,0),
                 self.transform.getUnscaledModelView()))
 
             self.output_right, self.output_alpha_right = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
