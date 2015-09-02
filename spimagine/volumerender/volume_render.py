@@ -46,12 +46,13 @@ from time import time
 
 
 import sys
-from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
 
+from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
 from gputools.core.config import cl_datatype_dict
 
-import spimagine.utils.transform_matrices as transmat
+from spimagine.utils.transform_matrices import *
 
+import spimagine
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -83,7 +84,7 @@ class VolumeRenderer:
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
             init_device(useGPU = True, 
-                                 useDevice = spimagine.__OPENCLDEVICE__)
+                                 useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -108,11 +109,11 @@ class VolumeRenderer:
                                  "-cl-fast-relaxed-math\
                                  -cl-unsafe-math-optimizations\
                                  -cl-mad-enable\
-                                 -D maxSteps=%s"%spimagine.__DEFAULTMAXSTEPS__)
+                                 -D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__)
 
         except:
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                 "-D maxSteps=%s"%spimagine.__DEFAULTMAXSTEPS__)
+                                 "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__)
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
@@ -683,6 +684,7 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
+    pass
     # test_simple()
     # test_speed(256)
 
@@ -697,12 +699,12 @@ if __name__ == "__main__":
     # ts = [[test_speed(128,w,n) for w in ws] for n in nums]
 
     
-    N= 64
-    d = np.linspace(0,1,N**3).reshape((N,)*3).astype(np.float32)
+    # N= 64
+    # d = np.linspace(0,1,N**3).reshape((N,)*3).astype(np.float32)
 
-    rend = VolumeRenderer((400,400))
-    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
-    rend.set_modelView(mat4_translate(0,0,5.))
+    # rend = VolumeRenderer((400,400))
+    # # rend.set_modelView(mat4_rotation(.5,0,1.,0))
+    # rend.set_modelView(mat4_translate(0,0,5.))
 
-    rend.set_data(d)
-    out = rend.render(maxVal = 1., method = "max_project_part")
+    # rend.set_data(d)
+    # out = rend.render(maxVal = 1., method = "max_project_part")

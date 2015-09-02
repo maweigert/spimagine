@@ -5,9 +5,9 @@ import numpy as np
 from PyQt4 import QtCore, QtGui, Qt
 from sortedcontainers import SortedDict
 
-import spimagine.models.imageprocessor as imageprocessor 
+from spimagine.models.imageprocessor import ImageProcessor
 
-from spimgine.gui import gui_utils
+from spimagine.gui import gui_utils
 
 class ImageFlow(QtCore.QObject):
     # _dataPosChanged = QtCore.pyqtSignal(int)

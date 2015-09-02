@@ -17,8 +17,12 @@ from time import sleep, time
 
 from collections import OrderedDict 
 
+
 from spimagine.models.keyframe_model import KeyFrame, KeyFrameList
 from spimagine.models.data_model import DataModel, DemoData
+
+
+
 from spimagine.models.transform_model import TransformModel
 
 
@@ -556,11 +560,17 @@ class KeyFramePanel(QWidget):
         self.t = 0
 
 
-    def connect_to_transform(self, transform = TransformModel() ):
+    def connect_to_transform(self, transform = None ):
+        if not transform:
+            transform = TransformModel()
+            
         logger.debug("keyPanel.connect_to_transform\n")
         self.keyView.connect_to_transform(transform)
 
-    def setModel(self,keyList=KeyFrameList()):
+    def setModel(self,keyList = None):
+        if not keyList:
+            keyList=KeyFrameList()
+            
         logger.debug("keyPanel.setModel: keyList = %s\n"%keyList)
         self.keyView.setModel(keyList)
 

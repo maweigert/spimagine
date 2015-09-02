@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import bisect
 from PyQt4 import QtCore
-from spimagine.quaternion import *
 import json
 import sortedcontainers
+
+from spimagine.utils.quaternion import *
 
 import spimagine
 
