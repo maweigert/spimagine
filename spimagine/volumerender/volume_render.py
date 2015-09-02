@@ -106,14 +106,21 @@ class VolumeRenderer:
 
         try:
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                 "-cl-fast-relaxed-math\
-                                 -cl-unsafe-math-optimizations\
-                                 -cl-mad-enable\
-                                 -D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__)
-
+                                   build_options = """-cl-fast-relaxed-math\
+                                   -cl-unsafe-math-optimizations\
+                                   -cl-mad-enable\
+                                   -I %s\
+                                   -D maxSteps=%s"""%(
+                                     absPath("kernels"),
+                                     spimagine.config.__DEFAULTMAXSTEPS__)
+                                   )
         except:
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                 "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__)
+                                   build_options = """-I %s\
+                                   -D maxSteps=%s"""%(
+                                           absPath("kernels"),
+                                           spimagine.config.__DEFAULTMAXSTEPS__)
+                                   )
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
@@ -419,50 +426,6 @@ class VolumeRenderer:
                             np.int32(self.dtype == np.uint16)
                             )
 
-        # if method=="iso_surface_new":
-        #     self.proc.run_kernel("iso_surface_new",
-        #                     (self.width,self.height),
-        #                     None,
-        #                     self.bufNormals.data,
-        #                     self.bufAlpha.data,
-        #                     np.int32(self.width),np.int32(self.height),
-        #                     np.float32(self.boxBounds[0]),
-        #                     np.float32(self.boxBounds[1]),
-        #                     np.float32(self.boxBounds[2]),
-        #                     np.float32(self.boxBounds[3]),
-        #                     np.float32(self.boxBounds[4]),
-        #                     np.float32(self.boxBounds[5]),
-        #                     np.float32(self.maxVal/2),
-        #                     np.float32(self.gamma),
-        #                     self.invPBuf.data,
-        #                     self.invMBuf.data,
-        #                     self.dataImg.data,
-        #                     np.int32(self.dtype == np.uint16)
-        #                     )
-
-
-        #     self.proc.run_kernel("blur_normals_x",
-        #                     (self.width,self.height),
-        #                     None,
-        #                     self.bufNormals.data,
-        #                     self.bufNormalsScratch.data,
-        #                     np.int32(3))
-        #     self.proc.run_kernel("blur_normals_y",
-        #                     (self.width,self.height),
-        #                     None,
-        #                     self.bufNormalsScratch.data,
-        #                     self.bufNormals.data,
-        #                     np.int32(3))
-
-        #     self.proc.run_kernel("iso_shading",
-        #                         (self.width,self.height),
-        #                         None,
-        #                         self.bufNormals.data,
-        #                         self.bufAlpha.data,
-        #                         self.invMBuf.data,
-        #                         self.invPBuf.data,
-        #                         self.buf.data)
-
         if return_alpha:
             return self.buf.get(), self.bufAlpha.get()
         else:
@@ -488,41 +451,6 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
 
         imsave("%s_%s.png"%(outName,str(t+1).zfill(int(ceil(log10(count+1))))),out)
 
-
-# def test_simple():
-
-#     from time import time, sleep
-#     from spimagine.data_model import DemoData
-#     import pylab
-
-#     rend = VolumeRenderer((400,400))
-
-#     # Nx,Ny,Nz = 200,150,50
-#     # d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
-
-#     d = DemoData(100)[0]
-#     rend.set_data(d)
-#     rend.set_units([1.,1.,.1])
-#     rend.set_projection(projMatPerspective(60,1.,1,10))
-#     rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
-
-
-#     img = None
-#     pylab.figure()
-#     pylab.ion()
-#     for t in linspace(0,pi,10):
-#         print t
-#         rend.set_modelView(dot(transMatReal(0,0,-7),dot(rotMatX(t),scaleMat(.7,.7,.7))))
-
-#         out = rend.render()
-
-#         if not img:
-#             img = pylab.imshow(out)
-#         else:
-#             img.set_data(out)
-#         pylab.draw()
-
-#         sleep(.4)
 
 
 
@@ -684,27 +612,29 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
-    pass
     # test_simple()
     # test_speed(256)
 
-    # d, rend, out = test_new_iso()
-
-
-    # d, rend, out = test_real()
-
-
-    # ws = range(100,1500,100)
-    # nums = range(1,2)
-    # ts = [[test_speed(128,w,n) for w in ws] for n in nums]
-
+    import os
+    os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
+    os.environ['PYOPENCL_NO_CACHE'] = '1'
     
-    # N= 64
-    # d = np.linspace(0,1,N**3).reshape((N,)*3).astype(np.float32)
+    N= 64
 
-    # rend = VolumeRenderer((400,400))
-    # # rend.set_modelView(mat4_rotation(.5,0,1.,0))
-    # rend.set_modelView(mat4_translate(0,0,5.))
+    x = np.linspace(-1,1,N)
+    R = np.sqrt(np.sum([_X**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
 
-    # rend.set_data(d)
-    # out = rend.render(maxVal = 1., method = "max_project_part")
+    d = np.exp(-50*(R-.3)**2)
+    
+    rend = VolumeRenderer((400,400))
+    rend.set_modelView(mat4_translate(0,0,5.))
+
+    rend.set_data(d.astype(np.float32))
+    out = rend.render(maxVal = 1., method = "max_project_part")
+    # out = rend.render(maxVal = 1., method = "iso_surface")
+
+    import pylab
+    pylab.figure(1)
+    pylab.clf()
+    pylab.imshow(out)
+    pylab.show()

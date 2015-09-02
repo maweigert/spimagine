@@ -16,13 +16,13 @@ setup(name='spimagine',
         ,"sortedcontainers", "scikit-tensor"
     ],
 
-    package_data={"spimagine":['kernels/*','images/*','colormaps/*','lib/*']},
+    package_data={"spimagine":['volumerender/kernels/*','gui/images/*','colormaps/*','lib/*']},
       entry_points = {
           'console_scripts': [
-              'spimagine_render = spimagine.spim_render:main'
+              'spimagine_render = spimagine.bin.spim_render:main'
           ],
     'gui_scripts': [
-        'spimagine = spimagine.spimagine_gui:main'
+        'spimagine = spimagine.bin.spimagine_gui:main'
     ]
         }
 
