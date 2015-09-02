@@ -20,6 +20,13 @@ A working OpenCL environment
 	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
 	```
 
+	until clinfo shows your GPU as a valid OpenCL device:
+	```
+	sudo apt-get install clinfo
+	clinfo
+	```
+	
+	
 	
 
 ## Installing
