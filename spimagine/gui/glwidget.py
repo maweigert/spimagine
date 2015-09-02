@@ -867,8 +867,7 @@ def test_demo_simple():
     win.setModel(DataModel(DemoData()))
     
     win.show()
-
-
+    
     win.raise_()
 
     sys.exit(app.exec_())
