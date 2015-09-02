@@ -53,7 +53,7 @@ def main():
         sys.exit(0)
 
 
-    from spimagine.gui.gui_mainwidget import MainWidget
+    from spimagine.gui.mainwidget import MainWidget
     from spimagine.models.data_model import DemoData, DataModel
         
         
