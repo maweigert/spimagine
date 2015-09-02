@@ -18,13 +18,17 @@ import sys
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+
+
 from spimagine.utils.quaternion import Quaternion
 from spimagine.gui.glwidget import GLWidget
 
 from spimagine.models.keyframe_model import KeyFrameList, KeyFrame
 
 from spimagine.gui.keyframe_view import KeyFramePanel
+
 from spimagine.gui.mainsettings import MainSettingsPanel
+
 from spimagine.gui.volsettings import VolumeSettingsPanel
 
 from spimagine.models.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
@@ -35,14 +39,13 @@ from spimagine.gui.slice_view import SliceWidget
 
 from spimagine.gui.imageprocessor_view import ImageProcessorListView
 
-import spimagine.utils.egg3d as egg3d
+import spimagine.utils.egg3d 
 from spimagine.models.imageprocessor import *
 
 
 from spimagine.gui.floatslider import FloatSlider
 
 from spimagine.models.transform_model import TransformModel
-
 
 from spimagine.gui.gui_utils import  createStandardCheckbox,createStandardButton
 
@@ -330,7 +333,7 @@ class MainWidget(QtGui.QWidget):
         hbox0.setSpacing(5)
 
 
-        self.egg3d = egg3d.Egg3dController()
+        self.egg3d = spimagine.utils.egg3d.Egg3dController()
 
         # widget = QtGui.QWidget()
         self.setLayout(vbox)
@@ -707,7 +710,7 @@ class MainWidget(QtGui.QWidget):
 
 
 def test_sphere():
-    from data_model import DataModel, NumpyData
+    from spimagine import DataModel, NumpyData
 
     x = np.linspace(-1,1,128)
     Z,Y,X = np.meshgrid(x,x,x)

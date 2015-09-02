@@ -9,13 +9,13 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QtOpenGL
 
-from spimagine.floatslider import FloatSlider
+
 
 import numpy as np
 
 
 from gui_utils import createStandardCheckbox,createStandardButton
-
+from spimagine.gui.floatslider import FloatSlider
 
 import spimagine
 
@@ -133,12 +133,12 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
         self.colorCombo = QtGui.QComboBox()
 
-        self.colormaps = list(spimagine.__COLORMAPDICT__.keys())
+        self.colormaps = list(spimagine.config.__COLORMAPDICT__.keys())
 
         self.colorCombo.setIconSize(QtCore.QSize(100,20))
 
         for s in self.colormaps:
-            self.colorCombo.addItem(QtGui.QIcon(absPath("colormaps/cmap_%s.png"%s)),"")
+            self.colorCombo.addItem(QtGui.QIcon(absPath("../colormaps/cmap_%s.png"%s)),"")
 
         gridBox.addWidget(self.colorCombo,3,1)
 

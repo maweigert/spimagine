@@ -56,14 +56,14 @@ import spimagine
 
 from spimagine.volumerender.volume_render import VolumeRenderer
 from spimagine.utils.transform_matrices import *
-from spimagine.utils.transform_model import TransformModel
+from spimagine.models.transform_model import TransformModel
 
 from spimagine.models.data_model import DataModel
 
 
 
 import numpy as np
-from spimagine.gui.utils import *
+from spimagine.gui.gui_utils import *
 
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
@@ -283,7 +283,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((spimagine.__DEFAULTWIDTH__,spimagine.__DEFAULTWIDTH__))
+        self.renderer = VolumeRenderer((spimagine.config.__DEFAULTWIDTH__,
+                                        spimagine.config.__DEFAULTWIDTH__))
 
         self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
@@ -357,7 +358,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         """name should be either jet, hot, gray coolwarm"""
 
         try:
-            arr = spimagine.__COLORMAPDICT__[name]
+            arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
         except:
             print "could not load colormap %s"%name
@@ -441,7 +442,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.cubeCoords = create_cube_coords([-1,1,-1,1,-1,1])
 
-        self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
+        self.set_colormap(spimagine.config.__DEFAULTCOLORMAP__)
 
         glEnable( GL_BLEND )
 
@@ -857,7 +858,7 @@ def test_demo():
 
 def test_demo_simple():
 
-    from data_model import DataModel, DemoData
+    from spimagine import DataModel, DemoData
     
     app = QtGui.QApplication(sys.argv)
 

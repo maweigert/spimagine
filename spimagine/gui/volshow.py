@@ -8,10 +8,10 @@ from collections import OrderedDict
 
 import spimagine
 
-from spimagine.gui_mainwidget import MainWidget
+from spimagine.gui.mainwidget import MainWidget
 
 
-from spimagine.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
+from spimagine.models.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
 
 _MAIN_APP = None
 
@@ -152,8 +152,8 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window.setModel(m)
 
-    if cmap is None or not spimagine.__COLORMAPDICT__.has_key(cmap):
-        cmap = spimagine.__DEFAULTCOLORMAP__
+    if cmap is None or not spimagine.config.__COLORMAPDICT__.has_key(cmap):
+        cmap = spimagine.config.__DEFAULTCOLORMAP__
 
 
     window.glWidget.set_colormap(cmap)

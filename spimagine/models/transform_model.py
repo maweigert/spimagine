@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 from PyQt4 import QtCore
 
-from spimagine.transform_matrices import *
-from spimagine.quaternion import Quaternion
+from spimagine.utils.transform_matrices import *
+from spimagine.utils.quaternion import Quaternion
 
 import numpy as np
 
-from spimagine.keyframe_model import TransformData
+from spimagine.models.keyframe_model import TransformData
 
 
 class TransformModel(QtCore.QObject):

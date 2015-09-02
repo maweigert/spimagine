@@ -29,13 +29,12 @@ from OpenGL.GL import shaders
 import spimagine
 
 
-from spimagine.volume_render import VolumeRenderer
-
-from spimagine.transform_matrices import *
-from spimagine.data_model import DataModel
-
-
-from spimagine.transform_model import TransformModel
+from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.utils.transform_matrices import *
+from spimagine.models.data_model import DataModel
+from spimagine.models.transform_model import TransformModel
+from spimagine.utils.quaternion import Quaternion
+from spimagine.gui.gui_utils import *
 
 from numpy import *
 import numpy as np
@@ -47,10 +46,6 @@ if os.name == "nt":
 
 
 import time
-from spimagine.quaternion import Quaternion
-
-
-from spimagine.gui_utils import *
 
 vertShaderTex ="""
 attribute vec2 position;
@@ -166,7 +161,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
 
         try:
-            arr = spimagine.__COLORMAPDICT__[name]
+            arr = spimagine.config.__COLORMAPDICT__[name]
             self.makeCurrent()
             self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         except:
@@ -219,7 +214,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
                            [0,1.],
                            [0,0]])
 
-        self.set_colormap(spimagine.__DEFAULTCOLORMAP__)
+        self.set_colormap(spimagine.config.__DEFAULTCOLORMAP__)
 
         glDisable(GL_DEPTH_TEST)
         glEnable( GL_BLEND )
