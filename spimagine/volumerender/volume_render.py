@@ -106,21 +106,20 @@ class VolumeRenderer:
 
         try:
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                   build_options = """-cl-fast-relaxed-math\
-                                   -cl-unsafe-math-optimizations\
-                                   -cl-mad-enable\
-                                   -I %s\
-                                   -D maxSteps=%s"""%(
-                                     absPath("kernels"),
-                                     spimagine.config.__DEFAULTMAXSTEPS__)
+                                   build_options =
+                                   ["-cl-fast-relaxed-math",
+                                    "-cl-unsafe-math-optimizations",
+                                    "-cl-mad-enable",
+                                    "-I %s" %absPath("kernels"),
+                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
                                    )
-        except:
+        except Exception as e:
+            logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                   build_options = """-I %s\
-                                   -D maxSteps=%s"""%(
-                                           absPath("kernels"),
-                                           spimagine.config.__DEFAULTMAXSTEPS__)
-                                   )
+                                   build_options =
+                                   ["-I %s" %absPath("kernels"),
+                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
+            )
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
