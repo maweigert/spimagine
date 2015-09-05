@@ -33,7 +33,7 @@ if platform.system() =="Darwin" and platform.release()[:2] == "14":
         import Foundation
         def _parseFileNameFix(fpath):
             return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
-        _SYSTEM_DARWIN_14_AND_FOUNDATION_ = True
+        __SYSTEM_DARWIN_14_AND_FOUNDATION__ = True
     except ImportError:
         logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug in the drag/dropping of files")
 
