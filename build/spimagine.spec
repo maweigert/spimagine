@@ -17,7 +17,8 @@ a = Analysis(['../spimagine/bin/spimagine_gui.py'],
                  'scipy.special._ufuncs_cxx',
                  'scipy.linalg.cython_blas',
                  'scipy.linalg.cython_lapack',
-                 "pyfft"],
+                 "pyfft",
+                 "pyopencl"],
              hookspath=None,
              runtime_hooks=None)
 pyz = PYZ(a.pure)
@@ -33,29 +34,35 @@ a.datas += addAll("/Users/mweigert/python/gputools/gputools/convolve/kernels")
 a.datas += addAll("/Users/mweigert/python/gputools/gputools/transforms/kernels")
 a.datas += addAll("/Users/mweigert/python/pyopencl/build/lib.macosx-10.9-x86_64-2.7/pyopencl/cl")
 
+a.datas += addAll("../spimagine/data/")
 
-# a.datas += [("lucy_richardson.cl","/Users/mweigert/python/Deconvolution/lucy_richardson.cl","Data")]
-
-
-# include the libtiff dylib and all the py files (work around)
 a.datas += addAll("/Library/Python/2.7/site-packages/pyfft", prefix="pyfft/")
 
 print a.datas
 
+with open("_DATAS.txt","w") as f:
+    f.write(str(a.datas))
 
+with open("_BINARIES.txt","w") as f:
+    f.write(str(a.binaries))
 
-# a.datas += [("tiff_h_4_0_3.py","/Library/Python/2.7/site-packages/libtiff/tiff_h_4_0_3.py","Data")]
-
-
-
-# a.binaries += addAll("/usr/local/Cellar/libtiff/4.0.3/lib/","BINARY")
-
-
-# a.binaries += [("libtiff.dylib","/usr/local/lib/libtiff.dylib","BINARY")]
-
-# a.binaries += [("libtiff.dylib","/usr/local/Cellar/libtiff/4.0.3/lib/libtiff.dylib","BINARY")]
+with open("_PURE.txt","w") as f:
+    f.write(str(a.pure))
 
 print a.binaries
+
+
+# filter binaries.. exclude some dylibs that pyinstaller packaged but
+# we actually dont need (e.g. wxPython)
+
+import re
+reg = re.compile(".*(sparsetools|QtWebKit|wxPython|matplotlib).*")
+
+a.binaries = [s for s in a.binaries if reg.match(s[1]) is None] 
+
+
+with open("_BINARIES_FILTER.txt","w") as f:
+    f.write(str(a.binaries))
 
 
 pyz = PYZ(a.pure)
