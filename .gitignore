@@ -2,6 +2,7 @@
 *.pyc
 
 # build folder
+build_mac/
 
 build/dist/
 build/build/

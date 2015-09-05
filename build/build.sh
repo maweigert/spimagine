@@ -11,6 +11,9 @@ echo "building app..."
 
 pyinstaller -w -F -y spimagine.spec 
 
+
+exit 1
+
 echo "prettify bundle..."
 
 sed -i "" "s/icon-windowed/$iconName/g" dist/SpImagine.app/Contents/Info.plist

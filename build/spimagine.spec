@@ -11,7 +11,7 @@ def addAll(folderPath,attrib = "Data", prefix = ""):
     return res
 
 
-a = Analysis(['../spimagine/spimagine_gui.py'],
+a = Analysis(['../spimagine/bin/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine'],
              hiddenimports=[
                  'scipy.special._ufuncs_cxx',
@@ -24,8 +24,8 @@ pyz = PYZ(a.pure)
 
 
 
-a.datas += addAll("../spimagine/kernels")
-a.datas += addAll("../spimagine/images")
+a.datas += addAll("../spimagine/volumerender/kernels")
+a.datas += addAll("../spimagine/gui/images")
 a.datas += addAll("../spimagine/colormaps")
 
 
@@ -65,14 +65,14 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='spimagine',
-          debug=False,
-          # debug=True,
+          # debug=False,
+          debug=True,
           strip=None,
           upx=True,
           console=False )
 
 app = BUNDLE(exe,
-             name='SpImagine.app',
+             name='spimagine.app',
              icon=None)
 
 
