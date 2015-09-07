@@ -5,13 +5,12 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 [![Alt text for your video](images/poster_vimeo.png)](https://vimeo.com/126597994)
 
-## Requirements
+## Requirements (OpenCL)
 
-A working OpenCL environment
 
 #### Mac
 
-should be provided by default :)
+OpenCL should be provided by default :)
 
 #### Linux
 e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
@@ -27,40 +26,51 @@ until clinfo shows your GPU as a valid OpenCL device:
 sudo apt-get install clinfo
 sudo clinfo
 ```
-	
 
-	
 
 ## Installing
 
+### Mac
 
+install PyQt4, e.g. with homebrew:
+```
+brew install pyqt
+```
 
-* Mac
+then with pip
+```
+pip install --user git+https://github.com/maweigert/gputools
+pip install --user git+https://github.com/maweigert/spimagine
+```
 
-	install PyQt4, e.g. with homebrew:
-	```
-	brew install pyqt
-	```
-
-	then with pip
-	```
-	pip install --user git+https://github.com/maweigert/gputools
-	pip install --user git+https://github.com/maweigert/spimagine
-	```
-
-	or the developmental branch
-	```
-	pip install --user git+https://github.com/maweigert/spimagine@develop
-	```
+or the developmental branch
+```
+pip install --user git+https://github.com/maweigert/spimagine@develop
+```
 	
-* Linux
+### Linux
 
-	```
-	apt-get install python-qt4 python-qt4-gl
+```
+apt-get install python-qt4 python-qt4-gl
 
-	pip install --user git+https://github.com/maweigert/gputools
-	pip install --user git+https://github.com/maweigert/spimagine
-	```
+pip install --user git+https://github.com/maweigert/gputools
+pip install --user git+https://github.com/maweigert/spimagine
+```
+
+### Windows
+
+install pyopencl and PyQt4 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+```
+git clone https://github.com/maweigert/gputools.git
+cd gputools
+pip install -e spimagine
+
+git clone https://github.com/maweigert/spimagine.git
+cd spimagine
+pip install -e spimagine
+```
+
 
 ## Usage
 
