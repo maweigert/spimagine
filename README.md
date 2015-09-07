@@ -9,24 +9,26 @@ A python package to interactively visualize and process  time lapsed volumetric 
 
 A working OpenCL environment
 
-* Mac
+#### Mac
 
 	should be provided by default :)
 
-* Linux
+#### Linux
 	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
 	```bash
-	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+	sudo apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+	
+	sudo modprobe nvidia-352-uvm
 	```
 
 	until clinfo shows your GPU as a valid OpenCL device:
 	```
 	sudo apt-get install clinfo
-	clinfo
+	sudo clinfo
 	```
 	
-	
+
 	
 
 ## Installing
