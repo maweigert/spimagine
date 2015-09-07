@@ -1,4 +1,4 @@
-# SpImagine
+# spimagine
 
 A python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes. The package provides a generic 3D+t data viewer as well as denoising and deconvolution methods and makes use of GPU acceleration via OpenCL. 
 
