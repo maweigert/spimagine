@@ -64,11 +64,11 @@ install pyopencl and PyQt4 prebuilt binaries from http://www.lfd.uci.edu/~gohlke
 ```
 git clone https://github.com/maweigert/gputools.git
 cd gputools
-pip install -e spimagine
+python setup.py install
 
 git clone https://github.com/maweigert/spimagine.git
 cd spimagine
-pip install -e spimagine
+python setup.py install
 ```
 
 
