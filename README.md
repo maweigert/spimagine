@@ -94,7 +94,7 @@ Right now the following formats are supported as input
 the package provides interactive visualisation to be used e.g. within IPython
 
 ```python 
-from spimagine import volshow, volfig
+from spimagine import volshow
 
 data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
 	
