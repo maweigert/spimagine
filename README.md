@@ -11,22 +11,22 @@ A working OpenCL environment
 
 #### Mac
 
-	should be provided by default :)
+should be provided by default :)
 
 #### Linux
-	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
+e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
-	```bash
-	sudo apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
+```bash
+sudo apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
 	
-	sudo modprobe nvidia-352-uvm
-	```
+sudo modprobe nvidia-352-uvm
+```
 
-	until clinfo shows your GPU as a valid OpenCL device:
-	```
-	sudo apt-get install clinfo
-	sudo clinfo
-	```
+until clinfo shows your GPU as a valid OpenCL device:
+```
+sudo apt-get install clinfo
+sudo clinfo
+```
 	
 
 	
