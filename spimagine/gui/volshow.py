@@ -64,7 +64,7 @@ def volfig(num=None):
     return window
 
 
-def volshow(data, scale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
+def volshow(data, autoscale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
     """
     class to visualize 3d/4d data
 
@@ -138,7 +138,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     else:
         if not isinstance(data,np.ndarray):
             data = np.array(data)
-        if scale:
+        if autoscale:
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:
                 ma +=1.
