@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,7 +10,8 @@ setup(name='spimagine',
     author='Martin Weigert',
     author_email='mweigert@mpi-cbg.de',
     license='MIT',
-    packages=['spimagine'],
+    # packages=['spimagine'],
+    packages = find_packages(),
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
         ,"sortedcontainers", "scikit-tensor"
@@ -19,7 +20,7 @@ setup(name='spimagine',
     package_data={"spimagine":['volumerender/kernels/*',
                                'gui/images/*',
                                'colormaps/*',
-                               'data/',
+                               'data/*',
                                'lib/*']},
       entry_points = {
           'console_scripts': [
@@ -29,6 +30,4 @@ setup(name='spimagine',
         'spimagine = spimagine.bin.spimagine_gui:main'
     ]
         }
-
-
 )
