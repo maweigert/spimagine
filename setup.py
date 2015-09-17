@@ -19,7 +19,7 @@ setup(name='spimagine',
     package_data={"spimagine":['volumerender/kernels/*',
                                'gui/images/*',
                                'colormaps/*',
-                               'data/',
+                               'data/*',
                                'lib/*']},
       entry_points = {
           'console_scripts': [
