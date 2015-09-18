@@ -420,7 +420,7 @@ class MainWidget(QtGui.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
-
+        
 
     def impStateChanged(self):
         data = self.transform.dataModel[self.transform.dataPos]

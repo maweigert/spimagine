@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import os
 
 from PyQt4 import QtCore,QtGui
 
@@ -19,6 +20,21 @@ _MAIN_APP = None
 
 import logging
 logger = logging.getLogger(__name__)
+
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
+
 
 
 def getCurrentApp():
@@ -42,6 +58,8 @@ def volfig(num=None):
     logger.debug("volfig")
 
     app = getCurrentApp()
+    app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
+    
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
 
@@ -190,8 +208,5 @@ class TimeData(GenericData):
 
 if __name__ == '__main__':
 
-    d = np.zeros((512,)*3).astype(np.float32)
-    d[0,0,0] = 1.
-
-    volshow(d,blocking = False)
+    volshow(DemoData(),blocking = True)
 
