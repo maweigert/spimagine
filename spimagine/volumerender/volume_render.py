@@ -110,14 +110,14 @@ class VolumeRenderer:
                                    ["-cl-fast-relaxed-math",
                                     "-cl-unsafe-math-optimizations",
                                     "-cl-mad-enable",
-                                    "-I %s" %absPath("kernels"),
+                                    "-I %s" %absPath("kernels/"),
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
                                    )
         except Exception as e:
             logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
                                    build_options =
-                                   ["-I %s" %absPath("kernels"),
+                                   ["-I %s" %absPath("kernels/"),
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
             )
 

@@ -1,22 +1,27 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 setup(name='spimagine',
     version='0.1.1',
-    description='renders spim data in 3D',
+    description='renders spim data in 3D/4D',
     url='http://mweigert@bitbucket.org/mweigert/spimagine',
     author='Martin Weigert',
     author_email='mweigert@mpi-cbg.de',
     license='MIT',
-    packages=['spimagine'],
+    # packages=['spimagine'],
+    packages = find_packages(),
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
         ,"sortedcontainers", "scikit-tensor"
     ],
 
-    package_data={"spimagine":['volumerender/kernels/*','gui/images/*','colormaps/*','lib/*']},
+    package_data={"spimagine":['volumerender/kernels/*',
+                               'gui/images/*',
+                               'colormaps/*',
+                               'data/*',
+                               'lib/*']},
       entry_points = {
           'console_scripts': [
               'spimagine_render = spimagine.bin.spim_render:main'
@@ -25,6 +30,4 @@ setup(name='spimagine',
         'spimagine = spimagine.bin.spimagine_gui:main'
     ]
         }
-
-
 )

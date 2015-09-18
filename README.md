@@ -1,64 +1,76 @@
-# SpImagine
+# spimagine
 
 A python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes. The package provides a generic 3D+t data viewer as well as denoising and deconvolution methods and makes use of GPU acceleration via OpenCL. 
 
 
-[![Alt text for your video](poster_vimeo.png)](https://vimeo.com/126597994)
+[![Alt text for your video](images/poster_vimeo.png)](https://vimeo.com/126597994)
 
-## Requirements
+## Requirements (OpenCL)
 
-A working OpenCL environment
 
-* Mac
+#### Mac
 
-	should be provided by default :)
+OpenCL should be provided by default :)
 
-* Linux
-	e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
+#### Linux
+e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
-	```bash
-	apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
-	```
-
-	until clinfo shows your GPU as a valid OpenCL device:
-	```
-	sudo apt-get install clinfo
-	clinfo
-	```
+```bash
+sudo apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
 	
-	
-	
+sudo modprobe nvidia-352-uvm
+```
+
+until clinfo shows your GPU as a valid OpenCL device:
+```
+sudo apt-get install clinfo
+sudo clinfo
+```
+
 
 ## Installing
 
+### Mac
 
+install PyQt4, e.g. with homebrew:
+```
+brew install pyqt
+```
 
-* Mac
+then with pip
+```
+pip install --user git+https://github.com/maweigert/gputools
+pip install --user git+https://github.com/maweigert/spimagine
+```
 
-	install PyQt4, e.g. with homebrew:
-	```
-	brew install pyqt
-	```
-
-	then with pip
-	```
-	pip install --user git+https://github.com/maweigert/gputools
-	pip install --user git+https://github.com/maweigert/spimagine
-	```
-
-	or the developmental branch
-	```
-	pip install --user git+https://github.com/maweigert/spimagine@develop
-	```
+or the developmental branch
+```
+pip install --user git+https://github.com/maweigert/spimagine@develop
+```
 	
-* Linux
+### Linux
 
-	```
-	apt-get install python-qt4 python-qt4-gl
+```
+apt-get install python-qt4 python-qt4-gl
 
-	pip install --user git+https://github.com/maweigert/gputools
-	pip install --user git+https://github.com/maweigert/spimagine
-	```
+pip install --user git+https://github.com/maweigert/gputools
+pip install --user git+https://github.com/maweigert/spimagine
+```
+
+### Windows
+
+install pyopencl and PyQt4 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+```
+git clone https://github.com/maweigert/gputools.git
+cd gputools
+python setup.py install
+
+git clone https://github.com/maweigert/spimagine.git
+cd spimagine
+python setup.py install
+```
+
 
 ## Usage
 
@@ -82,7 +94,7 @@ Right now the following formats are supported as input
 the package provides interactive visualisation to be used e.g. within IPython
 
 ```python 
-from spimagine import volshow, volfig
+from spimagine import volshow
 
 data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
 	
