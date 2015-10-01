@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,7 +10,7 @@ setup(name='spimagine',
     author='Martin Weigert',
     author_email='mweigert@mpi-cbg.de',
     license='MIT',
-    packages=['spimagine'],
+    packages=find_packages(),
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
         ,"sortedcontainers", "scikit-tensor"
