@@ -105,17 +105,19 @@ class VolumeRenderer:
         self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
         try:
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                   build_options =
-                                   ["-cl-fast-relaxed-math",
+            # self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+            self.proc = OCLProgram(absPath("kernels/volume_kernel.cl"),                                                             build_options =
+                                   ["-cl-finite-math-only",
+                                    "-cl-fast-relaxed-math",
                                     "-cl-unsafe-math-optimizations",
                                     "-cl-mad-enable",
                                     "-I %s" %absPath("kernels/"),
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
                                    )
         except Exception as e:
+            print e
             logger.debug(str(e))
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =
                                    ["-I %s" %absPath("kernels/"),
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
@@ -351,7 +353,6 @@ class VolumeRenderer:
 
         # invP = inv(self.projection)
         # self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
-
         if method=="max_project":
             if self.dtype == np.uint16:
                 method = "max_project_short"
@@ -373,38 +374,12 @@ class VolumeRenderer:
                             np.float32(self.maxVal),
                             np.float32(self.gamma),
                             np.float32(self.alphaPow),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
-
-
-        if method=="max_project_part":
-            if self.dtype == np.uint16:
-                method = "max_project_part_short"
-            else:
-                method = "max_project_part_float"
-
-            self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
                             np.int32(numParts),
                             np.int32(currentPart),
                             self.invPBuf.data,
                             self.invMBuf.data,
                             self.dataImg)
-
+            
         if method=="iso_surface":
             self.proc.run_kernel("iso_surface",
                             (self.width,self.height),
@@ -424,7 +399,7 @@ class VolumeRenderer:
                             self.dataImg,
                             np.int32(self.dtype == np.uint16)
                             )
-
+            
         if return_alpha:
             return self.buf.get(), self.bufAlpha.get()
         else:
@@ -597,7 +572,7 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
     t2 = time.time()
     rend.dev.queue.finish()
     for i in range(10):
-        out = rend.render(method = "max_project_part", maxVal = 200.,
+        out = rend.render(method = "max_project", maxVal = 200.,
                           currentPart=0,numParts=numParts)
     rend.dev.queue.finish()
 
@@ -627,9 +602,8 @@ if __name__ == "__main__":
     
     rend = VolumeRenderer((400,400))
     rend.set_modelView(mat4_translate(0,0,5.))
-
     rend.set_data(d.astype(np.float32))
-    out = rend.render(maxVal = 1., method = "max_project_part")
+    out = rend.render(maxVal = 1.)
     # out = rend.render(maxVal = 1., method = "iso_surface")
 
     import pylab
