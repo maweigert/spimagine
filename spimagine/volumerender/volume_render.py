@@ -106,7 +106,9 @@ class VolumeRenderer:
 
         try:
             # self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
-            self.proc = OCLProgram(absPath("kernels/volume_kernel.cl"),                                                             build_options =
+            self.proc = OCLProgram(absPath("kernels/volume_kernel.cl"),
+            # self.proc = OCLProgram(absPath("kernels/iso_kernel.cl"),
+                                   build_options =
                                    ["-cl-finite-math-only",
                                     "-cl-fast-relaxed-math",
                                     "-cl-unsafe-math-optimizations",
@@ -116,6 +118,7 @@ class VolumeRenderer:
                                    )
         except Exception as e:
             print e
+            raise Exception()
             logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =

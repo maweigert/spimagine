@@ -112,12 +112,19 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   float4 delta_pos = .5f*dt*direc;
   float4 pos = 0.5f *(1.f + orig + tnear*direc);
 
-  float newval = 0.f;
+  float newVal = 0.f;
 
+  int maxInd = 0;
+  
   if (alpha_pow==0){
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
   	  for (int j = 0; j < LOOPUNROLL; ++j){
-  		colVal = fmax(colVal,read_imagef(volume, volumeSampler, pos).x);
+		newVal = read_imagef(volume, volumeSampler, pos).x;
+		maxInd = newVal>colVal?i*LOOPUNROLL+j:maxInd;
+		colVal = fmax(colVal,newVal);
+
+		
+  		// colVal = fmax(colVal,read_imagef(volume, volumeSampler, pos).x);
 		pos += delta_pos;
   	  }
   	}
@@ -128,10 +135,10 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   else	{
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
   	  for (int j = 0; j < LOOPUNROLL; ++j){
-  		newval = read_imagef(volume, volumeSampler, pos).x;
-  		newval = (newval-minVal)/(maxVal-minVal);
-  		colVal += (1.f-alphaVal)*newval;
-  		alphaVal += alpha_pow*(1.f-alphaVal)*newval; 
+  		newVal = read_imagef(volume, volumeSampler, pos).x;
+  		newVal = (newVal-minVal)/(maxVal-minVal);
+  		colVal += (1.f-alphaVal)*newVal;
+  		alphaVal += alpha_pow*(1.f-alphaVal)*newVal; 
   		pos += delta_pos;
   		if (alphaVal>=1.f)
   		  break;
@@ -139,16 +146,76 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   	}
   } 
 
-  if ((x==250) &&(y==250))
-	printf("kern: %.20f\n",dt);
-  
   
   colVal = clamp(pow(colVal,gamma),0.f,1.f);
 
   alphaVal = clamp(alphaVal,0.f,1.f);
 
-  // // for depth test...
-  // alphaVal = tnear;
+
+
+  // now phong shading
+  pos = 0.5f *(1.f + orig + tnear*direc) +  delta_pos*maxInd;
+  
+  float4 light = (float4)(2,-1,-2,0);
+
+  float c_diffuse = .5;
+  float c_specular = .5;
+
+  light = mult(invM,light);
+  light = normalize(light);
+
+  // the normal
+
+  
+  float4 normal;
+  float4 reflect;
+  float h = dt;
+
+  h*= pow(gamma,2);
+
+  
+  const int isShortType = 0;
+  // robust 2nd order
+  normal.x = 2.f*read_image(volume,volumeSampler,pos+(float4)(h,0,0,0), isShortType)-
+  	2.f*read_image(volume,volumeSampler,pos+(float4)(-h,0,0,0), isShortType)+
+	read_image(volume,volumeSampler,pos+(float4)(2.f*h,0,0,0), isShortType)-
+  	read_image(volume,volumeSampler,pos+(float4)(-2.f*h,0,0,0), isShortType);
+
+  normal.y = 2.f*read_image(volume,volumeSampler,pos+(float4)(0,h,0,0), isShortType)-
+  	2.f*read_image(volume,volumeSampler,pos+(float4)(0,-h,0,0), isShortType)+
+	read_image(volume,volumeSampler,pos+(float4)(0,2.f*h,0,0), isShortType)-
+  	read_image(volume,volumeSampler,pos+(float4)(0,-2.f*h,0,0), isShortType);
+
+  normal.z = 2.f*read_image(volume,volumeSampler,pos+(float4)(0,0,h,0), isShortType)-
+  	2.f*read_image(volume,volumeSampler,pos+(float4)(0,0,-h,0), isShortType)+
+	read_image(volume,volumeSampler,pos+(float4)(0,0,2.f*h,0), isShortType)-
+  	read_image(volume,volumeSampler,pos+(float4)(0,0,-2.f*h,0), isShortType);
+
+  normal.w = 0;
+
+  normal *= 1./8./h;
+
+  float gradFac = 1.-exp(-length(normal)/maxVal);
+
+  if ((x==Nx/2-100) &&(y==Ny/2))
+	printf("hello: %.10f  \n",length(normal)/maxVal);
+
+  //flip normal if we are coming from values greater than isoVal... 
+  // normal = (1.f-2*isGreater)*normalize(normal);
+
+
+  normal = normalize(normal);
+
+  reflect = 2*dot(light,normal)*normal-light;
+
+  float diffuse = fmax(0.f,dot(light,normal));
+  float specular = pow(fmax(0.f,dot(normalize(reflect),normalize(direc))),10);
+
+
+  colVal *= (1.+ 0*gradFac*(c_diffuse*diffuse));
+
+  // for depth test...
+  alphaVal = tnear;
 
 
   if ((x < Nx) && (y < Ny)){
@@ -278,6 +345,11 @@ max_project_float2(__global float *d_output, __global float *d_alpha_output,
 
   alphaVal = clamp(alphaVal,0.f,1.f);
 
+
+  if ((x==200) &&(y==200))
+	printf("hello from here!  \n");
+
+  
   // for depth test...
   alphaVal = tnear;
 
@@ -426,10 +498,10 @@ max_project_short(__global float *d_output, __global float *d_alpha_output,
   
   colVal = clamp(pow(colVal,gamma),0.f,1.f);
 
-  alphaVal = clamp(alphaVal,0.f,1.f);
+  // alphaVal = clamp(alphaVal,0.f,1.f);
 
-  // // for depth test...
-  // alphaVal = tnear;
+  // for depth test...
+  alphaVal = tnear;
 
 
   if ((x < Nx) && (y < Ny)){

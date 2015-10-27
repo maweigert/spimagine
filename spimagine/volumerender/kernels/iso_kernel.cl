@@ -9,7 +9,6 @@
 #include<utils.cl>
 
 
-#define read_image(volume,sampler, pos,isShortType) (isShortType?1.f*read_imageui(volume, sampler, pos).x:read_imagef(volume, sampler, pos).x)
 
 
 __kernel void iso_surface(
@@ -73,6 +72,8 @@ __kernel void iso_surface(
   // find intersection with box
   float tnear, tfar;
   int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
+
+  
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
@@ -80,11 +81,56 @@ __kernel void iso_surface(
   	}
   	return;
   }
+
+  
   if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
 
   float colVal = 0;
   float alphaVal = 0;
 
+  
+  float dt = (tfar-tnear)/maxSteps;
+  
+
+  // uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  // orig += dt*random(entropy+x,entropy+y)*direc;
+
+
+  float4 delta_pos = .5f*dt*direc;
+  float4 pos = 0.5f *(1.f + orig + tnear*direc);
+
+  float newVal = read_image(volume, volumeSampler, pos,isShortType);
+  bool isGreater = newVal>isoVal;
+  bool hitIso = false;
+
+  for(uint i=1; i<maxSteps; i++) {		
+	newVal = read_image(volume, volumeSampler, pos, isShortType);
+	pos += delta_pos;
+
+	if ((newVal>isoVal) != isGreater){
+	  hitIso = true;
+	  break;
+	}
+  }
+
+
+
+  // find real intersection point
+  // still broken
+  float oldVal = read_image(volume, volumeSampler, pos-delta_pos, isShortType);
+  float lam = .5f;
+
+  if (newVal!=oldVal)
+	lam = (newVal - isoVal)/(newVal-oldVal);
+  
+  pos -= (1.-lam)*delta_pos;
+
+  // if ((x == Nx/2-100) && (y == Ny/2))
+  // 	// printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
+  // 	printf("start:  %.5f %.5f %.4f %d\n",newVal,direc.z,lam,maxSteps);
+
+
+  // now phong shading
   float4 light = (float4)(2,-1,-2,0);
 
   float c_ambient = .3;
@@ -99,55 +145,6 @@ __kernel void iso_surface(
 
   light = mult(invM,light);
   light = normalize(light);
-  
-  float t = tnear;
-
-
-
-
-  float4 pos = orig + tnear*direc;;
-  uint i;
-
-  
-  float dt = (tfar-tnear)/maxSteps;
-  
-  float newVal = read_image(volume, volumeSampler, pos*0.5f+0.5f,isShortType);
-  bool isGreater = newVal>isoVal;
-  bool hitIso = false;
-
-  
-  // if ((x == Nx/2) && (y == Ny/2))
-  // 	printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
-
-  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
-  // orig += dt*random(entropy+x,entropy+y)*direc;
-
-
-  
-  for(i=1; i<maxSteps; i++) {		
-  	pos = orig + (t+dt*i)*direc;
-	pos = pos*0.5f+0.5f;    // map position to [0, 1] coordinates
-
-	// newVal = read_imagef(volume, volumeSampler, pos).x;
-	newVal = read_image(volume, volumeSampler, pos, isShortType);
-
-	// if ((x == Nx/2) && (y == Ny/2))
-	//   printf("%.3f %d %d %d \n",newVal,i,newVal>isoVal,hitIso);
-	
-	if ((newVal>isoVal) != isGreater){
-	  hitIso = true;
-	  break;
-	}
-  }
-
-  // find real intersection point
-  // still broken
-  // float oldVal = read_image(volume, volumeSampler, .5f*(orig + (t+dt*(i-1))*direc)+.5f, isShortType);
-  // float lam = (newVal - isoVal)/(newVal-oldVal);
-  // pos = .5f*(orig + (t+dt*((i-1)*(1-lam)+i*lam) )*direc)+.5f;
-
-
-  // now phong shading
 
   // the normal
 
@@ -200,6 +197,7 @@ __kernel void iso_surface(
 	
   }
 
+ 
   // for depth test...
   alphaVal = tnear;
 
