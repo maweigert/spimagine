@@ -1,6 +1,6 @@
 # Compiled python modules.
 *.pyc
-
+.idea
 # build folder
 build_mac/
 
