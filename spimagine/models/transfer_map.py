@@ -32,6 +32,7 @@ class TransferMap(object):
         if rgb_or_name is None:
             rgb_or_name = (1.,.4,.2)
         self._texture = None
+        self._initalized = False
 
         self.set_cmap(rgb_or_name)
 
@@ -48,6 +49,8 @@ class TransferMap(object):
         glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
         glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
+        self._initalized = True
+
     def fill_texture(self):
         """ data.shape == (Ny,Nx)
         file texture with GL_RED
@@ -56,8 +59,11 @@ class TransferMap(object):
         data.shape == (Ny,Nx,4)
         file texture with GL_RGBA
         """
+        # if not self._initalized:
+        #     raise Exception("texture cannot be filled before initGL() was called!")
+
         if self._texture is None:
-            return
+            self.init_GL()
 
         glBindTexture(GL_TEXTURE_2D, self._texture)
 
@@ -95,7 +101,8 @@ class TransferMap(object):
                 self._set_cmap_name(rgb_or_name)
             else:
                 self._set_cmap_rgb(rgb_or_name)
-        self.fill_texture()
+        if self._initalized:
+            self.fill_texture()
 
 
 
@@ -108,10 +115,10 @@ class TransferMap(object):
         """set the colormap by name"""
 
         try:
-            self._set_array(spimagine.__COLORMAPDICT__[name])
+            self._set_array(spimagine.config.__COLORMAPDICT__[name])
         except KeyError:
             logger.info("not a valid color map: %s  "%name)
-            logger.info("valid keys: %s"%(spimagine.__COLORMAPDICT__.keys()))
+            logger.info("valid keys: %s"%(spimagine.config.__COLORMAPDICT__.keys()))
 
     def _fill_texture(self):
         """ data.shape == (Ny,Nx)
@@ -158,3 +165,5 @@ if __name__ == '__main__':
 
 
     map = TransferMap("hot")
+
+    #print map._arr

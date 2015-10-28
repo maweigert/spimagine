@@ -12,6 +12,17 @@ It should handle all user interaction via a transformation model.
 
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
+
+
+understanding glBlendFunc:
+first color:     d
+second color:    s
+resulting color: c
+c = s*S + d*D
+where S and D are set with glBlendFunc(S,D)
+e.g. glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+c = s*s.w + d*(1-s.w)
+
 """
 from spimagine.models.transfer_map import TransferMap
 
@@ -100,22 +111,15 @@ void main()
 {
   vec4 col = texture2D(texture,mytexcoord);
   vec4 alph = texture2D(texture_alpha,mytexcoord);
-
+  float tnear  = alph.x;
   vec4 lut = texture2D(texture_LUT,col.xy);
 
   gl_FragColor = vec4(lut.xyz,col.x);
 
   gl_FragColor.w = 1.0*length(col.xyz);
 
-  //gl_FragColor.w = 1.;
-  //gl_FragColor *= (alph.x==0.)?0.:1.;
-
-  //gl_FragColor.w = (alph.x==0.)?0.:gl_FragColor.w+1./255.;
-
- // gl_FragColor = (alph.x==0.)?0.:gl_FragColor+1./255.;
-  
-//   gl_FragColor.x = (alph.x==0.)?0.:gl_FragColor.x+6./255.;
-
+  if (tnear<1.0)
+    gl_FragColor.w = 0.;
 
 }
 """
@@ -331,8 +335,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.outputs.append(np.zeros([rend.height,rend.width],dtype = np.float32))
             self.outputs_a.append(np.zeros([rend.height,rend.width],dtype = np.float32))
 
-
-
         self.setTransfers([TransferMap() for _ in range(nChannels)])
         self.setTransforms([TransformModel() for _ in range(nChannels)])
 
@@ -461,8 +463,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
 
+        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         self.set_background_color(0,0,0,.0)
-        # self.set_background_color(1,1,1,.6)
+        #self.set_background_color(1,1,1,.6)
 
 
 
@@ -474,6 +479,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             t._stackUnitsChanged.connect(self.setStackUnits)
             t._boundsChanged.connect(self.setBounds)
 
+    def setTransfers(self, transfers):
+        self.transfers = transfers
+        self.refresh()
 
     def dataModelChanged(self):
 
@@ -588,8 +596,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.programCube.setUniformValue("texture_alpha",0)
 
             glEnable(GL_DEPTH_TEST)
-
-            # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+            #
+            # # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
             glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
             glDrawArrays(GL_LINES,0,len(self.cubeCoords))
@@ -600,6 +608,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # Draw the render texture
         self.programTex.bind()
+
+
+        self.transfers[n].fill_texture()
 
         self.texture = fillTexture2d(self.outputs[n],self.texture)
 
@@ -621,10 +632,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.setUniformValue("texture_alpha",1)
 
         glActiveTexture(GL_TEXTURE2)
-        glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+        glBindTexture(GL_TEXTURE_2D, self.transfers[n]._texture)
         self.programTex.setUniformValue("texture_LUT",2)
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
