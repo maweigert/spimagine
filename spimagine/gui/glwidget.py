@@ -26,24 +26,6 @@ c = s*s.w + d*(1-s.w)
 """
 from spimagine.models.transfer_map import TransferMap
 
-"""
-understanding glBlendFunc:
-
-first color:     d
-second color:    s
-resulting color: c
-
-c = s*S + d*D
-
-where S and D are set with glBlendFunc(S,D)
-
-e.g. glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-
-c = s*s.w + d*(1-s.w)
-
-
-
-"""
 
 import logging
 
@@ -84,174 +66,10 @@ else:
 import time
 from spimagine.utils.quaternion import Quaternion
 
-# from spimagine.shaders import vertShaderTex, fragShaderTex, vertShaderCube, fragShaderCube
-
 # logger.setLevel(logging.DEBUG)
 
 
-vertShaderTex ="""
-attribute vec2 position;
-attribute vec2 texcoord;
-varying vec2 mytexcoord;
 
-void main()
-{
-    gl_Position = vec4(position, 0., 1.0);
-    mytexcoord = texcoord;
-}
-"""
-
-fragShaderTex = """
-uniform sampler2D texture;
-uniform sampler2D texture_alpha;
-uniform sampler2D texture_LUT;
-varying vec2 mytexcoord;
-
-void main()
-{
-  vec4 col = texture2D(texture,mytexcoord);
-  vec4 alph = texture2D(texture_alpha,mytexcoord);
-  float tnear  = alph.x;
-  vec4 lut = texture2D(texture_LUT,col.xy);
-
-  gl_FragColor = vec4(lut.xyz,col.x);
-
-  gl_FragColor.w = 1.0*length(col.xyz);
-
-  if (tnear<1.0)
-    gl_FragColor.w = 0.;
-
-}
-"""
-
-fragShaderStereo = """
-uniform sampler2D texture;
-uniform vec4 col0;
-varying vec2 mytexcoord;
-
-void main()
-{
-  vec4 col = texture2D(texture,mytexcoord);
-  
-  gl_FragColor = col0*col.x;
-
-  gl_FragColor.w = 1.0*length(col.xyz);
-
-
-}
-"""
-
-vertShaderSliceTex ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-attribute vec2 texcoord;
-varying vec2 mytexcoord;
-
-void main()
-{
-    vec3 pos = position;
-    gl_Position = mvpMatrix *vec4(pos, 1.0);
-
-    mytexcoord = texcoord;
-}
-"""
-
-fragShaderSliceTex = """
-uniform sampler2D texture;
-uniform sampler2D texture_LUT;
-varying vec2 mytexcoord;
-
-void main()
-{
-   vec4 col = texture2D(texture,mytexcoord);
-
-   vec4 lut = texture2D(texture_LUT,col.xy);
-
-  gl_FragColor = vec4(lut.xyz,1.);
-
-  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
-  gl_FragColor.w = 1.0;
-
-
-
-}
-"""
-
-vertShaderCube ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-
-varying float zPos;
-varying vec2 texcoord;
-void main()
-{
-  vec3 pos = position;
-  gl_Position = mvpMatrix *vec4(pos, 1.0);
-
-  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
-  zPos = 0.04+gl_Position.z;
-}
-"""
-
-fragShaderCube = """
-
-uniform vec4 color;
-uniform sampler2D texture_alpha;
-varying float zPos;
-varying vec2 texcoord;
-void main()
-{
-
-  // float tnear = texture2D(texture_alpha,mytexcoord.xy).x;
-
-  float tnear = texture2D(texture_alpha,texcoord).x;
-
-  float att = exp(-.5*(zPos-tnear));
-
-  gl_FragColor = color*att;
-
-//  gl_FragColor = vec4(att,att,att,.3);
-
-// gl_FragColor = vec4(0.,0.,0.,1.);
-
-//gl_FragColor.w =1.;
-}
-"""
-
-
-vertShaderOverlay ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-varying float zPos;
-varying vec2 texcoord;
-
-void main()
-{
-  gl_Position = mvpMatrix *vec4(position, 1.0);
-
-  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
-  zPos = 0.04+gl_Position.z;
-}
-"""
-
-fragShaderOverlay = """
-varying float zPos;
-varying vec2 texcoord;
-uniform sampler2D texture_alpha;
-
-void main()
-{
-
-  gl_FragColor = vec4(1.,1.,1.,.3);
-
-  float tnear = texture2D(texture_alpha,texcoord).x;
-  float att = exp(-1.*(zPos-tnear));
-
-  att = tnear<0.000001?1.:att;
-  gl_FragColor = vec4(att,att,att,.3);
-
-}
-"""
 
 def _next_golden(n):
     res = round((np.sqrt(5)-1.)/2.*n)
@@ -384,51 +202,24 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         self.refresh()
 
-    
+    def _shader_from_file(self,fname_vert,fname_frag):
+        shader = QtOpenGL.QGLShaderProgram()
+        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex,fname_vert)
+        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment,fname_frag)
+        shader.link()
+        shader.bind()
+        logger.debug("GLSL program log:%s",shader.log())
+        return shader
+
     def initializeGL(self):
 
         self.resized = True
 
         logger.debug("initializeGL")
 
-        self.programTex = QtOpenGL.QGLShaderProgram()
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
-        self.programTex.link()
-        self.programTex.bind()
-        logger.debug("GLSL programTex log:%s",self.programTex.log())
-
-
-        self.programStereo = QtOpenGL.QGLShaderProgram()
-        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStereo)
-        self.programStereo.link()
-        self.programStereo.bind()
-        logger.debug("GLSL programStereo log:%s",self.programStereo.log())
-
-        self.programCube = QtOpenGL.QGLShaderProgram()
-        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
-        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderCube)
-        self.programCube.link()
-        self.programCube.bind()
-        logger.debug("GLSL programCube log:%s",self.programCube.log())
-
-        self.programSlice = QtOpenGL.QGLShaderProgram()
-        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,
-                                                  vertShaderSliceTex)
-        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment,
-                                                  fragShaderSliceTex)
-        self.programSlice.link()
-        self.programSlice.bind()
-        logger.debug("GLSL programCube log:%s",self.programSlice.log())
-
-        self.programOverlay = QtOpenGL.QGLShaderProgram()
-        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderOverlay)
-        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderOverlay)
-        self.programOverlay.link()
-        self.programOverlay.bind()
-        logger.debug("GLSL programOverlay log:%s",self.programOverlay.log())
-
+        self.programTex = self._shader_from_file(absPath("shaders/texture.vert"),absPath("shaders/texture.frag"))
+        self.programCube = self._shader_from_file(absPath("shaders/box.vert"),absPath("shaders/box.frag"))
+        self.programSlice = self._shader_from_file(absPath("shaders/slice.vert"),absPath("shaders/slice.frag"))
 
         self.texture = None
         self.textureAlpha = None
@@ -455,21 +246,22 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable( GL_BLEND )
 
         # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-
         # glLineWidth(1.0);
         glBlendFunc(GL_ONE,GL_ONE)
 
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
 
-        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
-        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+        # glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.set_background_color(0,0,0,.0)
-        #self.set_background_color(1,1,1,.6)
+        # self.set_background_color(0,0,0,.0)
+        self.set_background_color(1,1,1,.6)
 
 
+    def setInvertedMode(self, inverted = True):
+        self._inverted = inverted
 
 
     def setTransforms(self, transforms):
@@ -635,9 +427,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBindTexture(GL_TEXTURE_2D, self.transfers[n]._texture)
         self.programTex.setUniformValue("texture_LUT",2)
 
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
-        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+        # glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
@@ -674,7 +466,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                                                       return_alpha = True,
                                                       numParts = self.NSubrenderSteps,
                                                       currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
-
+        print np.amin(self.outputs_a[n])
 
     def getFrame(self):
         self.render()

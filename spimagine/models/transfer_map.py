@@ -30,7 +30,7 @@ class TransferMap(object):
 
     def __init__(self, rgb_or_name = None):
         if rgb_or_name is None:
-            rgb_or_name = (1.,.4,.2)
+            rgb_or_name = spimagine.config.__DEFAULTCOLORMAP__
         self._texture = None
         self._initalized = False
 

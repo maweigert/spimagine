@@ -18,8 +18,6 @@ if __name__ == '__main__':
 
     d = DataModel(DemoData())
 
-
-
     win.setModel(d)
 
     win.show()
