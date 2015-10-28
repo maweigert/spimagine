@@ -663,7 +663,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                 renderMethod = "iso_surface"
                 
             else:
-                renderMethod = "max_project_part"
+                renderMethod = "max_project"
 
             self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
