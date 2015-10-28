@@ -261,8 +261,6 @@ max_project_part_float(__global float *d_output, __global float *d_alpha_output,
   // if ((x == Nx/2) && (y == Ny/2))
   // 	printf("%.5f %.5f\n",tnear,tfar);
   
-
-  colVal *= 2.f;
   if ((x < Nx) && (y < Ny)){
 	if (currentPart==0){
 	  d_output[x+Nx*y] = colVal;

@@ -64,6 +64,9 @@ def absPath(myPath):
         base_path = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(base_path, myPath)
 
+
+init_device(useGPU = True,useDevice = spimagine.config.__OPENCLDEVICE__)
+
 class VolumeRenderer:
     """ renders a data volume by ray casting/max projection
 
@@ -83,8 +86,6 @@ class VolumeRenderer:
 
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
-            init_device(useGPU = True, 
-                                 useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -114,6 +115,7 @@ class VolumeRenderer:
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
                                    )
         except Exception as e:
+
             logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
                                    build_options =
@@ -262,7 +264,10 @@ class VolumeRenderer:
         if self._data.dtype != self.dtype:
             self._data = self._data.astype(self.dtype,copy=False)
 
+
         self.dataImg.write_array(self._data)
+
+
 
     def set_box_boundaries(self,boxBounds = [-1,1,-1,1,-1,1]):
         self.boxBounds = np.array(boxBounds)
@@ -284,6 +289,7 @@ class VolumeRenderer:
             mScale = self._stack_scale_mat()
             invM = inv(np.dot(self.modelView,mScale))
             self.invMBuf.write_array(invM.flatten().astype(np.float32))
+
             invP = inv(self.projection)
             self.invPBuf.write_array(invP.flatten().astype(np.float32))
 
@@ -345,12 +351,6 @@ class VolumeRenderer:
             else:
                 return self.buf.get()
 
-        # mScale = self._stack_scale_mat()
-        # invM = inv(np.dot(self.modelView,mScale))
-        # self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
-
-        # invP = inv(self.projection)
-        # self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
 
         if method=="max_project":
             if self.dtype == np.uint16:

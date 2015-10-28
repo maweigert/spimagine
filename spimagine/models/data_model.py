@@ -8,6 +8,8 @@ and Tiff files (TiffData).
 Extend it if you want to and change the DataLoadModel.chooseContainer to
 accept it via dropg
 
+at the end every data nodel is assumed to be 5d (Time,Channel,ZYZ)
+
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
@@ -64,11 +66,12 @@ class GenericData():
         self.stackUnits = None
         self.name = name
 
-    # def setStackSize(self, stackSize):
-    #     self.stackSize  = list(stackSize)
 
     def sizeT(self):
         return self.size()[0]
+
+    def sizeC(self):
+        return self.size()[1]
 
     def size(self):
         return self.stackSize
@@ -93,6 +96,8 @@ class SpimData(GenericData):
         if fName:
             try:
                 self.stackSize = imgutils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                # no multichannel for now...
+                self.stackSize = self.stackSize[:1]+[1,]+self.stackSize[1:]
                 self.stackUnits = imgutils.parseMetaFile(os.path.join(fName,"metadata.txt"))
                 self.fName = fName
             except Exception as e:
@@ -168,8 +173,14 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.data = imgutils.read3dTiff(fName)
-                self.stackSize = (1,)+ self.data.shape
+                data = imgutils.read3dTiff(fName)
+                dshape = data.shape
+                if len(dshape)<3:
+                    raise ValueError("the file %s appears to have only %s dimensions!"%(fname,len(dshape)))
+
+                self.stackSize = (1,)*(5-len(dshape)) + dshape
+                self.data = data.reshape(self.stackSize)
+
             except Exception as e:
                 print e
                 self.fName = ""
@@ -182,7 +193,7 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return self.data
+            return self.data[pos]
         else:
             return None
 
@@ -227,20 +238,17 @@ class NumpyData(GenericData):
     def __init__(self, data, stackUnits = [1.,1.,1.]):
         GenericData.__init__(self,"NumpyData")
 
-        if len(data.shape)==3:
-            self.stackSize = (1,) + data.shape
-            self.data = data.copy().reshape(self.stackSize)
-        elif len(data.shape)==4:
-            self.stackSize = data.shape
-            self.data = data.copy()
-        else:
-            raise TypeError("data should be 3 or 4 dimensional! shape = %s" %str(data.shape))
+        if not data.ndim in [3,4,5]:
+            raise TypeError("data should be 3, 4 or 5 dimensional! shape = %s" %str(data.shape))
 
+        self.stackSize  = (1,)*(5-data.ndim) + data.shape
+
+        self.data = data.copy().reshape(self.stackSize)
 
         self.stackUnits = stackUnits
 
     def __getitem__(self,pos):
-        return self.data[pos,...]
+        return self.data[pos]
 
 
 class DemoData(GenericData):
@@ -253,13 +261,13 @@ class DemoData(GenericData):
             logger.debug("loading precomputed demodata")
             self.data = imgutils.read3dTiff(absPath("../data/mpi_logo_80.tif")).astype(np.float32)
             N = 80
-            self.stackSize = (10,N,N,N)
+            self.stackSize = (10,1,N,N,N)
             self.fName = ""
             self.nT = 10
             self.stackUnits = (1,1,1)
 
         else:
-            self.stackSize = (1,N,N,N)
+            self.stackSize = (1,1,N,N,N)
             self.fName = ""
             self.nT = N
             self.stackUnits = (1,1,1)
@@ -275,6 +283,7 @@ class DemoData(GenericData):
 
             u2 = np.exp(-7*R2**2)
             self.data = (10000*(u + 2*u2)).astype(np.float32)
+        self.data = self.data.reshape((1,)+self.data.shape)
 
 
     def sizeT(self):
@@ -300,28 +309,6 @@ class EmptyData(GenericData):
         return self.data
 
 
-# class HDF5Data(GenericData):
-#     """loads hdf5 data files
-#     """
-
-#     def __init__(self,fName = None, key = None ):
-#         GenericData.__init__(self, fName)
-#         self.load(fName, key)
-
-#     def load(self,fName, key = None, stackUnits = [1.,1.,1.]):
-#         if fName:
-#             with h5py.File(fName,"r") as f:
-#                 if len(f.keys())==0 :
-#                     raise KeyError("no valid key found in file %s"%fName)
-#                 if key is None:
-#                     key = f.keys()[0]
-#                 self.data = np.asarray(f[key][:]).copy()
-#                 self.stackSize = (1,)+ self.data.shape
-#                 self.stackUnits = stackUnits
-#                 self.fName = fName
-        
-#     def __getitem__(self,pos):
-#         return self.data
 
 class CZIData(GenericData):
     """loads czi data files
@@ -461,6 +448,10 @@ class DataModel(QtCore.QObject):
     def sizeT(self):
         if self.dataContainer:
             return self.dataContainer.sizeT()
+
+    def sizeC(self):
+        if self.dataContainer:
+            return self.dataContainer.sizeC()
 
     def size(self):
         if self.dataContainer:

@@ -239,7 +239,7 @@ class TransformModel(QtCore.QObject):
 
         #scale the interns
         if hasattr(self,"dataModel"):
-            Nz,Ny,Nx = self.dataModel.size()[1:]
+            Nz,Ny,Nx = self.dataModel.size()[-3:]
             dx,dy,dz = self.stackUnits
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
             mScale =  mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
