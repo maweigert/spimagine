@@ -15,7 +15,6 @@
 
 #include<volume_kernel.cl>
 
-
 #include<iso_kernel.cl>
 
 
