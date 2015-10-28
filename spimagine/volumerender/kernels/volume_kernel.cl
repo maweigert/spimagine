@@ -142,8 +142,9 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 
   		cumsum  *= (1.f-.1f*alpha_pow*newVal);
   		pos += delta_pos;
-  		if (cumsum<=0.05f)
+  		if (cumsum<=0.02f)
   		  break;
+
   	  }
   	}
   }
@@ -273,7 +274,7 @@ max_project_short(__global float *d_output, __global float *d_alpha_output,
   float4 delta_pos = .5f*dt*direc;
   float4 pos = 0.5f *(1.f + orig + tnear*direc);
 
-  float newval = 0.f;
+  float newVal = 0.f;
 
   if (alpha_pow==0){
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
@@ -287,18 +288,20 @@ max_project_short(__global float *d_output, __global float *d_alpha_output,
   
   }
   else	{
+  	float cumsum = 1.f;
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
   	  for (int j = 0; j < LOOPUNROLL; ++j){
-  		newval = 1.f*read_imageui(volume, volumeSampler, pos).x;
-  		newval = (newval-minVal)/(maxVal-minVal);
-  		colVal += (1.f-alphaVal)*newval;
-  		alphaVal += alpha_pow*(1.f-alphaVal)*newval; 
+  		newVal = 1.f*read_imageui(volume, volumeSampler, pos).x;
+  		newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
+  		colVal = fmax(colVal,cumsum*newVal);
+
+  		cumsum  *= (1.f-.1f*alpha_pow*newVal);
   		pos += delta_pos;
-  		if (alphaVal>=1.f)
+  		if (cumsum<=0.02f)
   		  break;
-  	  }
+      }
   	}
-  } 
+  }
 
  // if ((x==250) &&(y==250))
 //	printf("kern: %.20f\n",pos.z);
