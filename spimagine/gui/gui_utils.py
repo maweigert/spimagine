@@ -127,6 +127,11 @@ def fillTexture2d(data,tex = None):
         GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGB, Nx, Ny,
                          0, GL.GL_RGB, GL.GL_FLOAT, data.astype(np.float32))
 
+    elif data.ndim == 3 and data.shape[2]==4:
+        Ny,Nx = data.shape[:2]
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, Nx, Ny,
+                         0, GL.GL_RGBA, GL.GL_FLOAT, data.astype(np.float32))
+
     else:
         raise Exception("data format not supported! \ndata.shape should be either (Ny,Nx) or (Ny,Nx,3)")
     return tex

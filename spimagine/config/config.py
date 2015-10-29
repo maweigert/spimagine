@@ -14,6 +14,8 @@ __spimagine_config_parser = MyConfigParser(__CONFIGFILE__)
 
 __OPENCLDEVICE__ = int(__spimagine_config_parser.get("opencldevice",0))
 __DEFAULTCOLORMAP__ = __spimagine_config_parser.get("colormap","viridis")
+
+
 __DEFAULTWIDTH__ = int(__spimagine_config_parser.get("width",800))
 __DEFAULTMAXSTEPS__ = int(__spimagine_config_parser.get("max_steps",200))
 

@@ -138,6 +138,7 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   	  for (int j = 0; j < LOOPUNROLL; ++j){
   		newVal = read_imagef(volume, volumeSampler, pos).x;
   		newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
+  		maxInd = cumsum*newVal>colVal?i*LOOPUNROLL+j:maxInd;
   		colVal = fmax(colVal,cumsum*newVal);
 
   		cumsum  *= (1.f-.1f*alpha_pow*newVal);
@@ -159,7 +160,11 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   alphaVal = clamp(colVal,0.f,1.f);
 
   // for depth test...
-  alphaVal = tnear;
+  if (maxInd>-1)
+    alphaVal = maxInd*dt;
+  else
+  alphaVal = 0.f;
+
 
 
   if ((x < Nx) && (y < Ny)){
@@ -275,6 +280,8 @@ max_project_short(__global float *d_output, __global float *d_alpha_output,
   float4 pos = 0.5f *(1.f + orig + tnear*direc);
 
   float newVal = 0.f;
+
+
 
   if (alpha_pow==0){
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
