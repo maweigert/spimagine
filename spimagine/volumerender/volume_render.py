@@ -100,9 +100,9 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = .4*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        self.memMax = .5*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        #self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
         try:
             self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),

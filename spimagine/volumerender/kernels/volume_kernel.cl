@@ -160,10 +160,11 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   alphaVal = clamp(colVal,0.f,1.f);
 
   // for depth test...
-  if (maxInd>-1)
-    alphaVal = maxInd*dt;
-  else
-  alphaVal = 0.f;
+  alphaVal = tnear;
+  //if (maxInd>-1)
+  //  alphaVal = maxInd*dt;
+  //else
+  // alphaVal = 0.f;
 
 
 

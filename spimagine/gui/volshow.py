@@ -52,7 +52,7 @@ def getCurrentApp():
 
 
 
-def volfig(num=None):
+def volfig(num=None, raise_window = True):
     """return window"""
 
     logger.debug("volfig")
@@ -78,11 +78,14 @@ def volfig(num=None):
 
     #make num the last window
     app.volfigs[num] = window
-    window.raise_()
+
+    if raise_window:
+        window.raise_()
+
     return window
 
 
-def volshow(data, autoscale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None):
+def volshow(data, autoscale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None, raise_window = True):
     """
     class to visualize 3d/4d data
 
@@ -143,7 +146,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     except:
         num = 1
 
-    window = volfig(num)
+    window = volfig(num, raise_window = raise_window)
 
     logger.debug("volfig: %s s "%(time()-t))
     t = time()
