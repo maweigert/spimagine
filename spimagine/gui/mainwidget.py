@@ -206,7 +206,7 @@ class MainWidget(QtGui.QWidget):
 
         
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
-        self.gammaSlider.setRange(.25,2.)
+        self.gammaSlider.setRange(.01,2.,200)
 
         self.gammaSlider.setToolTip("value gamma")
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)

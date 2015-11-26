@@ -84,7 +84,6 @@ def _next_golden(n):
     return int(round((np.sqrt(5)-1.)/2.*n))
 
 
-
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -100,7 +99,8 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-    
+    _foo= QtCore.pyqtSignal()
+
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -139,23 +139,29 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.setMouseTracking(True)
 
+        self._dataModelChanged.connect(self.dataModelChanged)
+
         self.refresh()
+
+
+
 
 
 
 
     def setModel(self,dataModel):
         logger.debug("setModel")
+        if self.dataModel is None or (self.dataModel != dataModel):
+                self.dataModel = dataModel
+                self.transform.setModel(dataModel)
+                self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+                self.dataModel._dataPosChanged.connect(self.dataPosChanged)
+                self._dataModelChanged.emit()
 
-        self.dataModel = dataModel
 
-        if self.dataModel:
-            self.transform.setModel(dataModel)
 
-            self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-            self.dataModel._dataPosChanged.connect(self.dataPosChanged)
-            self._dataModelChanged.connect(self.dataModelChanged)
-            self._dataModelChanged.emit()
+    def foo(self):
+        print "fooooooooooooooo"
 
 
 
@@ -272,6 +278,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataModelChanged(self):
+        logger.debug("+++++++++ data model changed")
+
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
             self.transform.reset(minVal = np.amin(self.dataModel[0]),

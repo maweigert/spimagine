@@ -83,6 +83,7 @@ class VolumeRenderer:
 
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
+
             init_device(useGPU = True, 
                                  useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
@@ -206,6 +207,8 @@ class VolumeRenderer:
 
 
     def set_data(self,data, autoConvert = True, copyData = False):
+        logger.debug("set_data")
+
         if not autoConvert and not data.dtype in self.dtypes:
             raise NotImplementedError("data type should be either %s not %s"%(self.dtypes,data.dtype))
 
