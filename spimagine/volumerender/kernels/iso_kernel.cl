@@ -123,7 +123,7 @@ __kernel void iso_surface(
   if (newVal!=oldVal)
 	lam = (newVal - isoVal)/(newVal-oldVal);
   
-  pos -= (1.-lam)*delta_pos;
+  pos -= (1.f-lam)*delta_pos;
 
   // if ((x == Nx/2-100) && (y == Ny/2))
   // 	// printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
