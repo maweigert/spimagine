@@ -8,7 +8,7 @@ logger.setLevel(logging.INFO)
 
 from spimagine.config import config
 
-from spimagine.models.data_model import DataModel,DemoData, SpimData, TiffData, TiffFolderData, NumpyData
+from spimagine.models.data_model import DataModel,DemoData, SpimData, TiffData, CZIData, TiffFolderData, NumpyData
 
 from spimagine.utils.imgutils import read3dTiff, write3dTiff
 

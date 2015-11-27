@@ -168,8 +168,16 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.data = imgutils.read3dTiff(fName)
-                self.stackSize = (1,)+ self.data.shape
+                data = np.squeeze(imgutils.read3dTiff(fName))
+
+                if not data.ndim in [3,4]:
+                    raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
+
+                if data.ndim == 3:
+                    self.stackSize = (1,)+ data.shape
+                else:
+                    self.stackSize = data.shape
+                self.data = data
             except Exception as e:
                 print e
                 self.fName = ""
@@ -182,7 +190,12 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return self.data
+            if self.data.ndim == 3:
+                return self.data
+            else:
+                return self.data[pos]
+
+
         else:
             return None
 
@@ -332,18 +345,29 @@ class CZIData(GenericData):
         self.load(fName)
 
     def load(self,fName, stackUnits = [1.,1.,1.]):
+
         if fName:
             try:
-                self.data = np.squeeze(imgutils.readCziFile(fName))
-                assert(self.data.ndim == 3)
-                self.stackSize = (1,)+ self.data.shape
+                data = np.squeeze(imgutils.readCziFile(fName))
+
+                if not data.ndim in [3,4]:
+                    raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
+
+                if data.ndim == 3:
+                    self.stackSize = (1,)+ data.shape
+                else:
+                    self.stackSize = data.shape
+                self.data = data
                 self.stackUnits = stackUnits
                 self.fName = fName
             except Exception as e:
                 print e
         
     def __getitem__(self,pos):
-        return self.data
+        if self.data.ndim == 3:
+            return self.data
+        else:
+            return self.data[pos]
 
 
 

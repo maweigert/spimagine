@@ -101,7 +101,7 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = .5*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        self.memMax = .7*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
         #self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
