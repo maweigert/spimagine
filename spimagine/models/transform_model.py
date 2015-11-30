@@ -45,6 +45,29 @@ class TransformModel(QtCore.QObject):
         super(TransformModel,self).__init__()
         self.reset()
 
+    def _update_value(self,name,newval):
+        """update self.name to newval and returns True if the
+        new value indeed was different than the new"""
+        if not hasattr(self,name):
+            setattr(self,name,newval)
+            return True
+
+        oldval = getattr(self,name)
+        is_equal = True
+
+        if isinstance(oldval,np.ndarray):
+            is_equal = np.array_equal(oldval,newval)
+        elif isinstance(oldval,Quaternion):
+            is_equal = np.array_equal(oldval.data,newval.data)
+        else:
+            is_equal = (oldval == newval)
+
+        if not is_equal:
+            setattr(self,name,newval)
+
+        return not is_equal
+
+
     def setModel(self,dataModel):
         self.dataModel = dataModel
 
@@ -75,9 +98,9 @@ class TransformModel(QtCore.QObject):
 
     def setIso(self,isIso):
         logger.debug("setting Iso %s"%isIso)
-        self.isIso = isIso
-        self._isoChanged.emit(isIso)
-        self._transformChanged.emit()
+        if self._update_value("isIso",isIso):
+            self._isoChanged.emit(isIso)
+            self._transformChanged.emit()
 
     def center(self):
         self.quatRot = Quaternion()
@@ -91,9 +114,11 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
     def setTranslate(self,x,y,z):
-        self.translate = np.array([x,y,z])
-        self._translateChanged.emit(x,y,z)
-        self._transformChanged.emit()
+        newtrans = np.array([x,y,z])
+
+        if self._update_value("translate",newtrans):
+            self._translateChanged.emit(x,y,z)
+            self._transformChanged.emit()
 
     def addTranslate(self,dx,dy,dz):
         self.translate = self.translate + np.array([dx,dy,dz])
