@@ -47,8 +47,8 @@ def main():
     parser = argparse.ArgumentParser(description='spimagine rendering application ')
     parser.add_argument('fname',
                         type=str,
-                        nargs='?',
-                        help='the file/folder to open (e.g. tif, folder of tif) ',
+                        nargs='*',
+                        help='the files/folder to open (e.g. tif, folder of tif) ',
                         default = None)
     
     parser.add_argument('-p',
@@ -87,7 +87,10 @@ def main():
     win = MainWidget()
 
     if args.fname:
-        win.setModel(DataModel.fromPath(args.fname))
+        if len(args.fname)==1:
+            win.setModel(DataModel.fromPath(args.fname[0]))
+        else:
+            win.setModel(DataModel.fromPath(args.fname))
     else:
         win.setModel(DataModel(DemoData()))
 

@@ -43,7 +43,7 @@ class Quaternion():
             return Quaternion(*(q*self.data))
 
     def __repr__(self):
-        return str(self.data)
+        return "Quaternion(%s,%s,%s,%s)"%tuple(self.data)
 
     def dot(self,q):
         return np.inner(self.data,q.data)
