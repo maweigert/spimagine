@@ -85,7 +85,13 @@ def volfig(num=None, raise_window = True):
     return window
 
 
-def volshow(data, autoscale = False, stackUnits = [1.,1.,1.], blocking = False, cmap = None, raise_window = True):
+def volshow(data,
+            cmap = None,
+            autoscale = True,
+            stackUnits = [1.,1.,1.],
+            blocking = False,
+
+            raise_window = True):
     """
     class to visualize 3d/4d data
 
