@@ -582,6 +582,18 @@ class MainWidget(QtGui.QWidget):
             self.glWidget.saveFrame(str(fileName))
 
 
+    def set_colormap(self, name):
+        self.glWidget.set_colormap(name)
+
+    def set_colormap_rgb(self, color):
+        self.glWidget.set_colormap_rgb(color)
+
+
+    def saveFrame(self, fName):
+        self.glWidget.saveFrame(fName)
+
+
+
     def setLoopBounce(self,loopBounce):
         #if loopBounce = True, then while playing it should loop back and forth
         self.loopBounce = loopBounce
