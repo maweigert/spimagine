@@ -194,8 +194,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         try:
             arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
-        except:
-            print "could not load colormap %s"%name
+        except KeyError:
+            print "could not load colormap '%s'"%name
+            print "valid names: %s"%spimagine.config.__COLORMAPDICT__.keys()
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
