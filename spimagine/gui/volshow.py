@@ -85,7 +85,7 @@ def volfig(num=None, raise_window = True):
     return window
 
 
-def volshow(data, autoscale = False,
+def volshow(data, autoscale = True,
             stackUnits = [1.,1.,1.],
             blocking = False,
             cmap = None,
