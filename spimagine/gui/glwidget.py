@@ -477,7 +477,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             else:
                 renderMethod = "max_project"
 
-            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
+            self.output, self.output_alpha, _ = self.renderer.render(method = renderMethod,
+                                                                  return_all = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:

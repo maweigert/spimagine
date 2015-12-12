@@ -34,7 +34,7 @@ class MyWidget(MainWidget):
         super(MyWidget,self).__init__()
 
         self.compileTimer = QtCore.QTimer(self)
-        self.compileTimer.setInterval(1000)
+        self.compileTimer.setInterval(2000)
         self.compileTimer.timeout.connect(self.on_compile_timer)
         self.compileTimer.start()
 
@@ -48,15 +48,20 @@ class MyWidget(MainWidget):
 
 
         try:
-            dirname = os.path.dirname(spimagine.volumerender.__file__)
-            proc = OCLProgram(os.path.join(dirname,"kernels/volume_kernel.cl"),
-                                   build_options =
-                                      ["-cl-fast-relaxed-math",
+            dirname = os.path.join(os.path.dirname(spimagine.volumerender.__file__),"kernels")
+            build_options = ["-cl-fast-relaxed-math",
                                     "-cl-unsafe-math-optimizations",
                                     "-cl-mad-enable",
-                                    "-I %s" %os.path.join(dirname,"kernels/"),
+                                    "-I %s" %dirname,
                                     "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
-                                   )
+
+            kerns = ["volume_kernel.cl","iso_kernel.cl","all_render_kernels.cl"]
+            #enforce recompilations....
+            for k in kerns:
+                OCLProgram(os.path.join(dirname,k), build_options = build_options)
+
+            proc = OCLProgram(os.path.join(dirname,"iso_kernel.cl"),
+                                   build_options = build_options)
 
             self.glWidget.renderer.proc = proc
             self.glWidget.refresh()
@@ -67,7 +72,9 @@ class MyWidget(MainWidget):
         except Exception as e:
             print e
 
-
+    def closeEvent(self,event):
+        self.compileTimer.stop()
+        super(MyWidget,self).closeEvent(event)
 
 
 
@@ -77,10 +84,10 @@ class MyWidget(MainWidget):
 if __name__ == '__main__':
 
 
-    x = np.linspace(-1,1,128)
+    x = np.linspace(-1,1,64)
     Z,Y,X = np.meshgrid(x,x,x)
-    R1 = np.sqrt((X+.2)**2+(Y+.2)**2+(Z+.2)**2)
-    R2 = np.sqrt((X-.2)**2+(Y-.2)**2+(Z-.2)**2)
+    R1 = np.sqrt((X+.35)**2+(Y+.0)**2+(Z+.0)**2)
+    R2 = np.sqrt((X-.35)**2+(Y-.0)**2+(Z-.0)**2)
     d = np.exp(-10*R1**2)+np.exp(-10*R2**2)
 
     app = QtGui.QApplication(sys.argv)
@@ -88,7 +95,8 @@ if __name__ == '__main__':
     win = MyWidget()
 
     win.setModel(DataModel(NumpyData(d)))
-
+    win.transform.setIso(True)
+    win.transform.setZoom(1.2)
     win.show()
 
     win.raise_()

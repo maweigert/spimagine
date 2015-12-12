@@ -7,7 +7,7 @@
  */
 
 #ifndef maxSteps
-#define maxSteps 153
+#define maxSteps 166
 #endif
 
 

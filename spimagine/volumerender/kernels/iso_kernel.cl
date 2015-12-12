@@ -11,9 +11,9 @@
 
 
 
-__kernel void iso_surface(
-						  __global float *d_output,
-						  __global float *d_alpha_output, 
+__kernel void iso_surface(__global float *d_output,
+						  __global float *d_alpha_output,
+						   __global float * d_depth,
 						  uint Nx, uint Ny,
 						  float boxMin_x,
 						  float boxMax_x,
@@ -103,12 +103,15 @@ __kernel void iso_surface(
   bool isGreater = newVal>isoVal;
   bool hitIso = false;
 
+  int hit_index = -1;
+
   for(uint i=1; i<maxSteps; i++) {		
 	newVal = read_image(volume, volumeSampler, pos, isShortType);
 	pos += delta_pos;
 
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = true;
+	  hit_index = i;
 	  break;
 	}
   }
@@ -204,6 +207,7 @@ __kernel void iso_surface(
   
   if ((x < Nx) && (y < Ny)){
 	d_output[x+Nx*y] = colVal;
+	d_depth[x+Nx*y] = -1.f*hit_index;
 	d_alpha_output[x+Nx*y] = alphaVal;
 
   }

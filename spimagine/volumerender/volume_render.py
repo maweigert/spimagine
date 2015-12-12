@@ -169,8 +169,8 @@ class VolumeRenderer:
 
     def reset_buffer(self):
         self.buf = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufAlpha = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufDepth = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.buf_alpha = OCLArray.empty((self.height, self.width), dtype=np.float32)
+        self.buf_depth = OCLArray.empty((self.height,self.width),dtype=np.float32)
 
         # self.bufNormals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
 
@@ -309,8 +309,13 @@ class VolumeRenderer:
     def render(self,data = None, stackUnits = None,
                minVal = None, maxVal = None, gamma = None,
                modelView = None, projection = None,
-               boxBounds = None, return_alpha = False, method="max_project",
+               return_all = False,
+               boxBounds = None, method="max_project",
                numParts = 1, currentPart = 0):
+        """
+
+        :returns:  buf_color, buf_alpha, buf_depth
+        """
 
         if data is not None:
             self.set_data(data)
@@ -335,16 +340,16 @@ class VolumeRenderer:
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
+            if return_all:
+                return self.buf.get(), self.buf_alpha.get(), self.buf_depth.get()
             else:
                 return self.buf.get()
 
 
         if  modelView is None and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
+            if return_all:
+                return self.buf.get(), self.buf_alpha.get(), self.buf_depth.get()
             else:
                 return self.buf.get()
 
@@ -355,51 +360,54 @@ class VolumeRenderer:
                 method = "max_project_float"
 
             self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
-                            np.int32(numParts),
-                            np.int32(currentPart),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data,
+                                 self.buf_alpha.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.minVal),
+                                 np.float32(self.maxVal),
+                                 np.float32(self.gamma),
+                                 np.float32(self.alphaPow),
+                                 np.int32(numParts),
+                                 np.int32(currentPart),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg)
 
         if method=="iso_surface":
             self.proc.run_kernel("iso_surface",
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.maxVal/2),
-                            np.float32(self.gamma),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data,
+                                 self.buf_alpha.data,
+                                 self.buf_depth.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.maxVal/2),
+                                 np.float32(self.gamma),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg,
+                                 np.int32(self.dtype == np.uint16))
 
-        if return_alpha:
-            return self.buf.get(), self.bufAlpha.get()
+        if return_all:
+            #return self.buf_depth.get(), self.buf_alpha.get(), self.buf_depth.get()
+            return self.buf.get(), self.buf_alpha.get(), self.buf_depth.get()
+
         else:
             return self.buf.get()
-
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
                      rot = 0, isStackScale = True):
@@ -415,7 +423,7 @@ def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
         rend.set_dataFromFolder(fName,pos=start+t)
 
         rend.set_modelView(modelView)
-        out = rend.render(scale = 1200, density=.01,gamma=2,
+        out  = rend.render(scale = 1200, density=.01,gamma=2,
                           isStackScale = isStackScale)
 
         imsave("%s_%s.png"%(outName,str(t+1).zfill(int(ceil(log10(count+1))))),out)
