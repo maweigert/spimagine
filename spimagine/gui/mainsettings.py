@@ -13,7 +13,7 @@ import numpy as np
 
 from spimagine.gui.floatslider import FloatSlider
 
-from spimagine.gui.gui_utils import createStandardCheckbox,createStandardButton
+from spimagine.gui.gui_utils import createImageCheckbox,createStandardButton
 
 import spimagine
 
@@ -94,9 +94,9 @@ class MainSettingsPanel(QtGui.QWidget):
         gridBox.addWidget(self.editSubsteps)
 
         gridBox.addWidget(QtGui.QLabel("Egg3D:\t"))
-        self.checkEgg = createStandardCheckbox(self,absPath("images/egg.png"),
-                                               absPath("images/egg_inactive.png"),
-                                               tooltip="toggle egg control")
+        self.checkEgg = createImageCheckbox(self, absPath("images/egg.png"),
+                                            absPath("images/egg_inactive.png"),
+                                            tooltip="toggle egg control")
 
         gridBox.addWidget(self.checkEgg)
 

@@ -18,6 +18,13 @@ background:black;
 color:black;
 border-image: url(%s);}
 """
+checkNormalBoxStyleStr = """
+QCheckBox::indicator:checked {
+}
+QCheckBox::indicator:unchecked {
+background:black;
+color:white;
+"""
 
 checkBoxTristateStyleStr = """
 QCheckBox::indicator:unchecked {
@@ -68,7 +75,7 @@ def createStandardButton(parent,fName = None,method = None, width = 24, tooltip 
     return but
 
 
-def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
+def createImageCheckbox(parent, img1=None, img2 = None, tooltip =""):
     check = QtGui.QCheckBox("",parent)
     checkStr = checkBoxStyleStr%(absPath(img1),absPath(img2))
     if os.name =="nt":
@@ -78,6 +85,15 @@ def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
     check.setToolTip(tooltip)
     return check
 
+def createStandardCheckbox(parent,  tooltip =""):
+    check = QtGui.QCheckBox("",parent)
+    checkStr = checkNormalBoxStyleStr
+    if os.name =="nt":
+        checkStr = checkStr.replace("\\","/")
+
+    check.setStyleSheet(checkStr)
+    check.setToolTip(tooltip)
+    return check
 
 def createTristateCheckbox(parent, img1=None , img2 = None,img3 = None, tooltip = ""):
     check = QtGui.QCheckBox("",parent)

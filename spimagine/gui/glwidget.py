@@ -101,6 +101,10 @@ class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
     _foo= QtCore.pyqtSignal()
 
+    _BACKGROUND_BLACK = (0.,0.,0.,0.)
+    _BACKGROUND_WHITE = (1.,1.,1.,0.)
+
+
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -134,7 +138,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.NSubrenderSteps = 1
 
-
         self.dataModel = None
 
         # self.setMouseTracking(True)
@@ -144,7 +147,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
 
-
+    def set_background_mode_black(self, mode_back = True):
+        self._background_mode_black = mode_back
+        self.refresh()
 
 
 
@@ -265,7 +270,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
 
-        self.set_background_color(0,0,0,.0)
+        #self.set_background_color(0,0,0,.0)
+        self.set_background_mode_black(True)
         # self.set_background_color(1,1,1,.6)
 
 
@@ -351,7 +357,10 @@ class GLWidget(QtOpenGL.QGLWidget):
             glViewport((self.width-w)/2,(self.height-w)/2,w,w)
             self.resized = False
 
-
+        if self._background_mode_black:
+            glClearColor(*self._BACKGROUND_BLACK)
+        else:
+            glClearColor(*self._BACKGROUND_WHITE)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -372,9 +381,13 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
                 self.programCube.enableAttributeArray("position")
 
-                r,g,b,a = self._background_color
-                self.programCube.setUniformValue("color",
-                                                 QtGui.QVector4D(1-r,1-g,1-b,0.6))
+                if self._background_mode_black:
+                    self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1,1,1,0.6))
+                else:
+                    self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(0,0,0,0.6))
+
                 self.programCube.setAttributeArray("position", self.cubeCoords)
 
 
@@ -441,6 +454,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
 
 
+            self.programTex.setUniformValue("is_mode_black",self._background_mode_black)
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self.texture)
             self.programTex.setUniformValue("texture",0)

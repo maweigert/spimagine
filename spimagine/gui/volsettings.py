@@ -14,7 +14,7 @@ from PyQt4 import QtOpenGL
 import numpy as np
 
 
-from gui_utils import createStandardCheckbox,createStandardButton
+from gui_utils import createImageCheckbox,createStandardCheckbox, createStandardButton
 from spimagine.gui.floatslider import FloatSlider
 
 import spimagine
@@ -110,12 +110,15 @@ class VolumeSettingsPanel(QtGui.QWidget):
         vbox.addWidget(QtGui.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
 
         # the perspective/box checkboxes
-        self.checkProj = createStandardCheckbox(self,absPath("images/rays_persp.png"),
-                                                    absPath("images/rays_ortho.png"), tooltip="projection")
+        self.checkProj = createImageCheckbox(self, absPath("images/rays_persp.png"),
+                                             absPath("images/rays_ortho.png"), tooltip="projection")
 
-        self.checkBox = createStandardCheckbox(self,absPath("images/wire_cube.png"),
-                                                    absPath("images/wire_cube_incative.png"),
-                                                    tooltip="toggle box")
+        self.checkBox = createImageCheckbox(self, absPath("images/wire_cube.png"),
+                                            absPath("images/wire_cube_incative.png"),
+                                            tooltip="toggle box")
+
+        self.checkInvert = createStandardCheckbox(self,
+                                               tooltip="invert colors")
 
         self.butColor = createStandardButton(self,absPath("images/icon_colors.png"),
                                              method = self.onButtonColor,
@@ -129,7 +132,10 @@ class VolumeSettingsPanel(QtGui.QWidget):
         gridBox.addWidget(QtGui.QLabel("bounding box:\t"),2,0)
         gridBox.addWidget(self.checkBox,2,1)
 
-        gridBox.addWidget(QtGui.QLabel("colormap:\t"),3,0)
+        gridBox.addWidget(QtGui.QLabel("invert colors:\t"),3,0)
+        gridBox.addWidget(self.checkInvert,3,1)
+
+        gridBox.addWidget(QtGui.QLabel("colormap:\t"),4,0)
 
         self.colorCombo = QtGui.QComboBox()
 
@@ -140,9 +146,9 @@ class VolumeSettingsPanel(QtGui.QWidget):
         for s in self.colormaps:
             self.colorCombo.addItem(QtGui.QIcon(absPath("../colormaps/cmap_%s.png"%s)),"")
 
-        gridBox.addWidget(self.colorCombo,3,1)
+        gridBox.addWidget(self.colorCombo,4,1)
 
-        gridBox.addWidget(self.butColor,4,0)
+        gridBox.addWidget(self.butColor,5,0)
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
@@ -151,8 +157,8 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
-        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),5,0)
-        gridBox.addWidget(self.sliderAlphaPow,5,1)
+        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),6,0)
+        gridBox.addWidget(self.sliderAlphaPow,6,1)
 
 
 
