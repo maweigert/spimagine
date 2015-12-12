@@ -18,6 +18,7 @@ setup(name='spimagine',
     ],
 
     package_data={"spimagine":['volumerender/kernels/*',
+                               'gui/shaders/*',
                                'gui/images/*',
                                'colormaps/*',
                                'data/*',
