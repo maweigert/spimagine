@@ -86,6 +86,8 @@ class VolumeRenderer:
 
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
+            init_device(useGPU = True,
+                                 useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -101,27 +103,26 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = .4*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        self.memMax = .7*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        #self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
         try:
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =
-                                   ["-cl-fast-relaxed-math",
+                                   ["-cl-finite-math-only",
+                                    "-cl-fast-relaxed-math",
                                     "-cl-unsafe-math-optimizations",
                                     "-cl-mad-enable",
-                                    "-I %s" %absPath("kernels/"),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
-                                   )
+                                    str("-I %s"%absPath("kernels/")),
+                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__])
         except Exception as e:
 
             logger.debug(str(e))
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =
-                                   ["-I %s" %absPath("kernels/"),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
-            )
+                                   [str("-I %s"%absPath("kernels/")),
+                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__])
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
@@ -203,11 +204,13 @@ class VolumeRenderer:
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
 
-    def set_alpha_pow(self,alphaPow = 10.):
+    def set_alpha_pow(self,alphaPow = 0.):
         self.alphaPow = alphaPow
 
 
     def set_data(self,data, autoConvert = True, copyData = False):
+        logger.debug("set_data")
+
         if not autoConvert and not data.dtype in self.dtypes:
             raise NotImplementedError("data type should be either %s not %s"%(self.dtypes,data.dtype))
 
@@ -351,38 +354,11 @@ class VolumeRenderer:
             else:
                 return self.buf.get()
 
-
         if method=="max_project":
             if self.dtype == np.uint16:
                 method = "max_project_short"
             else:
                 method = "max_project_float"
-
-            self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
-
-
-        if method=="max_project_part":
-            if self.dtype == np.uint16:
-                method = "max_project_part_short"
-            else:
-                method = "max_project_part_float"
 
             self.proc.run_kernel(method,
                             (self.width,self.height),
@@ -629,7 +605,7 @@ if __name__ == "__main__":
     rend.set_modelView(mat4_translate(0,0,5.))
 
     rend.set_data(d.astype(np.float32))
-    out = rend.render(maxVal = 1., method = "max_project_part")
+    out = rend.render(maxVal = 1., method = "max_project")
     # out = rend.render(maxVal = 1., method = "iso_surface")
 
     import pylab

@@ -20,8 +20,12 @@ logger = logging.getLogger(__name__)
 
 import os
 import numpy as np
-from PyQt4 import QtCore
 import time
+
+from PyQt4 import QtCore
+
+
+
 import re
 import glob
 
@@ -173,13 +177,15 @@ class TiffData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                data = imgutils.read3dTiff(fName)
-                dshape = data.shape
-                if len(dshape)<3:
-                    raise ValueError("the file %s appears to have only %s dimensions!"%(fname,len(dshape)))
+                data = np.squeeze(imgutils.read3dTiff(fName))
 
-                self.stackSize = (1,)*(5-len(dshape)) + dshape
-                self.data = data.reshape(self.stackSize)
+                if not data.ndim in [3,4]:
+                    raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
+
+                #reshape it to e.g. (1,1,100,100,100)
+                self.stackSize = (1,)*(5-data.ndim) + data.shape
+
+                self.data = data.reshape(self.StackSize)
 
             except Exception as e:
                 print e
@@ -193,7 +199,10 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return self.data[pos]
+            if self.data.ndim == 3:
+                return self.data
+            else:
+                return self.data[pos]
         else:
             return None
 
@@ -232,7 +241,33 @@ class TiffFolderData(GenericData):
         if len(self.fNames)>0 and pos<len(self.fNames):
             return imgutils.read3dTiff(self.fNames[pos])
 
-        
+class TiffMultipleFiles(GenericData):
+    """3d tiff data inside a folder"""
+    def __init__(self,fName = []):
+        GenericData.__init__(self, fName)
+        self.fNames = fName
+        self.load(fName)
+
+    def load(self,fNames, stackUnits = [1.,1.,1.]):
+        if fNames:
+            if len(self.fNames) == 0:
+                raise Exception("filelist %s seems to be empty"%fName)
+
+            try:
+                _tmp = imgutils.read3dTiff(self.fNames[0])
+                self.stackSize = (len(self.fNames),)+ _tmp.shape
+            except Exception as e:
+                print e
+                raise Exception("couldnt open %s as TiffData"%self.fNames[0])
+                return
+
+            self.stackUnits = stackUnits
+
+
+    def __getitem__(self,pos):
+        if len(self.fNames)>0 and pos<len(self.fNames):
+            return imgutils.read3dTiff(self.fNames[pos])
+
 class NumpyData(GenericData):
 
     def __init__(self, data, stackUnits = [1.,1.,1.]):
@@ -319,18 +354,29 @@ class CZIData(GenericData):
         self.load(fName)
 
     def load(self,fName, stackUnits = [1.,1.,1.]):
+
         if fName:
             try:
-                self.data = np.squeeze(imgutils.readCziFile(fName))
-                assert(self.data.ndim == 3)
-                self.stackSize = (1,)+ self.data.shape
+                data = np.squeeze(imgutils.readCziFile(fName))
+
+                if not data.ndim in [3,4]:
+                    raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
+
+                if data.ndim == 3:
+                    self.stackSize = (1,)+ data.shape
+                else:
+                    self.stackSize = data.shape
+                self.data = data
                 self.stackUnits = stackUnits
                 self.fName = fName
             except Exception as e:
                 print e
         
     def __getitem__(self,pos):
-        return self.data
+        if self.data.ndim == 3:
+            return self.data
+        else:
+            return self.data[pos]
 
 
 
@@ -359,7 +405,10 @@ class DataLoadThread(QtCore.QThread):
 
 
     def run(self):
+        import time
+
         self.stopped = False
+
         while not self.stopped:
             self._rwLock.lockForWrite()
 
@@ -380,11 +429,17 @@ class DataLoadThread(QtCore.QThread):
                     self.data[k] = newdata
                     self._rwLock.unlock()
                     logger.debug("preload: %s",k)
-                    time.sleep(.0001)
+                    try:
+                        time.sleep(.0001)
+                    except Exception as e:
+                        print e
 
             # print "load thead dict length: ", len(self.data.keys())
             
-            time.sleep(.0001)
+            try:
+                time.sleep(.0001)
+            except Exception as e:
+                print e
 
 
 class DataModel(QtCore.QObject):
@@ -505,8 +560,11 @@ class DataModel(QtCore.QObject):
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
     def loadFromPath(self,fName, prefetchSize = 0):
-        
-        if re.match(".*\.tif",fName):
+
+        if  isinstance(fName,(tuple,list)):
+            self.setContainer(TiffMultipleFiles(fName),prefetchSize)
+
+        elif re.match(".*\.tif",fName):
             self.setContainer(TiffData(fName),prefetchSize = 0)
         elif re.match(".*\.(png|jpg|bmp)",fName):
             self.setContainer(Img2dData(fName),prefetchSize = 0)
@@ -519,6 +577,7 @@ class DataModel(QtCore.QObject):
                 self.setContainer(SpimData(fName),prefetchSize)
             else:
                 self.setContainer(TiffFolderData(fName),prefetchSize = prefetchSize)            
+
 
 
 

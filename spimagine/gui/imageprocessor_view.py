@@ -87,9 +87,9 @@ class ImageProcessorView(QtGui.QWidget):
 
         gridBox = QtGui.QGridLayout()
 
-        self.checkActive = gui_utils.createStandardCheckbox(self,
-            absPath("images/icon_processor_active"),
-            absPath("images/icon_processor_inactive"))
+        self.checkActive = gui_utils.createImageCheckbox(self,
+                                                         absPath("images/icon_processor_active"),
+                                                         absPath("images/icon_processor_inactive"))
 
 
         label = QtGui.QLabel(self.proc.name)

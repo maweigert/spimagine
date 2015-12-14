@@ -68,13 +68,9 @@ from spimagine.utils.quaternion import Quaternion
 
 # logger.setLevel(logging.DEBUG)
 
-
-
-
 def _next_golden(n):
     res = round((np.sqrt(5)-1.)/2.*n)
     return int(round((np.sqrt(5)-1.)/2.*n))
-
 
 
 def absPath(myPath):
@@ -92,7 +88,12 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-    
+    _foo= QtCore.pyqtSignal()
+
+    _BACKGROUND_BLACK = (0.,0.,0.,0.)
+    _BACKGROUND_WHITE = (1.,1.,1.,0.)
+
+
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -113,11 +114,17 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.NSubrenderSteps = 1
 
-
         self.dataModel = None
 
         # self.setMouseTracking(True)
 
+        self._dataModelChanged.connect(self.dataModelChanged)
+
+        self.refresh()
+
+
+    def set_background_mode_black(self, mode_back = True):
+        self._background_mode_black = mode_back
         self.refresh()
 
 
@@ -125,17 +132,22 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def setModel(self,dataModel):
         logger.debug("setModel")
+        if self.dataModel is None or (self.dataModel != dataModel):
+                self.dataModel = dataModel
+                self.init_render_objects(self.dataModel.sizeC())
+                for t in self.transforms:
+                    t.setModel(dataModel)
 
-        self.dataModel = dataModel
+                self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+                self.dataModel._dataPosChanged.connect(self.dataPosChanged)
+                self._dataModelChanged.emit()
 
-        if self.dataModel:
-            self.init_render_objects(self.dataModel.sizeC())
 
 
-            self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-            self.dataModel._dataPosChanged.connect(self.dataPosChanged)
-            self._dataModelChanged.connect(self.dataModelChanged)
-            self._dataModelChanged.emit()
+
+
+    def foo(self):
+        print "fooooooooooooooo"
 
 
     def init_render_objects(self,nChannels = 1):
@@ -186,8 +198,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         try:
             arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
-        except:
-            print "could not load colormap %s"%name
+        except KeyError:
+            print "could not load colormap '%s'"%name
+            print "valid names: %s"%spimagine.config.__COLORMAPDICT__.keys()
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
@@ -255,13 +268,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         # glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
         # glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        # self.set_background_color(0,0,0,.0)
-        self.set_background_color(1,1,1,.6)
-
-
-    def setInvertedMode(self, inverted = True):
-        self._inverted = inverted
+        #self.set_background_color(0,0,0,.0)
+        self.set_background_mode_black(True)
 
 
     def setTransforms(self, transforms):
@@ -276,6 +284,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
     def dataModelChanged(self):
+        logger.debug("+++++++++ data model changed")
 
         if self.dataModel:
             for i in range(self.dataModel.sizeC()):
@@ -355,6 +364,11 @@ class GLWidget(QtOpenGL.QGLWidget):
             glViewport((self.width-w)/2,(self.height-w)/2,w,w)
             self.resized = False
 
+        if self._background_mode_black:
+            glClearColor(*self._BACKGROUND_BLACK)
+        else:
+            glClearColor(*self._BACKGROUND_WHITE)
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 
@@ -377,11 +391,14 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*finalMat.flatten()))
             self.programCube.enableAttributeArray("position")
 
-            r,g,b,a = self._background_color
-            self.programCube.setUniformValue("color",
-                                             QtGui.QVector4D(1-r,1-g,1-b,0.6))
-            self.programCube.setAttributeArray("position", self.cubeCoords)
+            if self._background_mode_black:
+                self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1,1,1,0.6))
+            else:
+                self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(0,0,0,0.6))
 
+            self.programCube.setAttributeArray("position", self.cubeCoords)
 
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
@@ -413,6 +430,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.enableAttributeArray("texcoord")
         self.programTex.setAttributeArray("position", self.quadCoord)
         self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+
+
+        self.programTex.setUniformValue("is_mode_black",self._background_mode_black)
 
 
         glActiveTexture(GL_TEXTURE0)
@@ -458,9 +478,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if t.isIso:
             renderMethod = "iso_surface"
-                
         else:
-            renderMethod = "max_project_part"
+            renderMethod = "max_project"
 
         self.outputs[n], self.outputs_a[n] = r.render(method = renderMethod,
                                                       return_alpha = True,

@@ -26,14 +26,29 @@ import argparse
 
 import logging
 
+
+def absPath(myPath):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    import sys
+
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+
+        return os.path.join(base_path, os.path.basename(myPath))
+    except Exception:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        return os.path.join(base_path, myPath)
+
     
 def main():
 
     parser = argparse.ArgumentParser(description='spimagine rendering application ')
     parser.add_argument('fname',
                         type=str,
-                        nargs='?',
-                        help='the file/folder to open (e.g. tif, folder of tif) ',
+                        nargs='*',
+                        help='the files/folder to open (e.g. tif, folder of tif) ',
                         default = None)
     
     parser.add_argument('-p',
@@ -63,6 +78,8 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
 
+    app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
+
     if sys.platform.startswith("win"):
     	QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
 
@@ -70,7 +87,10 @@ def main():
     win = MainWidget()
 
     if args.fname:
-        win.setModel(DataModel.fromPath(args.fname))
+        if len(args.fname)==1:
+            win.setModel(DataModel.fromPath(args.fname[0]))
+        else:
+            win.setModel(DataModel.fromPath(args.fname))
     else:
         win.setModel(DataModel(DemoData()))
 

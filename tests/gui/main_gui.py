@@ -10,7 +10,6 @@ from spimagine.models.data_model import DemoData, DataModel
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
 
     win = MainWidget()
 

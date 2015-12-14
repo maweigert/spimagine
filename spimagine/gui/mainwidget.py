@@ -47,7 +47,7 @@ from spimagine.gui.floatslider import FloatSlider
 
 from spimagine.models.transform_model import TransformModel
 
-from spimagine.gui.gui_utils import  createStandardCheckbox,createStandardButton
+from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 
 from spimagine.utils.imgutils import write3dTiff
 
@@ -82,8 +82,8 @@ class MainWidget(QtGui.QWidget):
     N_SCALE_MAX_EXP = 17
     N_SCALE_SLIDER = 500
 
-    def __init__(self, parent = None):
-        super(QtGui.QWidget,self).__init__(parent)
+    def __init__(self, parent = None, **kwargs):
+        super(QtGui.QWidget,self).__init__(parent, **kwargs)
 
         self.myparent = parent
 
@@ -94,13 +94,13 @@ class MainWidget(QtGui.QWidget):
 
         self.resize(900, 700)
 
+        #self.transform = TransformModel()
 
-        self.transform = TransformModel()
 
         self.initActions()
 
         self.glWidget = GLWidget(self)
-        self.glWidget.setTransform(self.transform)
+        # self.glWidget.setTransform(self.transform)
 
         self.sliceWidget = SliceWidget(self)
         self.sliceWidget.hide()
@@ -109,7 +109,7 @@ class MainWidget(QtGui.QWidget):
         # self.jack.start()
 
         
-        self.sliceWidget.setTransform(self.transform)
+        # self.sliceWidget.setTransform(self.transform)
 
         self.fwdButton = createStandardButton(self,
                 fName = absPath("images/icon_forward.png"),
@@ -144,31 +144,31 @@ class MainWidget(QtGui.QWidget):
                         fName = absPath("images/icon_filesave.png"),
                         method = self.saveFile, tooltip = "save file as tif")
         
-        self.checkVolSettings = createStandardCheckbox(self,
-            absPath("images/icon_volsettings_active.png"),
-            absPath("images/icon_volsettings_inactive.png"),
-                tooltip="volume settings")
+        self.checkVolSettings = createImageCheckbox(self,
+                                                    absPath("images/icon_volsettings_active.png"),
+                                                    absPath("images/icon_volsettings_inactive.png"),
+                                                    tooltip="volume settings")
 
-        self.checkSettings = createStandardCheckbox(self,
-                absPath("images/icon_mainsettings_active.png"),
-                absPath("images/icon_mainsettings_inactive.png"),
-                tooltip="general settings")
-
-
-        self.checkKey = createStandardCheckbox(self,absPath("images/video.png"),absPath("images/video_inactive.png"), tooltip="keyframe editor")
-
-        self.checkIsoView = createStandardCheckbox(self,
-            absPath("images/icon_method_vol.png"),
-            absPath("images/icon_method_iso.png"),
-            tooltip="iso surface")
-
-        self.checkProcView = createStandardCheckbox(self,
-            absPath("images/icon_process_active.png"),
-            absPath("images/icon_process_inactive.png"),
-            tooltip="image processors")
+        self.checkSettings = createImageCheckbox(self,
+                                                 absPath("images/icon_mainsettings_active.png"),
+                                                 absPath("images/icon_mainsettings_inactive.png"),
+                                                 tooltip="general settings")
 
 
-        self.checkSliceView = createStandardCheckbox(
+        self.checkKey = createImageCheckbox(self, absPath("images/video.png"), absPath("images/video_inactive.png"), tooltip="keyframe editor")
+
+        self.checkIsoView = createImageCheckbox(self,
+                                                absPath("images/icon_method_vol.png"),
+                                                absPath("images/icon_method_iso.png"),
+                                                tooltip="iso surface")
+
+        self.checkProcView = createImageCheckbox(self,
+                                                 absPath("images/icon_process_active.png"),
+                                                 absPath("images/icon_process_inactive.png"),
+                                                 tooltip="image processors")
+
+
+        self.checkSliceView = createImageCheckbox(
             self,
             absPath("images/icon_slice.png"),
             absPath("images/icon_slice_inactive.png"), tooltip="slice view")
@@ -206,7 +206,7 @@ class MainWidget(QtGui.QWidget):
 
         
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
-        self.gammaSlider.setRange(.25,2.)
+        self.gammaSlider.setRange(.01,2.,200)
 
         self.gammaSlider.setToolTip("value gamma")
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -293,8 +293,6 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.fwdButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
-        # hbox.addWidget(self.checkProj)
-        # hbox.addWidget(self.checkBox)
 
         hbox.addWidget(self.centerButton)
 
@@ -353,16 +351,24 @@ class MainWidget(QtGui.QWidget):
         self.playDir = 1
 
         # a decorator as checkboxe state is  2 if checked
-        def stateToBool(objFunc):
+        def stateToBool(objFunc, invert = False):
             def _foo(x):
-                return objFunc(x!=0)
+                if invert:
+                    return objFunc(x!=2)
+                else:
+                    return objFunc(x==2)
             return _foo
 
-        self.volSettingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+        self.volSettingsView.checkBox.stateChanged.connect(
+            self.glWidget.transform.setBox)
+
+        self.volSettingsView.checkInvert.stateChanged.connect(
+            stateToBool(self.glWidget.set_background_mode_black,invert = True))
 
         self.settingsView._substepsChanged.connect(self.substepsChanged)
 
-        self.checkIsoView.stateChanged.connect(stateToBool(self.glWidget.transform.setIso))
+        self.checkIsoView.stateChanged.connect(
+            stateToBool(self.glWidget.transform.setIso))
 
         self.transform._isoChanged.connect(self.checkIsoView.setChecked)
 
@@ -420,7 +426,7 @@ class MainWidget(QtGui.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
-
+        
 
     def impStateChanged(self):
         data = self.transform.dataModel[self.transform.dataPos]
@@ -580,6 +586,18 @@ class MainWidget(QtGui.QWidget):
 
         if fileName:
             self.glWidget.saveFrame(str(fileName))
+
+
+    def set_colormap(self, name):
+        self.glWidget.set_colormap(name)
+
+    def set_colormap_rgb(self, color):
+        self.glWidget.set_colormap_rgb(color)
+
+
+    def saveFrame(self, fName):
+        self.glWidget.saveFrame(fName)
+
 
 
     def setLoopBounce(self,loopBounce):

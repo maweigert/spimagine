@@ -48,7 +48,7 @@ def createImgCheckBox(fName_active,fName_inactive):
 
 
 
-class VolumeSettingsPanel(QtGui.QWidget):
+class LayerSettingsPanel(QtGui.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
     _alphaPowChanged = QtCore.pyqtSignal(float)
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
 
-    win = MainWindow()
+    win = LayerSettingsPanel()
     win.show()
     win.raise_()
 
