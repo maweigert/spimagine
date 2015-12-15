@@ -143,6 +143,9 @@ class VolumeRenderer:
         self.set_min_val()
 
         self.set_occ_strength(.3)
+        self.set_occ_radius(21)
+        self.set_occ_n_points(30)
+
         self.set_alpha_pow()
         self.set_box_boundaries()
         self.set_units()
@@ -214,6 +217,12 @@ class VolumeRenderer:
 
     def set_occ_strength(self, occ=.3):
         self.occ_strength = occ
+
+    def set_occ_radius(self, rad =21):
+        self.occ_radius = rad
+
+    def set_occ_n_points(self, n_points = 31):
+        self.occ_n_points = n_points
 
 
     def set_alpha_pow(self,alphaPow = 0.):
@@ -430,20 +439,20 @@ class VolumeRenderer:
                                  )
         self._convolve_vec(self.buf_normals,7)
 
-
+        
         self.proc.run_kernel("occlusion",
                                  (self.width,self.height),
                                  None,
                                  self.buf_occlusion.data,
                                  np.int32(self.width), np.int32(self.height),
-                                 np.int32(21),
-                                 np.int32(30),
+                                 np.int32(self.occ_radius),
+                                 np.int32(self.occ_n_points),
                              self.buf_depth.data,
                              self.buf_normals.data,
                                  )
 
         self._convolve_scalar(self.buf_occlusion,5)
-        self._convolve_vec(self.buf_normals,5)
+        #self._convolve_vec(self.buf_normals,5)
 
         self.proc.run_kernel("shading",
                                  (self.width,self.height),

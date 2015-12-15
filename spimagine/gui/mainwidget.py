@@ -382,6 +382,11 @@ class MainWidget(QtGui.QWidget):
         self.volSettingsView.sliderOcc.floatValueChanged.connect(
             self.glWidget.transform.setOccStrength)
 
+        self.volSettingsView.sliderOccRadius.floatValueChanged.connect(
+                self.glWidget.transform.setOccRadius)
+        self.volSettingsView.sliderOccNPoints.floatValueChanged.connect(
+            self.glWidget.transform.setOccNPoints)
+
         self.glWidget.transform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
 
         self.glWidget.transform._boundsChanged.connect(self.volSettingsView.setBounds)

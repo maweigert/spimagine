@@ -85,7 +85,9 @@ class TransformModel(QtCore.QObject):
         self.setAlphaPow(0)
         self.setBox(True)
 
-        self.setOccStrength(.3)
+        self.setOccStrength()
+        self.setOccRadius()
+        self.setOccNPoints()
 
         self.eye_dist_proj = 0
         self.eye_dist_cam = 0
@@ -108,6 +110,13 @@ class TransformModel(QtCore.QObject):
         if self._update_value("occ_strength",occ_strength):
             self._transformChanged.emit()
 
+    def setOccRadius(self, val = 21):
+        if self._update_value("occ_radius",val):
+            self._transformChanged.emit()
+
+    def setOccNPoints(self, val = 31):
+        if self._update_value("occ_n_points",val):
+            self._transformChanged.emit()
 
     def center(self):
         self.quatRot = Quaternion()

@@ -152,9 +152,6 @@ __kernel void iso_surface(
   int maxBisect = 10;
 
 
-  //float t_bisect = .5f*(t1+t2);
-  //pos  = 0.5f *(1.f + orig + tnear*direc) + (t1-tnear)/dt*delta_pos;
-
   t_hit -= dt;
   hitIso = false;
 
@@ -167,18 +164,12 @@ __kernel void iso_surface(
 	newVal = read_image(volume, volumeSampler, pos, isShortType);
     pos += delta_pos2;
 
-    if ((x == Nx/2) && (y == Ny/2))
-       printf("loop2:  %.5f %.6f %.4f \n",newVal,1.f*i,dt2);
-
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = true;
 	  t_hit += i*dt2;
 	  break;
 	}
   }
-
-  if ((x == Nx/2) && (y == Ny/2))
-       printf("end:  %.5f %.6f %.4f \n",newVal,t_hit,dt2);
 
 
 

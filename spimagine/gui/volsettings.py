@@ -164,11 +164,28 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderOcc.setRange(0,1.,100)
         self.sliderOcc.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderOcc.setTracking(True)
-        self.sliderOcc.setValue(.4)
+        self.sliderOcc.setValue(.3)
 
-        gridBox.addWidget(QtGui.QLabel("ambient occlusion:\t"),7,0)
+        gridBox.addWidget(QtGui.QLabel("AO strength:\t"),7,0)
         gridBox.addWidget(self.sliderOcc,7,1)
 
+        self.sliderOccRadius = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderOccRadius.setRange(4.,100.,100)
+        self.sliderOccRadius.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderOccRadius.setTracking(True)
+        self.sliderOccRadius.setValue(21)
+
+        gridBox.addWidget(QtGui.QLabel("AO radius :\t"),8,0)
+        gridBox.addWidget(self.sliderOccRadius,8,1)
+
+        self.sliderOccNPoints = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderOccNPoints.setRange(10.,200.,100)
+        self.sliderOccNPoints.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderOccNPoints.setTracking(True)
+        self.sliderOccNPoints.setValue(31)
+
+        gridBox.addWidget(QtGui.QLabel("AO n points:\t"),9,0)
+        gridBox.addWidget(self.sliderOccNPoints,9,1)
 
         vbox.addLayout(gridBox)
 
