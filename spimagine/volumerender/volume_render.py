@@ -129,7 +129,9 @@ class VolumeRenderer:
         
         self.projection = np.zeros((4,4))
         self.modelView = np.zeros((4,4))
-                
+
+
+
         if size:
             self.resize(size)
         else:
@@ -169,13 +171,17 @@ class VolumeRenderer:
 
     def reset_buffer(self):
         self.buf = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufAlpha = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufDepth = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.buf_alpha = OCLArray.empty((self.height, self.width), dtype=np.float32)
+        self.buf_depth = OCLArray.empty((self.height, self.width), dtype=np.float32)
+        self.buf_normals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
+        self.buf_tmp = OCLArray.empty((self.height,self.width),dtype=np.float32)
 
-        # self.bufNormals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
+        self.output = np.zeros((self.height,self.width),dtype=np.float32)
+        self.output_alpha = np.zeros((self.height,self.width),dtype=np.float32)
+        self.output_depth = np.zeros((self.height,self.width),dtype=np.float32)
 
-        # self.bufNormalsScratch = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
-        
+
+
 
 
     def _get_downsampled_data_slices(self,data):
@@ -290,11 +296,6 @@ class VolumeRenderer:
             invP = inv(self.projection)
             self.invPBuf.write_array(invP.flatten().astype(np.float32))
 
-    # def _get_user_coords(self,x,y,z):
-    #     p = array([x,y,z,1])
-    #     worldp = dot(self.modelView,p)[:-2]
-    #     userp = (worldp+[1.,1.])*.5*array([self.width,self.height])
-    #     return userp[0],userp[1]
 
     def _stack_scale_mat(self):
         # scaling the data according to size and units
@@ -305,6 +306,61 @@ class VolumeRenderer:
         maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
         return mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
 
+
+    def _render_max_project(self,dtype=np.float32, numParts = 1,currentPart = 0):
+        if dtype == np.uint16:
+            method = "max_project_short"
+        elif dtype == np.float32:
+            method = "max_project_float"
+        else:
+            raise NotImplementedError("wrong dtype: %s",dtype)
+
+        self.proc.run_kernel(method,
+                    (self.width,self.height),
+                    None,
+                    self.buf.data, self.buf_alpha.data,
+                    np.int32(self.width), np.int32(self.height),
+                    np.float32(self.boxBounds[0]),
+                    np.float32(self.boxBounds[1]),
+                             np.float32(self.boxBounds[2]),
+                             np.float32(self.boxBounds[3]),
+                             np.float32(self.boxBounds[4]),
+                             np.float32(self.boxBounds[5]),
+                             np.float32(self.minVal),
+                             np.float32(self.maxVal),
+                             np.float32(self.gamma),
+                             np.float32(self.alphaPow),
+                             np.int32(numParts),
+                             np.int32(currentPart),
+                             self.invPBuf.data,
+                             self.invMBuf.data,
+                             self.dataImg)
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+
+    def _render_isosurface(self):
+        self.proc.run_kernel("iso_surface",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.maxVal/2),
+                                 np.float32(self.gamma),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg,
+                                 np.int32(self.dtype == np.uint16)
+                                 )
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
 
     def render(self,data = None, stackUnits = None,
                minVal = None, maxVal = None, gamma = None,
@@ -335,70 +391,18 @@ class VolumeRenderer:
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
-            else:
-                return self.buf.get()
-
+            return
 
         if  modelView is None and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
-            else:
-                return self.buf.get()
+            return
 
         if method=="max_project":
-            if self.dtype == np.uint16:
-                method = "max_project_short"
-            else:
-                method = "max_project_float"
-
-            self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
-                            np.int32(numParts),
-                            np.int32(currentPart),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
+            self._render_max_project(self.dtype,numParts,currentPart)
 
         if method=="iso_surface":
-            self.proc.run_kernel("iso_surface",
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.maxVal/2),
-                            np.float32(self.gamma),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+            self._render_isosurface(self.dtype,numParts,currentPart)
 
-        if return_alpha:
-            return self.buf.get(), self.bufAlpha.get()
-        else:
-            return self.buf.get()
 
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
@@ -445,7 +449,8 @@ def test_simple():
     rend = VolumeRenderer((400,400))
 
     rend.set_data(d)
-    out = rend.render()
+    rend.render()
+    out = rend.output
     pylab.imshow(out)
     pylab.show()
 
@@ -476,7 +481,8 @@ def test_simple2():
     t2 = time.time()
 
     rend.dev.queue.finish()
-    out = rend.render(maxVal = 10000.)
+    rend.render(maxVal = 10000.)
+    out =  rend.output
     rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
@@ -513,7 +519,8 @@ def test_new_iso():
     t2 = time.time()
 
     rend.dev.queue.finish()
-    out = rend.render(maxVal = 1000., method="iso_surface_new")
+    rend.render(maxVal = 1000., method="iso_surface_new")
+    out = rend.output
     rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
@@ -539,13 +546,13 @@ def test_real():
     rend.set_units([1.,1.,6.])
     t2 = time.time()
 
-    out = rend.render(maxVal = 200.)
+    rend.render(maxVal = 200.)
 
     print "time to set data :\t %.2f ms"%(1000*(t2-t1))
 
     print "time to render:\t %.2f ms"%(1000*(time.time()-t2))
 
-    return d, rend, out
+    return d, rend, rend.output
 
 
 def test_speed(N=128,renderWidth = 400, numParts = 1):
@@ -567,7 +574,7 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
     t2 = time.time()
     rend.dev.queue.finish()
     for i in range(10):
-        out = rend.render(method = "max_project_part", maxVal = 200.,
+        rend.render(method = "max_project_part", maxVal = 200.,
                           currentPart=0,numParts=numParts)
     rend.dev.queue.finish()
 
@@ -599,11 +606,12 @@ if __name__ == "__main__":
     rend.set_modelView(mat4_translate(0,0,5.))
 
     rend.set_data(d.astype(np.float32))
-    out = rend.render(maxVal = 1., method = "max_project")
+    rend.render(maxVal = 1., method = "max_project")
+
     # out = rend.render(maxVal = 1., method = "iso_surface")
 
     import pylab
     pylab.figure(1)
     pylab.clf()
-    pylab.imshow(out)
+    pylab.imshow(rend.output)
     pylab.show()
