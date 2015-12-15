@@ -77,7 +77,6 @@ __kernel void iso_surface(
   float tnear, tfar;
   int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
 
-
   
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
@@ -90,8 +89,6 @@ __kernel void iso_surface(
   	}
   	return;
   }
-
-
 
   
   if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
@@ -115,17 +112,14 @@ __kernel void iso_surface(
   bool hitIso = false;
   float t_hit = -1.f;
 
+  for(uint i=1; i<maxSteps; i++) {
+	newVal = read_image(volume, volumeSampler, pos, isShortType);
 
-  for(int i=0; i<maxSteps; ++i) {
-
-    newVal = read_image(volume, volumeSampler, pos, isShortType);
-    pos += delta_pos;
-
+	pos += delta_pos;
 
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = true;
 	  t_hit = i*dt;
-
 	  break;
 	}
   }
@@ -145,20 +139,17 @@ __kernel void iso_surface(
 
   // find real intersection point
   // still broken
-  float oldVal = read_image(volume, volumeSampler, pos-delta_pos, isShortType);
+  float oldVal = read_image(volume, volumeSampler, pos-2*delta_pos, isShortType);
   float lam = .5f;
 
-  // lam = 1 if we already are ot the point, lam = 0 if we should be at the prelast
   if (newVal!=oldVal)
 	lam = (newVal - isoVal)/(newVal-oldVal);
   
   pos -= (1.f-lam)*delta_pos;
-  //t_hit -= lam*dt;
 
-
-
-  if ((x == Nx/2) && (y == Ny/2))
-  	printf("start:  %.5f %.5f %.4f %d\n",newVal,oldVal,lam,maxSteps);
+  //if ((x == Nx/2-100) && (y == Ny/2))
+  // 	// printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
+  //	printf("start:  %.5f %.5f %.4f %d\n",newVal,oldVal,lam,maxSteps);
 
 
   // now phong shading
@@ -243,7 +234,6 @@ __kernel void iso_surface(
   }
 
 }
-
 
 __kernel void shading(
 						  __global float *d_output,

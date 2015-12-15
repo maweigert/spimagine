@@ -731,7 +731,7 @@ if __name__ == "__main__":
     out = rend.output_normals[...,0]
     out = rend.output_occlusion
     #out[rend.output_depth>10] = 0.6
-    #out = rend.output
+    out = rend.output_depth
 
     import pylab
     pylab.figure(1)
