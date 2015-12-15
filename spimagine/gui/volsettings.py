@@ -160,6 +160,14 @@ class VolumeSettingsPanel(QtGui.QWidget):
         gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),6,0)
         gridBox.addWidget(self.sliderAlphaPow,6,1)
 
+        self.sliderOcc = FloatSlider(QtCore.Qt.Horizontal)
+        self.sliderOcc.setRange(0,1.,100)
+        self.sliderOcc.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.sliderOcc.setTracking(True)
+        self.sliderOcc.setValue(.4)
+
+        gridBox.addWidget(QtGui.QLabel("ambient occlusion:\t"),7,0)
+        gridBox.addWidget(self.sliderOcc,7,1)
 
 
         vbox.addLayout(gridBox)

@@ -485,6 +485,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_gamma(self.transform.gamma)
             self.renderer.set_alpha_pow(self.transform.alphaPow)
 
+            self.renderer.set_occ_strength(self.transform.occ_strength)
+
             if self.transform.isIso:
                 renderMethod = "iso_surface"
                 

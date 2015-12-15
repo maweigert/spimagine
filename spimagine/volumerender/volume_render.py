@@ -142,6 +142,7 @@ class VolumeRenderer:
         self.set_max_val()
         self.set_min_val()
 
+        self.set_occ_strength(.3)
         self.set_alpha_pow()
         self.set_box_boundaries()
         self.set_units()
@@ -210,6 +211,10 @@ class VolumeRenderer:
         
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
+
+    def set_occ_strength(self, occ=.3):
+        self.occ_strength = occ
+
 
     def set_alpha_pow(self,alphaPow = 0.):
         self.alphaPow = alphaPow
@@ -431,12 +436,14 @@ class VolumeRenderer:
                                  None,
                                  self.buf_occlusion.data,
                                  np.int32(self.width), np.int32(self.height),
-                                 np.int32(41),
+                                 np.int32(101),
                                  np.int32(30),
                              self.buf_depth.data,
                              self.buf_normals.data,
                                  )
-        self._convolve_scalar(self.buf_occlusion,7)
+
+        self._convolve_scalar(self.buf_occlusion,5)
+        self._convolve_vec(self.buf_normals,5)
 
         self.proc.run_kernel("shading",
                                  (self.width,self.height),
@@ -445,8 +452,9 @@ class VolumeRenderer:
                                  np.int32(self.width), np.int32(self.height),
                                  self.invPBuf.data,
                                  self.invMBuf.data,
+                                np.float32(self.occ_strength),
                                  self.buf_normals.data,
-                             self.buf_depth.data,
+                                self.buf_depth.data,
                                 self.buf_occlusion.data,
 
                              )
@@ -711,7 +719,6 @@ if __name__ == "__main__":
 
     rend = VolumeRenderer((400,400))
 
-    rend.set_modelView(mat4_translate(0,0,-2.))
 
     rend.set_modelView(np.dot(mat4_translate(0,0,-2.),mat4_rotation(0.,0.,1.,0.)))
 
@@ -722,14 +729,15 @@ if __name__ == "__main__":
     rend.render(maxVal = .1, method = "iso_surface")
     print time()-t
     out = rend.output_normals[...,0]
-    #out = rend.output_occlusion
+    out = rend.output_occlusion
     #out[rend.output_depth>10] = 0.6
-    out = rend.output
+    #out = rend.output
 
     import pylab
     pylab.figure(1)
     pylab.clf()
+    ss = (slice(140,260),slice(140,260))
     #pylab.imshow(out[140:260,140:260])
-    pylab.imshow(out)
+    pylab.imshow(out[ss])
 
     pylab.show()

@@ -85,6 +85,8 @@ class TransformModel(QtCore.QObject):
         self.setAlphaPow(0)
         self.setBox(True)
 
+        self.setOccStrength(.3)
+
         self.eye_dist_proj = 0
         self.eye_dist_cam = 0
         if not hasattr(self,"isSlice"):
@@ -101,6 +103,11 @@ class TransformModel(QtCore.QObject):
         if self._update_value("isIso",isIso):
             self._isoChanged.emit(isIso)
             self._transformChanged.emit()
+
+    def setOccStrength(self, occ_strength = .3):
+        if self._update_value("occ_strength",occ_strength):
+            self._transformChanged.emit()
+
 
     def center(self):
         self.quatRot = Quaternion()

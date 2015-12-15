@@ -379,6 +379,9 @@ class MainWidget(QtGui.QWidget):
 
         self.volSettingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
 
+        self.volSettingsView.sliderOcc.floatValueChanged.connect(
+            self.glWidget.transform.setOccStrength)
+
         self.glWidget.transform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
 
         self.glWidget.transform._boundsChanged.connect(self.volSettingsView.setBounds)
