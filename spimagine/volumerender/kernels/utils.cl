@@ -2,6 +2,11 @@
 #define UTILS_H
 
 
+#define MPI_2 6.2831853071795f
+#define INFINITY 1.e30f
+
+// returns random value between [0,1]
+
 inline float random(uint x, uint y)
 {   
     uint a = 4421 +(1+x)*(1+y) +x +y;
@@ -13,11 +18,24 @@ inline float random(uint x, uint y)
 
     float rnd = (a*1.0f)/(79197919);
 
-    // return .5f*(rnd-.5f);
-	return -rnd;
+    return rnd;
 
 }
 
+inline float rand_int(uint x, uint y, int start, int end)
+{
+    uint a = 4421 +(1+x)*(1+y) +x +y;
+
+    for(int i=0; i < 10; i++)
+    {
+        a = (1664525 * a + 1013904223) % 79197919;
+    }
+
+    float rnd = (a*1.0f)/(79197919);
+
+    return (int)(start+rnd*(end-start));
+
+}
 
 
 int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tnear, float *tfar)

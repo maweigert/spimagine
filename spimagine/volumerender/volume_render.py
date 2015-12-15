@@ -173,8 +173,11 @@ class VolumeRenderer:
         self.buf = OCLArray.empty((self.height,self.width),dtype=np.float32)
         self.buf_alpha = OCLArray.empty((self.height, self.width), dtype=np.float32)
         self.buf_depth = OCLArray.empty((self.height, self.width), dtype=np.float32)
-        self.buf_normals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
+        self.buf_normals = OCLArray.empty((self.height,self.width,3),dtype=np.float32)
         self.buf_tmp = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.buf_tmp_vec = OCLArray.empty((self.height,self.width,3),dtype=np.float32)
+
+        self.buf_occlusion = OCLArray.empty((self.height,self.width),dtype=np.float32)
 
         self.output = np.zeros((self.height,self.width),dtype=np.float32)
         self.output_alpha = np.zeros((self.height,self.width),dtype=np.float32)
@@ -279,7 +282,7 @@ class VolumeRenderer:
     def set_units(self,stackUnits = np.ones(3)):
         self.stackUnits = np.array(stackUnits)
 
-    def set_projection(self,projection = mat4_identity()):
+    def set_projection(self,projection = mat4_perspective()):
         self.projection = projection
         self.update_matrices()
 
@@ -319,6 +322,7 @@ class VolumeRenderer:
                     (self.width,self.height),
                     None,
                     self.buf.data, self.buf_alpha.data,
+                             self.buf_depth.data,
                     np.int32(self.width), np.int32(self.height),
                     np.float32(self.boxBounds[0]),
                     np.float32(self.boxBounds[1]),
@@ -339,11 +343,40 @@ class VolumeRenderer:
         self.output_alpha = self.buf_alpha.get()
         self.output_depth = self.buf_depth.get()
 
-    def _render_isosurface(self):
+    def _convolve_scalar(self,buf,radius=11):
+
+        self.proc.run_kernel("conv_x",
+                             (self.width,self.height),None,
+                             buf.data,
+                             self.buf_tmp.data,
+                             np.int32(radius))
+        self.proc.run_kernel("conv_y",
+                             (self.width,self.height),None,
+                             self.buf_tmp.data,
+                             buf.data ,
+                             np.int32(radius))
+
+
+
+    def _convolve_vec(self,buf,radius=11):
+        self.proc.run_kernel("conv_vec_x",
+                             (self.width,self.height),None,
+                             buf.data,
+                             self.buf_tmp_vec.data,
+                             np.int32(radius))
+
+        self.proc.run_kernel("conv_vec_y",
+                             (self.width,self.height),None,
+                             self.buf_tmp_vec.data,
+                             buf.data,
+                             np.int32(radius))
+
+    def _render_isosurface2(self):
         self.proc.run_kernel("iso_surface",
                                  (self.width,self.height),
                                  None,
                                  self.buf.data, self.buf_alpha.data,
+                                 self.buf_depth.data,self.buf_normals.data,
                                  np.int32(self.width), np.int32(self.height),
                                  np.float32(self.boxBounds[0]),
                                  np.float32(self.boxBounds[1]),
@@ -358,9 +391,77 @@ class VolumeRenderer:
                                  self.dataImg,
                                  np.int32(self.dtype == np.uint16)
                                  )
+
+
+        self._convolve_vec(self.buf_normals,5)
+
         self.output = self.buf.get()
         self.output_alpha = self.buf_alpha.get()
         self.output_depth = self.buf_depth.get()
+        self.output_normals = self.buf_normals.get()
+
+    def _render_isosurface(self):
+        """
+        with ambient occlusion
+        """
+        self.proc.run_kernel("iso_surface",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 self.buf_depth.data,self.buf_normals.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.maxVal/2),
+                                 np.float32(self.gamma),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg,
+                                 np.int32(self.dtype == np.uint16)
+                                 )
+        self._convolve_vec(self.buf_normals,7)
+
+
+        self.proc.run_kernel("occlusion",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf_occlusion.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.int32(41),
+                                 np.int32(30),
+                             self.buf_depth.data,
+                             self.buf_normals.data,
+                                 )
+        self._convolve_scalar(self.buf_occlusion,7)
+
+        self.proc.run_kernel("shading",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.buf_normals.data,
+                             self.buf_depth.data,
+                                self.buf_occlusion.data,
+
+                             )
+
+
+        #self._convolve_scalar(self.buf,13)
+        #self._convolve_vec(self.buf_normals,101)
+
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+        self.output_normals = self.buf_normals.get()
+        self.output_occlusion = self.buf_occlusion.get()
+
+
 
     def render(self,data = None, stackUnits = None,
                minVal = None, maxVal = None, gamma = None,
@@ -401,7 +502,7 @@ class VolumeRenderer:
             self._render_max_project(self.dtype,numParts,currentPart)
 
         if method=="iso_surface":
-            self._render_isosurface(self.dtype,numParts,currentPart)
+            self._render_isosurface()
 
 
 
@@ -588,30 +689,47 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
+    from time import time
     # test_simple()
     # test_speed(256)
+    from gputools.utils.utils import remove_cache_dir, get_cache_dir
+    remove_cache_dir()
 
-    import os
-    os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
-    os.environ['PYOPENCL_NO_CACHE'] = '1'
-    
-    N= 64
+
+    N = 128
 
     x = np.linspace(-1,1,N)
-    R = np.sqrt(np.sum([_X**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
+    #R1 = np.sqrt(np.sum([(_X-.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
+    #R2 = np.sqrt(np.sum([(_X+.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
 
-    d = np.exp(-50*(R-.3)**2)
-    
+    Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
+    R1 = np.sqrt((X-.2)**2+Y**2+Z**2)
+    R2 = np.sqrt((X+.2)**2+Y**2+Z**2)
+
+    d = np.exp(-30*R1**2)+ np.exp(-30*R2**2)
+    #d += .03*np.random.uniform(0.,1.,d.shape)
+
     rend = VolumeRenderer((400,400))
-    rend.set_modelView(mat4_translate(0,0,5.))
+
+    rend.set_modelView(mat4_translate(0,0,-2.))
+
+    rend.set_modelView(np.dot(mat4_translate(0,0,-2.),mat4_rotation(0.,0.,1.,0.)))
+
 
     rend.set_data(d.astype(np.float32))
-    rend.render(maxVal = 1., method = "max_project")
 
-    # out = rend.render(maxVal = 1., method = "iso_surface")
+    t = time()
+    rend.render(maxVal = .1, method = "iso_surface")
+    print time()-t
+    out = rend.output_normals[...,0]
+    #out = rend.output_occlusion
+    #out[rend.output_depth>10] = 0.6
+    out = rend.output
 
     import pylab
     pylab.figure(1)
     pylab.clf()
-    pylab.imshow(rend.output)
+    #pylab.imshow(out[140:260,140:260])
+    pylab.imshow(out)
+
     pylab.show()

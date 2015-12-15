@@ -18,7 +18,8 @@
 
 // the basic max_project ray casting
 __kernel void
-max_project_float(__global float *d_output, __global float *d_alpha_output, 
+max_project_float(__global float *d_output, __global float *d_alpha_output,
+ __global float *d_depth_output,
 				 uint Nx, uint Ny,
 				 float boxMin_x,
 				 float boxMax_x,
@@ -186,7 +187,9 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 
 
 __kernel void
-max_project_short(__global float *d_output, __global float *d_alpha_output, 
+max_project_short(__global float *d_output,
+                __global float *d_alpha_output,
+                __global float *d_depth_output,
 				 uint Nx, uint Ny,
 				 float boxMin_x,
 				 float boxMax_x,

@@ -8,12 +8,16 @@
 
 #include<utils.cl>
 
+#include<convolve_2d.cl>
+#include<occlusion.cl>
 
 
 
 __kernel void iso_surface(
 						  __global float *d_output,
-						  __global float *d_alpha_output, 
+						  __global float *d_alpha_output,
+						  __global float *d_depth_output,
+						  __global float *d_normals_output,
 						  uint Nx, uint Ny,
 						  float boxMin_x,
 						  float boxMax_x,
@@ -78,6 +82,10 @@ __kernel void iso_surface(
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
 	  d_alpha_output[x+Nx*y] = 0.f;
+	  d_depth_output[x+Nx*y] = INFINITY;
+	  d_normals_output[3*x+3*Nx*y] = 0.f;
+	  d_normals_output[1+3*x+3*Nx*y] = 0.f;
+	  d_normals_output[2+3*x+3*Nx*y] = 0.f;
   	}
   	return;
   }
@@ -102,22 +110,35 @@ __kernel void iso_surface(
   float newVal = read_image(volume, volumeSampler, pos,isShortType);
   bool isGreater = newVal>isoVal;
   bool hitIso = false;
+  float t_hit = -1.f;
 
-  for(uint i=1; i<maxSteps; i++) {		
+  for(uint i=1; i<maxSteps; i++) {
 	newVal = read_image(volume, volumeSampler, pos, isShortType);
 	pos += delta_pos;
 
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = true;
+	  t_hit = i*dt;
 	  break;
 	}
   }
 
+  if (!hitIso) {
+  	if ((x < Nx) && (y < Ny)) {
+  	  d_output[x+Nx*y] = 0.f;
+	  d_alpha_output[x+Nx*y] = 0.f;
+	  d_depth_output[x+Nx*y] = INFINITY;
+	  d_normals_output[3*x+3*Nx*y] = 0.f;
+	  d_normals_output[1+3*x+3*Nx*y] = 0.f;
+	  d_normals_output[2+3*x+3*Nx*y] = 0.f;
+  	}
+  	return;
+  }
 
 
   // find real intersection point
   // still broken
-  float oldVal = read_image(volume, volumeSampler, pos-delta_pos, isShortType);
+  float oldVal = read_image(volume, volumeSampler, pos-2*delta_pos, isShortType);
   float lam = .5f;
 
   if (newVal!=oldVal)
@@ -125,9 +146,9 @@ __kernel void iso_surface(
   
   pos -= (1.f-lam)*delta_pos;
 
-  // if ((x == Nx/2-100) && (y == Ny/2))
+  //if ((x == Nx/2-100) && (y == Ny/2))
   // 	// printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
-  // 	printf("start:  %.5f %.5f %.4f %d\n",newVal,direc.z,lam,maxSteps);
+  //	printf("start:  %.5f %.5f %.4f %d\n",newVal,oldVal,lam,maxSteps);
 
 
   // now phong shading
@@ -205,8 +226,91 @@ __kernel void iso_surface(
   if ((x < Nx) && (y < Ny)){
 	d_output[x+Nx*y] = colVal;
 	d_alpha_output[x+Nx*y] = alphaVal;
-
+	d_depth_output[x+Nx*y] = t_hit;
+	d_normals_output[3*x+3*Nx*y] = normal.x;
+    d_normals_output[1+3*x+3*Nx*y] = normal.y;
+    d_normals_output[2+3*x+3*Nx*y] = normal.z;
   }
 
 }
 
+
+__kernel void shading(
+						  __global float *d_output,
+						  __global float *d_alpha_output,
+						  uint Nx, uint Ny,
+						  __constant float* invP,
+						  __constant float* invM,
+
+						  __global float* input_normals,
+						  __global float* input_depth,
+						    __global float *input_occlusion)
+{
+
+  uint x = get_global_id(0);
+  uint y = get_global_id(1);
+
+  float u = (x / (float) Nx)*2.0f-1.0f;
+  float v = (y / (float) Ny)*2.0f-1.0f;
+
+  // calculate eye ray in world space
+  float4 orig0, orig;
+  float4 direc;
+  float4 temp;
+  float4 front, back;
+  front = (float4)(u,v,-1,1);
+  back = (float4)(u,v,1,1);
+
+  orig0 = mult(invP,front);
+  orig0 *= 1.f/orig0.w;
+
+  orig = mult(invM,orig0);
+  orig *= 1.f/orig.w;
+
+  temp = mult(invP,back);
+
+  temp *= 1.f/temp.w;
+
+  direc = mult(invM,normalize(temp-orig0));
+  direc.w = 0.0f;
+
+  // now phong shading
+  float4 light = (float4)(2,-1,-2,0);
+
+  float c_ambient = .5f;
+  float c_diffuse = .3f;
+  float c_specular = .2f;
+
+
+  light = mult(invM,light);
+  light = normalize(light);
+
+  float4 normal = (float4)(input_normals[3*(x+Nx*y)],
+                            input_normals[1+3*(x+Nx*y)],
+                            input_normals[2+3*(x+Nx*y)],0.f);
+
+  float occ = input_occlusion[x+Nx*y];
+  float depth = input_depth[x+Nx*y];
+
+  normal = normalize(normal);
+  float4 reflect = 2.f*dot(light,normal)*normal-light;
+
+  float diffuse = fmax(0.f,dot(light,normal));
+  float specular = pow(fmax(0.f,dot(normalize(reflect),normalize(direc))),10);
+
+  // phong shading
+
+  float colVal = c_ambient
+	  + c_diffuse*diffuse
+	  + (diffuse>0)*c_specular*specular;
+
+  colVal *= (.3+.7*occ);
+
+
+  colVal *= ((depth<INFINITY)?1.f:0.f);
+
+  if ((x < Nx) && (y < Ny)){
+	d_output[x+Nx*y] = colVal;
+ }
+
+}
