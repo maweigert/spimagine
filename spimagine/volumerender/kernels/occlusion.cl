@@ -57,8 +57,8 @@ __kernel void occlusion(__global float *d_output,
 
     //sample point
 
-    float r = radius*sqrt(random(x+rand_int(i,i,0,1000),y+rand_int(i,i,0,10000)));
-    float phi = MPI_2*random(x+rand_int(i,i,0,1000),y+rand_int(i,i,0,10000));
+    float r = radius*sqrt(random(x+rand_int(i,i*i,0,1000),y+rand_int(i*i,i,294,97701)));
+    float phi = MPI_2*random(x+rand_int(i*i,i,0,1997),y+rand_int(i,i*i,569,17633));
 
     int x2 = clamp((int)(x+r*cos(phi)),(int)0,(int)Nx-1);
     int y2 = clamp((int)(y+r*sin(phi)),(int)0,(int)Ny-1);

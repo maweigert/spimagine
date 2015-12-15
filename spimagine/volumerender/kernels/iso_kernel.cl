@@ -110,20 +110,31 @@ __kernel void iso_surface(
   float newVal = read_image(volume, volumeSampler, pos,isShortType);
   bool isGreater = newVal>isoVal;
   bool hitIso = false;
+
+
   float t_hit = -1.f;
 
-  for(uint i=1; i<maxSteps; i++) {
-	newVal = read_image(volume, volumeSampler, pos, isShortType);
+  float t1 = tnear, t2 = tfar;
 
-	pos += delta_pos;
+  //bracket the isoval between t1 and t2
+  for(uint i=1; i<maxSteps; i++) {
+  	pos += delta_pos;
+
+    //if ((x == Nx/2) && (y == Ny/2))
+    //printf("loop1:  %.5f %.6f %.6f \n",newVal,pos.z,delta_pos.z);
+
+	newVal = read_image(volume, volumeSampler, pos, isShortType);
 
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = true;
-	  t_hit = i*dt;
+	  t_hit = tnear+i*dt;
+	  t1 = tnear+(i-1)*dt;
+	  t2 = tnear+i*dt;
 	  break;
 	}
   }
 
+  //if no intersection  found return
   if (!hitIso) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
@@ -136,19 +147,53 @@ __kernel void iso_surface(
   	return;
   }
 
+  //if intersection found bisect, TODO!
+
+  int maxBisect = 10;
+
+
+  //float t_bisect = .5f*(t1+t2);
+  //pos  = 0.5f *(1.f + orig + tnear*direc) + (t1-tnear)/dt*delta_pos;
+
+  t_hit -= dt;
+  hitIso = false;
+
+  float dt2 = dt/maxBisect;
+  float4 delta_pos2 = .5f*dt2*direc;
+  pos -= delta_pos;
+
+  for(uint i=0; i<=maxBisect; i++) {
+
+	newVal = read_image(volume, volumeSampler, pos, isShortType);
+    pos += delta_pos2;
+
+    if ((x == Nx/2) && (y == Ny/2))
+       printf("loop2:  %.5f %.6f %.4f \n",newVal,1.f*i,dt2);
+
+	if ((newVal>isoVal) != isGreater){
+	  hitIso = true;
+	  t_hit += i*dt2;
+	  break;
+	}
+  }
+
+  if ((x == Nx/2) && (y == Ny/2))
+       printf("end:  %.5f %.6f %.4f \n",newVal,t_hit,dt2);
+
+
 
   // find real intersection point
   // still broken
-  float oldVal = read_image(volume, volumeSampler, pos-2*delta_pos, isShortType);
-  float lam = .5f;
+//  float oldVal = read_image(volume, volumeSampler, pos-1*delta_pos, isShortType);
+//  float lam = .5f;
 
-  if (newVal!=oldVal)
-	lam = (newVal - isoVal)/(newVal-oldVal);
+//  if (newVal!=oldVal)
+//	lam = 1.f-(newVal - isoVal)/(newVal-oldVal);
   
-  pos -= (1.f-lam)*delta_pos;
+//  pos -= lam*delta_pos;
+//  t_hit -= lam*dt;
 
   //if ((x == Nx/2-100) && (y == Ny/2))
-  // 	// printf("start:  %.2f %.2f %d\n",newVal,isoVal,isGreater);
   //	printf("start:  %.5f %.5f %.4f %d\n",newVal,oldVal,lam,maxSteps);
 
 

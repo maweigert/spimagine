@@ -436,7 +436,7 @@ class VolumeRenderer:
                                  None,
                                  self.buf_occlusion.data,
                                  np.int32(self.width), np.int32(self.height),
-                                 np.int32(101),
+                                 np.int32(21),
                                  np.int32(30),
                              self.buf_depth.data,
                              self.buf_normals.data,
@@ -726,17 +726,17 @@ if __name__ == "__main__":
     rend.set_data(d.astype(np.float32))
 
     t = time()
-    rend.render(maxVal = .1, method = "iso_surface")
+    rend.render(maxVal = .5, method = "iso_surface")
     print time()-t
     out = rend.output_normals[...,0]
     out = rend.output_occlusion
     #out[rend.output_depth>10] = 0.6
-    out = rend.output_depth
+    #out = rend.output_depth
 
     import pylab
     pylab.figure(1)
     pylab.clf()
-    ss = (slice(140,260),slice(140,260))
+    ss = (slice(100,300),slice(120,280))
     #pylab.imshow(out[140:260,140:260])
     pylab.imshow(out[ss])
 
