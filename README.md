@@ -41,13 +41,13 @@ brew install pyqt
 
 then with pip
 ```
-pip install --user git+https://github.com/maweigert/gputools
-pip install --user git+https://github.com/maweigert/spimagine
+pip install git+https://github.com/maweigert/gputools
+pip install git+https://github.com/maweigert/spimagine
 ```
 
-or the developmental branch
+or the developmental branch (recommended)
 ```
-pip install --user git+https://github.com/maweigert/spimagine@develop
+pip install git+https://github.com/maweigert/spimagine@develop
 ```
 	
 ### Linux
@@ -55,8 +55,8 @@ pip install --user git+https://github.com/maweigert/spimagine@develop
 ```
 apt-get install python-qt4 python-qt4-gl
 
-pip install --user git+https://github.com/maweigert/gputools
-pip install --user git+https://github.com/maweigert/spimagine
+pip install git+https://github.com/maweigert/gputools
+pip install git+https://github.com/maweigert/spimagine@develop
 ```
 
 ### Windows
