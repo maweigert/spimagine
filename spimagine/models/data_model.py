@@ -577,7 +577,7 @@ class DataModel(QtCore.QObject):
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
     def loadFromPath(self,fName, prefetchSize = 0):
-
+        
         if  isinstance(fName,(tuple,list)):
             self.setContainer(TiffMultipleFiles(fName),prefetchSize)
 

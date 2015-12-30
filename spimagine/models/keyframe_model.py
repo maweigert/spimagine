@@ -289,7 +289,7 @@ class KeyFrameEncoder(json.JSONEncoder):
                 KeyFrame,
                 KeyFrameList,
                 TransformData,
-                spimagine.transform_model.TransformData)):
+                spimagine.models.transform_model.TransformData)):
             return obj.__dict__
 
         elif isinstance(obj,np.generic):
