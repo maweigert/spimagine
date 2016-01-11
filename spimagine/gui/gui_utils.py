@@ -214,15 +214,16 @@ def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
 
 
 
-def create_sphere_coords(r,Nphi=10,Ntheta=10):
+def create_sphere_coords(rx,ry,rz,Nphi=50,Ntheta=30, return_normals = False):
     ts = np.arccos(np.linspace(-1.,1.,Ntheta+1))
     ps = np.linspace(0,2.*np.pi,Nphi+1)
 
-    T,P = np.meshgrid(ts,ps)
+    T,P = np.meshgrid(ts,ps, indexing = "ij")
 
-    xs = r*np.array([np.cos(P)*np.sin(T),np.sin(P)*np.sin(T),np.cos(T)])
+    xs = np.array([rx*np.cos(P)*np.sin(T),ry*np.sin(P)*np.sin(T),rz*np.cos(T)])
 
     coords = []
+    normals = []
     for i in range(Ntheta):
         for j in range(Nphi):
             coords.append(xs[:,i,j])
@@ -232,7 +233,17 @@ def create_sphere_coords(r,Nphi=10,Ntheta=10):
             coords.append(xs[:,i,j+1])
             coords.append(xs[:,i+1,j+1])
 
-    return np.array(coords)
+            #FIXME, wrong for rx != ry ....
+            normals.append(1.*xs[:,i,j]/rx)
+            normals.append(1.*xs[:,i+1,j]/rx)
+            normals.append(1.*xs[:,i+1,j+1]/rx)
+            normals.append(1.*xs[:,i,j]/rx)
+            normals.append(1.*xs[:,i,j+1]/rx)
+            normals.append(1.*xs[:,i+1,j+1]/rx)
+    if return_normals:
+        return np.array(coords), np.array(normals)
+    else:
+        return np.array(coords)
 
 
 

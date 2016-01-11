@@ -140,6 +140,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.dataModel = None
 
+        self.surfaces = []
+
         # self.setMouseTracking(True)
 
         self._dataModelChanged.connect(self.dataModelChanged)
@@ -231,9 +233,17 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         logger.debug("initializeGL")
 
-        self.programTex = self._shader_from_file(absPath("shaders/texture.vert"),absPath("shaders/texture.frag"))
-        self.programCube = self._shader_from_file(absPath("shaders/box.vert"),absPath("shaders/box.frag"))
-        self.programSlice = self._shader_from_file(absPath("shaders/slice.vert"),absPath("shaders/slice.frag"))
+        self.programTex = self._shader_from_file(absPath("shaders/texture.vert"),
+                                                 absPath("shaders/texture.frag"))
+
+        self.programCube = self._shader_from_file(absPath("shaders/box.vert"),
+                                                  absPath("shaders/box.frag"))
+
+        self.programSlice = self._shader_from_file(absPath("shaders/slice.vert"),
+                                                   absPath("shaders/slice.frag"))
+
+        self.programSurface = self._shader_from_file(absPath("shaders/surface.vert"),
+                                                  absPath("shaders/surface.frag"))
 
 
 
@@ -292,7 +302,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.transform.reset(minVal = np.amin(self.dataModel[0]),
                                  maxVal = np.amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
-
+            self.surfaces = []
             self.refresh()
 
 
@@ -308,6 +318,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform.reset(minVal = np.amin(self.dataModel[0]),
                              maxVal = np.amax(self.dataModel[0]),
                              stackUnits= self.dataModel.stackUnits())
+
         self.refresh()
 
 
@@ -344,6 +355,145 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.resized = True
 
+    def add_surface(self, coords, color):
+        self.surfaces.append((coords,color))
+
+    def add_surface_sphere(self,pos = (0,0,0),
+                           radius = .2,
+                           color = (1.,1.,1.,0.),
+                           Nphi = 40, Ntheta = 30):
+        coords = np.array(pos)+create_sphere_coords(radius,radius,radius,Nphi, Ntheta)
+        self.add_surface(coords,color)
+
+    def add_surface_ellipsoid(self,pos = (0,0,0),
+                           rs = (.2,.2,.2),
+                           color = (1.,1.,1.,0.),
+                           Nphi = 40, Ntheta = 30):
+        coords = np.array(pos)+create_sphere_coords(rs[0],rs[1],rs[2],Nphi, Ntheta)
+        self.add_surface(coords,color)
+
+
+    def _paintGL_render(self):
+        # Draw the render texture
+        self.programTex.bind()
+
+        self.texture = fillTexture2d(self.output,self.texture)
+
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+
+        self.programTex.enableAttributeArray("position")
+        self.programTex.enableAttributeArray("texcoord")
+        self.programTex.setAttributeArray("position", self.quadCoord)
+        self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+
+
+        self.programTex.setUniformValue("is_mode_black",self._background_mode_black)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        self.programTex.setUniformValue("texture",0)
+
+        glActiveTexture(GL_TEXTURE1)
+        glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+        self.programTex.setUniformValue("texture_alpha",1)
+
+        glActiveTexture(GL_TEXTURE2)
+        glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+        self.programTex.setUniformValue("texture_LUT",2)
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
+
+
+
+
+    def _paintGL_slice(self):
+        #draw the slice
+        self.programSlice.bind()
+        self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programSlice.enableAttributeArray("position")
+
+        pos, dim = self.transform.slicePos,self.transform.sliceDim
+
+        coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+
+        texcoords = [[0.,0.],[1,0.],[1.,1.],
+                     [1.,1.],[0.,1.],[0.,0.]]
+
+
+
+        self.programSlice.setAttributeArray("position", coords)
+        self.programSlice.setAttributeArray("texcoord", texcoords)
+
+        self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
+
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.textureSlice)
+        self.programSlice.setUniformValue("texture",0)
+
+
+        glActiveTexture(GL_TEXTURE1)
+        glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+        self.programSlice.setUniformValue("texture_LUT",1)
+
+
+        glDrawArrays(GL_TRIANGLES,0,len(coords))
+
+
+
+    def _paintGL_box(self):
+
+        # Draw the cube
+        self.programCube.bind()
+        self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programCube.enableAttributeArray("position")
+
+        if self._background_mode_black:
+            self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1,1,1,0.6))
+        else:
+            self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(0,0,0,0.6))
+
+        self.programCube.setAttributeArray("position", self.cubeCoords)
+
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+        self.programCube.setUniformValue("texture_alpha",0)
+
+        glEnable(GL_DEPTH_TEST)
+        # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        glDrawArrays(GL_LINES,0,len(self.cubeCoords))
+        glDisable(GL_DEPTH_TEST)
+
+
+    def _paintGL_surface(self, coords, color = (1.,1.,1.,0.)):
+        """
+        coords are the coordinates of the triangle vertices
+        """
+        # Draw the cube
+        self.programSurface.bind()
+        self.programSurface.setUniformValue("mvpMatrix",
+                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programSurface.enableAttributeArray("position")
+
+        self.programSurface.setAttributeArray("position", coords)
+
+
+        self.programSurface.setUniformValue("color",QtGui.QVector4D(*color))
+
+        glEnable(GL_DEPTH_TEST)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+        glDrawArrays(GL_TRIANGLES,0,len(coords))
+        glDisable(GL_DEPTH_TEST)
+
+
+
     def paintGL(self):
 
         self.makeCurrent()
@@ -364,112 +514,29 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        modelView = self.transform.getModelView()
+
+        proj = self.transform.getProjection()
+
+        self.finalMat = np.dot(proj,modelView)
 
         if self.dataModel:
-            modelView = self.transform.getModelView()
-
-            proj = self.transform.getProjection()
-
-            self.finalMat = np.dot(proj,modelView)
 
 
             self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
             if self.transform.isBox:
-                # Draw the cube
-                self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programCube.enableAttributeArray("position")
-
-                if self._background_mode_black:
-                    self.programCube.setUniformValue("color",
-                                                 QtGui.QVector4D(1,1,1,0.6))
-                else:
-                    self.programCube.setUniformValue("color",
-                                                 QtGui.QVector4D(0,0,0,0.6))
-
-                self.programCube.setAttributeArray("position", self.cubeCoords)
-
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-                self.programCube.setUniformValue("texture_alpha",0)
-
-                glEnable(GL_DEPTH_TEST)
-
-                # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
-                glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-
-                glDrawArrays(GL_LINES,0,len(self.cubeCoords))
-
-
-                glDisable(GL_DEPTH_TEST)
+                self._paintGL_box()
 
             if self.transform.isSlice and self.sliceOutput is not None:
-                #draw the slice
-                self.programSlice.bind()
-                self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programSlice.enableAttributeArray("position")
+                self._paintGL_slice()
 
-                pos, dim = self.transform.slicePos,self.transform.sliceDim
+            self._paintGL_render()
 
-                coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-
-                texcoords = [[0.,0.],[1,0.],[1.,1.],
-                             [1.,1.],[0.,1.],[0.,0.]]
+        for coords, color in self.surfaces:
+            self._paintGL_surface(coords, color)
 
 
-
-                self.programSlice.setAttributeArray("position", coords)
-                self.programSlice.setAttributeArray("texcoord", texcoords)
-
-                self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
-
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureSlice)
-                self.programSlice.setUniformValue("texture",0)
-
-
-                glActiveTexture(GL_TEXTURE1)
-                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-                self.programSlice.setUniformValue("texture_LUT",1)
-
-
-                glDrawArrays(GL_TRIANGLES,0,len(coords))
-
-
-
-            # Draw the render texture
-            self.programTex.bind()
-
-            self.texture = fillTexture2d(self.output,self.texture)
-
-            glEnable(GL_TEXTURE_2D)
-            glDisable(GL_DEPTH_TEST)
-
-            self.programTex.enableAttributeArray("position")
-            self.programTex.enableAttributeArray("texcoord")
-            self.programTex.setAttributeArray("position", self.quadCoord)
-            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
-
-
-            self.programTex.setUniformValue("is_mode_black",self._background_mode_black)
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
-            self.programTex.setUniformValue("texture",0)
-
-            glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-            self.programTex.setUniformValue("texture_alpha",1)
-
-            glActiveTexture(GL_TEXTURE2)
-            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",2)
-
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-            glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
     def render(self):
@@ -704,8 +771,28 @@ def test_demo_simple():
     sys.exit(app.exec_())
 
 
+def test_surface():
+    from spimagine import DataModel, DemoData
+
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+
+    win.setModel(DataModel(DemoData()))
+
+    win.add_surface_ellipsoid((1.,0.2,0.2), (.2,.4,.2), color = (1.,.3,.1,.5))
+
+    win.show()
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
+
 if __name__ == '__main__':
 
     # test_sphere()
 
-    test_demo_simple()
+    #test_demo_simple()
+    test_surface()

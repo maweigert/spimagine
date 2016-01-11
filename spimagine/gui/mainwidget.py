@@ -697,7 +697,7 @@ class MainWidget(QtGui.QWidget):
             
             # self.glWidget.setParent(None)
             # free the gpu resources....
-            logger.debug("deleteing the renderer")
+            logger.debug("deleting the renderer")
             del self.glWidget.renderer
             event.accept()
 
@@ -771,5 +771,37 @@ def test_sphere():
 
     sys.exit(app.exec_())
 
+
+def test_surface():
+    from spimagine import DataModel, NumpyData
+
+    app = QtGui.QApplication(sys.argv)
+
+    win = MainWidget()
+
+
+    x = np.linspace(-1,1,128)
+    Z,Y,X = np.meshgrid(x,x,x)
+    d = np.exp(-10*X**2)
+
+
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.glWidget.add_surface_ellipsoid((1.,0,0), (.2,.2,.2), color = (1.,.3,.1,.5))
+
+    win.glWidget.add_surface_sphere((-.3,0,.6), .2, color = (.0,.3,1.,.5))
+
+    win.show()
+
+    win.raise_()
+
+
+    sys.exit(app.exec_())
+
+
+
 if __name__ == '__main__':
-    test_sphere()
+    #test_sphere()
+
+    test_surface()
