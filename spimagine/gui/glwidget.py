@@ -355,22 +355,33 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.resized = True
 
-    def add_surface(self, coords, color):
-        self.surfaces.append((coords,color))
+    def add_surface(self, coords,
+                    facecolor = (1.,1.,1.,1.),
+                    edgecolor = None):
+        if edgecolor is None:
+            edgecolor = (0.,)*4
+        self.surfaces.append((coords,facecolor, edgecolor))
 
     def add_surface_sphere(self,pos = (0,0,0),
                            radius = .2,
-                           color = (1.,1.,1.,0.),
-                           Nphi = 40, Ntheta = 30):
+                           Nphi = 40, Ntheta = 30,
+                           facecolor = (1.,1.,1.,1.),
+                           edgecolor = None):
+
         coords = np.array(pos)+create_sphere_coords(radius,radius,radius,Nphi, Ntheta)
-        self.add_surface(coords,color)
+        self.add_surface(coords,
+                         facecolor = facecolor,
+                         edgecolor = edgecolor)
 
     def add_surface_ellipsoid(self,pos = (0,0,0),
                            rs = (.2,.2,.2),
-                           color = (1.,1.,1.,0.),
-                           Nphi = 40, Ntheta = 30):
+                           Nphi = 40, Ntheta = 30,
+                              facecolor = (1.,1.,1.,1.),
+                           edgecolor = None):
         coords = np.array(pos)+create_sphere_coords(rs[0],rs[1],rs[2],Nphi, Ntheta)
-        self.add_surface(coords,color)
+        self.add_surface(coords,
+                         edgecolor = edgecolor,
+                         facecolor = facecolor)
 
 
     def _paintGL_render(self):
@@ -443,6 +454,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
 
+
+
     def _paintGL_box(self):
 
         # Draw the cube
@@ -471,11 +484,15 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDisable(GL_DEPTH_TEST)
 
 
-    def _paintGL_surface(self, coords, color = (1.,1.,1.,0.)):
+    def _paintGL_surface(self, coords,
+                         facecolor = (1.,1.,1.,1.),
+                         edgecolor = (1.,1.,1,1.),
+                         ):
         """
         coords are the coordinates of the triangle vertices
         """
         # Draw the cube
+
         self.programSurface.bind()
         self.programSurface.setUniformValue("mvpMatrix",
                         QtGui.QMatrix4x4(*self.finalMat.flatten()))
@@ -483,16 +500,20 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.programSurface.setAttributeArray("position", coords)
 
+        self.programSurface.setUniformValue("color",
+                                            QtGui.QVector4D(*facecolor))
 
-        self.programSurface.setUniformValue("color",QtGui.QVector4D(*color))
 
-        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_DEPTH_TEST)
+        #glEnable(GL_DEPTH_TEST)
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
         glDrawArrays(GL_TRIANGLES,0,len(coords))
         glDisable(GL_DEPTH_TEST)
 
-
+        self.programSurface.setUniformValue("color",
+                                            QtGui.QVector4D(*edgecolor))
+        glDrawArrays(GL_LINES,0,len(coords))
 
     def paintGL(self):
 
@@ -533,8 +554,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self._paintGL_render()
 
-        for coords, color in self.surfaces:
-            self._paintGL_surface(coords, color)
+        for coords, facecolor, edgecolor in self.surfaces:
+            self._paintGL_surface(coords, facecolor = facecolor, edgecolor = edgecolor)
 
 
 
@@ -574,6 +595,11 @@ class GLWidget(QtOpenGL.QGLWidget):
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
+
+
+
+            np.save("foo_a",self.output_alpha)
+            np.save("foo",self.output)
 
 
     def getFrame(self):
@@ -779,9 +805,10 @@ def test_surface():
     win = GLWidget(size=QtCore.QSize(800,800))
 
 
-    win.setModel(DataModel(DemoData()))
+    #win.setModel(DataModel(DemoData()))
 
-    win.add_surface_ellipsoid((1.,0.2,0.2), (.2,.4,.2), color = (1.,.3,.1,.5))
+    win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
+                                    Nphi = 30, Ntheta=20)
 
     win.show()
 

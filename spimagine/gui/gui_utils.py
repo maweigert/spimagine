@@ -214,8 +214,8 @@ def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
 
 
 
-def create_sphere_coords(rx,ry,rz,Nphi=50,Ntheta=30, return_normals = False):
-    ts = np.arccos(np.linspace(-1.,1.,Ntheta+1))
+def create_sphere_coords(rx,ry,rz,Nphi=50, Ntheta=30, return_normals = False):
+    ts = np.arccos(np.linspace(-1.,1.,Ntheta))
     ps = np.linspace(0,2.*np.pi,Nphi+1)
 
     T,P = np.meshgrid(ts,ps, indexing = "ij")
@@ -224,14 +224,14 @@ def create_sphere_coords(rx,ry,rz,Nphi=50,Ntheta=30, return_normals = False):
 
     coords = []
     normals = []
-    for i in range(Ntheta):
-        for j in range(Nphi):
+    for i in range(len(ts)-1):
+        for j in range(len(ps)-1):
             coords.append(xs[:,i,j])
             coords.append(xs[:,i+1,j])
             coords.append(xs[:,i+1,j+1])
             coords.append(xs[:,i,j])
-            coords.append(xs[:,i,j+1])
             coords.append(xs[:,i+1,j+1])
+            coords.append(xs[:,i,j+1])
 
             #FIXME, wrong for rx != ry ....
             normals.append(1.*xs[:,i,j]/rx)

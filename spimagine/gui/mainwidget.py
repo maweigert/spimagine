@@ -773,7 +773,7 @@ def test_sphere():
 
 
 def test_surface():
-    from spimagine import DataModel, NumpyData
+    from spimagine import DataModel, NumpyData, DemoData
 
     app = QtGui.QApplication(sys.argv)
 
@@ -786,11 +786,19 @@ def test_surface():
 
 
 
-    win.setModel(DataModel(NumpyData(d)))
+    #win.setModel(DataModel(NumpyData(d)))
+    win.setModel(DataModel(DemoData()))
 
-    win.glWidget.add_surface_ellipsoid((1.,0,0), (.2,.2,.2), color = (1.,.3,.1,.5))
+    win.glWidget.add_surface_ellipsoid((1.,0,0),
+                                       (.2,.2,.2),
+                                       facecolor = (1.,.3,.1,.5),
+                                       edgecolor = (1.,1.,1.,.2),
+                                       Nphi =20, Ntheta=10)
 
-    win.glWidget.add_surface_sphere((-.3,0,.6), .2, color = (.0,.3,1.,.5))
+    win.glWidget.add_surface_sphere((-.3,0,.6), .2,
+                                    facecolor = (.0,.3,1.,.5),
+                                    edgecolor = (1.,1.,.1,.2),
+                                    Nphi = 20, Ntheta=10)
 
     win.show()
 
