@@ -17,6 +17,11 @@ from spimagine.utils.quaternion import *
 import spimagine
 
 def create_interp_func(a):
+    """ an elastic interpolation function,
+    the bigger a, the more elastic 
+    when a==0, its the usual hard linear interpolation 
+    """
+    
     def atan_func(x):
         return .5*(1+np.arctan(2*a*(x-.5))/np.arctan(a))
 
@@ -98,7 +103,7 @@ class TransformData(object):
         self.translate = np.array(translate)
 
     @classmethod
-    def interp(cls,x1, x2, lam ,f = create_interp_func(0)):
+    def interp(cls,x1, x2, lam ,f = create_interp_func(10.)):
         """
         f should be a function [0...1] - [0...1]
         """
