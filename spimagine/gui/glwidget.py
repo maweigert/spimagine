@@ -61,6 +61,8 @@ from spimagine.models.transform_model import TransformModel
 from spimagine.models.data_model import DataModel
 
 
+from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
+
 
 import numpy as np
 from spimagine.gui.gui_utils import *
@@ -140,7 +142,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.dataModel = None
 
-        self.surfaces = []
+        self.meshes = []
 
         # self.setMouseTracking(True)
 
@@ -242,8 +244,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programSlice = self._shader_from_file(absPath("shaders/slice.vert"),
                                                    absPath("shaders/slice.frag"))
 
-        self.programSurface = self._shader_from_file(absPath("shaders/surface.vert"),
-                                                  absPath("shaders/surface.frag"))
+        self.programMesh = self._shader_from_file(absPath("shaders/mesh.vert"),
+                                                  absPath("shaders/mesh.frag"))
 
 
 
@@ -302,7 +304,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.transform.reset(minVal = np.amin(self.dataModel[0]),
                                  maxVal = np.amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
-            self.surfaces = []
+            self.meshes = []
             self.refresh()
 
 
@@ -355,34 +357,47 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.resized = True
 
-    def add_surface(self, coords,
-                    facecolor = (1.,1.,1.,1.),
-                    edgecolor = None):
-        if edgecolor is None:
-            edgecolor = (0.,)*4
-        self.surfaces.append((coords,facecolor, edgecolor))
+    def add_mesh(self, mesh = SphericalMesh()):
+        """
+        adds a mesh with vertices and facecolor/edgecolor to be drawn
 
-    def add_surface_sphere(self,pos = (0,0,0),
-                           radius = .2,
-                           Nphi = 40, Ntheta = 30,
-                           facecolor = (1.,1.,1.,1.),
-                           edgecolor = None):
+        mesh is an instance of spimagine.gui.Mesh, e.g.
 
-        coords = np.array(pos)+create_sphere_coords(radius,radius,radius,Nphi, Ntheta)
-        self.add_surface(coords,
-                         facecolor = facecolor,
-                         edgecolor = edgecolor)
+        mesh = Mesh(vertices = [[0,1,0],[0,1,0],...],
+                    normals = [[0,1,0],[0,1,0],...],
+                    facecolor = (1.,.4,.4,.2),
+                    edgecolor = None,...)
 
-    def add_surface_ellipsoid(self,pos = (0,0,0),
-                           rs = (.2,.2,.2),
-                           Nphi = 40, Ntheta = 30,
-                              facecolor = (1.,1.,1.,1.),
-                           edgecolor = None):
-        coords = np.array(pos)+create_sphere_coords(rs[0],rs[1],rs[2],Nphi, Ntheta)
-        self.add_surface(coords,
-                         edgecolor = edgecolor,
-                         facecolor = facecolor)
+        there are some predefined meshes like
+        SphericalMesh, EllipsoidMesh ...
+        """
+        self.meshes.append(mesh)
 
+        #sort according to opacity as the opaque objects should be drawn first
+        self.meshes.sort(key = lambda x:x.alpha, reverse = True)
+
+
+    # def add_surface_sphere(self,pos = (0,0,0),
+    #                        radius = .2,
+    #                        Nphi = 40, Ntheta = 30,
+    #                        facecolor = (1.,1.,1.,1.),
+    #                        edgecolor = None):
+    #
+    #     coords = np.array(pos)+create_sphere_coords(radius,radius,radius,Nphi, Ntheta)
+    #     self.add_surface(coords,
+    #                      facecolor = facecolor,
+    #                      edgecolor = edgecolor)
+    #
+    # def add_surface_ellipsoid(self,pos = (0,0,0),
+    #                        rs = (.2,.2,.2),
+    #                        Nphi = 40, Ntheta = 30,
+    #                           facecolor = (1.,1.,1.,1.),
+    #                        edgecolor = None):
+    #     coords = np.array(pos)+create_sphere_coords(rs[0],rs[1],rs[2],Nphi, Ntheta)
+    #     self.add_surface(coords,
+    #                      edgecolor = edgecolor,
+    #                      facecolor = facecolor)
+    #
 
     def _paintGL_render(self):
         # Draw the render texture
@@ -484,36 +499,77 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDisable(GL_DEPTH_TEST)
 
 
-    def _paintGL_surface(self, coords,
-                         facecolor = (1.,1.,1.,1.),
-                         edgecolor = (1.,1.,1,1.),
-                         ):
+    def _paintGL_mesh(self, mesh):
         """
-        coords are the coordinates of the triangle vertices
+        paint a mesh (which has all the coordinates and colors in it
         """
         # Draw the cube
 
-        self.programSurface.bind()
-        self.programSurface.setUniformValue("mvpMatrix",
-                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
-        self.programSurface.enableAttributeArray("position")
+        self.programMesh.bind()
+        self.programMesh.setUniformValue("mvpMatrix",
+                                         QtGui.QMatrix4x4(*self.finalMat.flatten()))
 
-        self.programSurface.setAttributeArray("position", coords)
-
-        self.programSurface.setUniformValue("color",
-                                            QtGui.QVector4D(*facecolor))
 
 
         glDisable(GL_DEPTH_TEST)
-        #glEnable(GL_DEPTH_TEST)
+        glEnable( GL_BLEND )
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
-        glDrawArrays(GL_TRIANGLES,0,len(coords))
-        glDisable(GL_DEPTH_TEST)
+        if mesh.facecolor:
+            r,g,b = mesh.facecolor
+            a = mesh.alpha
 
-        self.programSurface.setUniformValue("color",
-                                            QtGui.QVector4D(*edgecolor))
-        glDrawArrays(GL_LINES,0,len(coords))
+            self.programMesh.enableAttributeArray("position")
+            self.programMesh.setAttributeArray("position", mesh.vertices)
+
+            self.programMesh.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+            # glDisable(GL_DEPTH_TEST)
+            # glEnable( GL_BLEND )
+            # glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+            # #glBlendFunc(GL_SRC_ALPHA,GL_ONE)
+            # print mesh.alpha
+            # # if mesh.alpha>=1.:
+            #     glEnable(GL_DEPTH_TEST)
+            #     glDisable( GL_BLEND )
+            #     glDepthFunc(GL_LESS)
+            #     glBlendFunc(GL_SRC_ALPHA,GL_ONE)
+            #
+            # else:
+            #     glEnable(GL_DEPTH_TEST)
+            #     glEnable( GL_BLEND )
+            #     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+
+
+            glDrawArrays(GL_TRIANGLES,0,len(mesh.vertices))
+
+            glDisable(GL_DEPTH_TEST)
+
+        if mesh.edgecolor:
+            r,g,b = mesh.edgecolor
+            a = mesh.alpha
+
+            self.programMesh.enableAttributeArray("position")
+            self.programMesh.setAttributeArray("position", mesh.edges)
+
+            self.programMesh.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+            # if mesh.alpha>=1.:
+            #     glEnable(GL_DEPTH_TEST)
+            # else:
+            #     glDisable(GL_DEPTH_TEST)
+
+            # glEnable(GL_DEPTH_TEST)
+            # glEnable( GL_BLEND )
+            # glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+            # print mesh.alpha
+
+            glDrawArrays(GL_LINES,0,len(mesh.edges))
+
+
 
     def paintGL(self):
 
@@ -539,6 +595,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         proj = self.transform.getProjection()
 
+
+
         self.finalMat = np.dot(proj,modelView)
 
         if self.dataModel:
@@ -554,8 +612,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self._paintGL_render()
 
-        for coords, facecolor, edgecolor in self.surfaces:
-            self._paintGL_surface(coords, facecolor = facecolor, edgecolor = edgecolor)
+        for m in self.meshes:
+            self._paintGL_mesh(m)
 
 
 
@@ -598,9 +656,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
 
-            np.save("foo_a",self.output_alpha)
-            np.save("foo",self.output)
-
 
     def getFrame(self):
         self.render()
@@ -608,6 +663,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glFlush()
         im = self.grabFrameBuffer()
         im = im.convertToFormat(QtGui.QImage.Format_RGB32)
+
 
         width = im.width()
         height = im.height()
@@ -805,10 +861,20 @@ def test_surface():
     win = GLWidget(size=QtCore.QSize(800,800))
 
 
-    #win.setModel(DataModel(DemoData()))
+    win.setModel(DataModel(DemoData()))
 
-    win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
-                                    Nphi = 30, Ntheta=20)
+    # win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
+    #                                 Nphi = 30, Ntheta=20)
+
+    win.add_mesh(SphericalMesh(r = .2, facecolor = (1.,0.,0.),
+                               edgecolor = (1.,1.,1.), alpha = .3))
+
+    win.add_mesh(EllipsoidMesh(pos = (0,0,-.5),
+                               rx = .6, ry = .6,rz = .1,
+                               facecolor = (0.,1.,1.),
+                               edgecolor = (1.,1.,1.),
+                               alpha = .4))
+
 
     win.show()
 
