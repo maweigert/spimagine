@@ -196,6 +196,10 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
         return window
 
 
+def qt_exec():
+    getCurrentApp().exec_()
+
+
 class TimeData(GenericData):
     def __init__(self,func, dshape):
         """ func(i) returns the volume

@@ -12,5 +12,7 @@ from spimagine.models.data_model import DataModel,DemoData, SpimData, TiffData, 
 
 from spimagine.utils.imgutils import read3dTiff, write3dTiff
 
-from spimagine.gui.volshow import volshow, volfig
+from spimagine.gui.volshow import volshow, volfig, qt_exec
+
+from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
 

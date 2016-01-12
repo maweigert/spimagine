@@ -56,7 +56,7 @@ class Mesh(object):
 
 
 class EllipsoidMesh(Mesh):
-    def __init__(self, rx = 1., ry = .5, rz = .5,
+    def __init__(self, rs = (1.,.5,.5),
                  pos = (0,0,0),
                  n_phi = 30,
                  n_theta = 20,
@@ -64,10 +64,10 @@ class EllipsoidMesh(Mesh):
                  edgecolor = None,
                  alpha = 1.,
                  light = [1,1,-1]):
-        """creates an ellipsoidal mesh at pos with half axes rx,ry,rz
+        """creates an ellipsoidal mesh at pos with half axes rs = (rx,ry,rz)
         of equally distributing points n_phi x n_theta"""
 
-        vertices, normals = EllipsoidMesh.create_verts(rx, ry, rz, pos, n_phi, n_theta)
+        vertices, normals = EllipsoidMesh.create_verts(rs, pos, n_phi, n_theta)
 
         super(EllipsoidMesh,self).__init__(vertices = vertices,
                                            normals = normals,
@@ -76,12 +76,12 @@ class EllipsoidMesh(Mesh):
                                            alpha = alpha,
                                            light = light)
     @staticmethod
-    def create_verts(rx, ry, rz, pos, n_phi, n_theta):
+    def create_verts(rs, pos, n_phi, n_theta):
         ts = np.linspace(0,np.pi,n_theta)
         ps = np.linspace(0,2.*np.pi,n_phi+1)
 
         T,P = np.meshgrid(ts,ps, indexing = "ij")
-
+        rx,ry,rz = rs
         xs = np.array([rx*np.cos(P)*np.sin(T),ry*np.sin(P)*np.sin(T),rz*np.cos(T)])
 
         verts = []
@@ -119,8 +119,8 @@ class SphericalMesh(EllipsoidMesh):
         of equally distributing points n_phi x n_theta"""
 
 
-        super(SphericalMesh,self).__init__(rx = r,
-                                           ry=r, rz = r, pos = pos,
+        super(SphericalMesh,self).__init__(rs = (r,)*3,
+                                           pos = pos,
                                            n_phi = n_phi, n_theta = n_theta,
                                            facecolor = facecolor,
                                            edgecolor = edgecolor,

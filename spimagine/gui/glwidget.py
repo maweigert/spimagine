@@ -247,6 +247,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programMesh = self._shader_from_file(absPath("shaders/mesh.vert"),
                                                   absPath("shaders/mesh.frag"))
 
+        self.programMeshLight = self._shader_from_file(
+            absPath("shaders/mesh_light.vert"),
+            absPath("shaders/mesh_light.frag"))
+
 
 
         self.texture = None
@@ -371,6 +375,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         there are some predefined meshes like
         SphericalMesh, EllipsoidMesh ...
         """
+
+
         self.meshes.append(mesh)
 
         #sort according to opacity as the opaque objects should be drawn first
@@ -505,11 +511,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         """
         # Draw the cube
 
-        self.programMesh.bind()
-        self.programMesh.setUniformValue("mvpMatrix",
-                                         QtGui.QMatrix4x4(*self.finalMat.flatten()))
+
+        #whether we use phong lightning or not
+        prog = self.programMesh
 
 
+        prog.bind()
+        prog.setUniformValue("mvpMatrix",
+                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
 
         glDisable(GL_DEPTH_TEST)
         glEnable( GL_BLEND )
@@ -519,11 +528,70 @@ class GLWidget(QtOpenGL.QGLWidget):
             r,g,b = mesh.facecolor
             a = mesh.alpha
 
-            self.programMesh.enableAttributeArray("position")
-            self.programMesh.setAttributeArray("position", mesh.vertices)
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.vertices)
 
-            self.programMesh.setUniformValue("color",
+            prog.setUniformValue("color",
                                          QtGui.QVector4D(r,g,b,a))
+
+
+            glDrawArrays(GL_TRIANGLES,0,len(mesh.vertices))
+
+            glDisable(GL_DEPTH_TEST)
+
+        if mesh.edgecolor:
+            r,g,b = mesh.edgecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.edges)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+
+            glDrawArrays(GL_LINES,0,len(mesh.edges))
+
+
+    #FIXME this should be the new default....
+    def _paintGL_mesh_light(self, mesh):
+        """
+        paint a mesh (which has all the coordinates and colors in it
+        """
+        # Draw the cube
+
+
+        #whether we use phong lightning or not
+        if mesh.light:
+            prog = self.programMeshLight
+        else:
+            prog = self.programMesh
+
+
+        prog.bind()
+        prog.setUniformValue("mvpMatrix",
+                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
+
+        glDisable(GL_DEPTH_TEST)
+        glEnable( GL_BLEND )
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+        if mesh.facecolor:
+            r,g,b = mesh.facecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.vertices)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+            if mesh.light:
+                prog.enableAttributeArray("normal")
+                prog.setAttributeArray("normal", mesh.normals)
+                prog.setUniformValue("light",
+                                         QtGui.QVector3D(*mesh.light))
+
 
             # glDisable(GL_DEPTH_TEST)
             # glEnable( GL_BLEND )
@@ -551,10 +619,10 @@ class GLWidget(QtOpenGL.QGLWidget):
             r,g,b = mesh.edgecolor
             a = mesh.alpha
 
-            self.programMesh.enableAttributeArray("position")
-            self.programMesh.setAttributeArray("position", mesh.edges)
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.edges)
 
-            self.programMesh.setUniformValue("color",
+            prog.setUniformValue("color",
                                          QtGui.QVector4D(r,g,b,a))
 
             # if mesh.alpha>=1.:
@@ -620,6 +688,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def render(self):
         logger.debug("render")
+
+
 
         if self.dataModel:
             
@@ -861,20 +931,25 @@ def test_surface():
     win = GLWidget(size=QtCore.QSize(800,800))
 
 
-    win.setModel(DataModel(DemoData()))
+    #win.setModel(DataModel(DemoData()))
 
     # win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
     #                                 Nphi = 30, Ntheta=20)
 
-    win.add_mesh(SphericalMesh(r = .2, facecolor = (1.,0.,0.),
-                               edgecolor = (1.,1.,1.), alpha = .3))
+    win.add_mesh(SphericalMesh(r = .8,
+                               facecolor = (1.,0.,0.),
+                               #edgecolor = (1.,1.,1.),
+                               edgecolor = None,
+                               alpha = .3))
 
-    win.add_mesh(EllipsoidMesh(pos = (0,0,-.5),
-                               rx = .6, ry = .6,rz = .1,
-                               facecolor = (0.,1.,1.),
-                               edgecolor = (1.,1.,1.),
-                               alpha = .4))
-
+    # win.add_mesh(EllipsoidMesh(rs = (.3,.6,.6),
+    #                             pos = (0,0,-.5),
+    #
+    #                            facecolor = (0.,1.,1.),
+    #                            #edgecolor = (1.,1.,1.),
+    #                            edgecolor = None,
+    #                            alpha = .4))
+    #
 
     win.show()
 
