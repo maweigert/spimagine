@@ -23,8 +23,8 @@ void main()
   gl_FragColor.w = 1.0*length(col.xyz);
 
   if (tnear<0.0)
-    //gl_FragColor = vec4(1.,0.,0.,1.);
     gl_FragColor = vec4(0.,0.,0.,0.);
 
-   //gl_FragColor = vec4(1.,.3,.2,.5);
+
+  //gl_FragColor = vec4(lut.x,.0,.0, 1.);
 }

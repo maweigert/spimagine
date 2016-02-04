@@ -52,6 +52,8 @@ class Mesh(object):
 
         self.facecolor = facecolor
         self.edgecolor = edgecolor
+
+
         self.light = light
 
 

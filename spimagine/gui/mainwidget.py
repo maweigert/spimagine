@@ -796,8 +796,8 @@ def test_surface():
     #                                    edgecolor = (1.,1.,1.,.2),
     #                                    Nphi =20, Ntheta=10)
 
-    win.glWidget.add_mesh(SphericalMesh(facecolor = (1.,1.,1.,.3),
-                               edgecolor = None))
+    # win.glWidget.add_mesh(SphericalMesh(facecolor = (1.,1.,1.),
+    #                            edgecolor = None))
 
 
     win.show()

@@ -525,6 +525,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
 
         if mesh.facecolor:
+
             r,g,b = mesh.facecolor
             a = mesh.alpha
 
@@ -723,7 +724,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
-
 
 
 
@@ -931,16 +931,16 @@ def test_surface():
     win = GLWidget(size=QtCore.QSize(800,800))
 
 
-    #win.setModel(DataModel(DemoData()))
+    win.setModel(DataModel(DemoData()))
 
     # win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
     #                                 Nphi = 30, Ntheta=20)
 
-    win.add_mesh(SphericalMesh(r = .8,
-                               facecolor = (1.,0.,0.),
-                               #edgecolor = (1.,1.,1.),
-                               edgecolor = None,
-                               alpha = .3))
+    # win.add_mesh(SphericalMesh(r = .8,
+    #                            facecolor = (1.,0.,0.),
+    #                            #edgecolor = (1.,1.,1.),
+    #                            edgecolor = None,
+    #                            alpha = .3))
 
     # win.add_mesh(EllipsoidMesh(rs = (.3,.6,.6),
     #                             pos = (0,0,-.5),
