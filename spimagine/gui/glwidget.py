@@ -56,7 +56,7 @@ import spimagine
 
 from spimagine.volumerender.volume_render import VolumeRenderer
 from spimagine.utils.transform_matrices import *
-from spimagine.models.transform_model import TransformModel
+from spimagine.models.transform_model import TransformModel, LayerTransformModel
 
 from spimagine.models.data_model import DataModel
 
@@ -123,12 +123,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_projection(mat4_perspective(60,1.,.1,100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
 
-        self.output = np.zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-        self.output_alpha = np.zeros([self.renderer.height,self.renderer.width],dtype = np.float32)
-
         self.sliceOutput = np.zeros((100,100),dtype = np.float32)
 
         self.setTransform(TransformModel())
+        self.setLayertransform(LayerTransformModel())
 
         self.renderTimer = QtCore.QTimer(self)
         self.renderTimer.setInterval(10)
@@ -167,10 +165,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.dataModel._dataPosChanged.connect(self.dataPosChanged)
                 self._dataModelChanged.emit()
 
-
-
-    def foo(self):
-        print "fooooooooooooooo"
 
 
 
@@ -299,15 +293,20 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.transform._stackUnitsChanged.connect(self.setStackUnits)
         self.transform._boundsChanged.connect(self.setBounds)
 
+    def setLayertransform(self, layertransform):
+        self.layertransform = layertransform
+        self.layertransform._layertransformChanged.connect(self.refresh)
+
+
 
     def dataModelChanged(self):
         logger.debug("+++++++++ data model changed")
 
         if self.dataModel:
-            self.renderer.set_data(self.dataModel[0], autoConvert = True)
-            self.transform.reset(minVal = np.amin(self.dataModel[0]),
-                                 maxVal = np.amax(self.dataModel[0]),
-                                 stackUnits= self.dataModel.stackUnits())
+            self.renderer.set_data(self.dataModel[0][0], autoConvert = True)
+            self.transform.reset(stackUnits= self.dataModel.stackUnits())
+            self.layertransform.reset(minVal = np.amin(self.dataModel[0][0]),
+                                 maxVal = np.amax(self.dataModel[0][0]))
             self.meshes = []
             self.refresh()
 
@@ -320,10 +319,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         # print "SETDATA: ", self.dataModel[0].shape
-        self.renderer.set_data(self.dataModel[0],autoConvert = True)
-        self.transform.reset(minVal = np.amin(self.dataModel[0]),
-                             maxVal = np.amax(self.dataModel[0]),
-                             stackUnits= self.dataModel.stackUnits())
+        self.renderer.set_data(self.dataModel[0][0],autoConvert = True)
+        self.transform.reset(stackUnits= self.dataModel.stackUnits())
+        self.layertransform.reset(minVal = np.amin(self.dataModel[0][0]),
+                                 maxVal = np.amax(self.dataModel[0][0]))
 
         self.refresh()
 
@@ -338,7 +337,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataPosChanged(self,pos):
-        self.renderer.update_data(self.dataModel[pos])
+        self.renderer.update_data(self.dataModel[pos][0])
         self.refresh()
 
 
@@ -405,11 +404,12 @@ class GLWidget(QtOpenGL.QGLWidget):
     #                      facecolor = facecolor)
     #
 
-    def _paintGL_render(self):
+    def _paintGL_render(self, renderer):
         # Draw the render texture
         self.programTex.bind()
 
-        self.texture = fillTexture2d(self.output,self.texture)
+        self.texture = fillTexture2d(renderer.output,self.texture)
+        self.textureAlpha = fillTexture2d(renderer.output_alpha,self.textureAlpha)
 
         glEnable(GL_TEXTURE_2D)
         glDisable(GL_DEPTH_TEST)
@@ -448,7 +448,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         pos, dim = self.transform.slicePos,self.transform.sliceDim
 
-        coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+        coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+2],dim)
 
         texcoords = [[0.,0.],[1,0.],[1.,1.],
                      [1.,1.],[0.,1.],[0.,0.]]
@@ -493,6 +493,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.programCube.setAttributeArray("position", self.cubeCoords)
 
+        self.textureAlpha = fillTexture2d(self.renderer.output_alpha,self.textureAlpha)
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
@@ -671,7 +672,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         if self.dataModel:
 
 
-            self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
+            # self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
             if self.transform.isBox:
                 self._paintGL_box()
@@ -679,7 +680,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             if self.transform.isSlice and self.sliceOutput is not None:
                 self._paintGL_slice()
 
-            self._paintGL_render()
+            self._paintGL_render(self.renderer)
 
         for m in self.meshes:
             self._paintGL_mesh(m)
@@ -696,15 +697,15 @@ class GLWidget(QtOpenGL.QGLWidget):
             
             self.renderer.set_modelView(self.transform.getUnscaledModelView())
             self.renderer.set_projection(self.transform.getProjection())
-            self.renderer.set_min_val(self.transform.minVal)
 
-            self.renderer.set_max_val(self.transform.maxVal)
-            self.renderer.set_gamma(self.transform.gamma)
-            self.renderer.set_alpha_pow(self.transform.alphaPow)
+            self.renderer.set_min_val(self.layertransform.minVal)
+            self.renderer.set_max_val(self.layertransform.maxVal)
+            self.renderer.set_gamma(self.layertransform.gamma)
+            self.renderer.set_alpha_pow(self.layertransform.alphaPow)
 
-            self.renderer.set_occ_strength(self.transform.occ_strength)
-            self.renderer.set_occ_radius(self.transform.occ_radius)
-            self.renderer.set_occ_n_points(self.transform.occ_n_points)
+            self.renderer.set_occ_strength(self.layertransform.occ_strength)
+            self.renderer.set_occ_radius(self.layertransform.occ_radius)
+            self.renderer.set_occ_n_points(self.layertransform.occ_n_points)
 
             if self.transform.isIso:
                 renderMethod = "iso_surface"
@@ -713,15 +714,14 @@ class GLWidget(QtOpenGL.QGLWidget):
                 renderMethod = "max_project"
 
             self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
-            self.output, self.output_alpha = self.renderer.output, self.renderer.output_alpha
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
-                    out = self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos]
+                    out = self.dataModel[self.transform.dataPos][0][:,:,self.transform.slicePos]
                 elif self.transform.sliceDim==1:
-                    out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
+                    out = self.dataModel[self.transform.dataPos][0][:,self.transform.slicePos,:]
                 elif self.transform.sliceDim==2:
-                    out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
+                    out = self.dataModel[self.transform.dataPos][0][self.transform.slicePos,:,:]
 
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
@@ -962,5 +962,5 @@ if __name__ == '__main__':
 
     # test_sphere()
 
-    #test_demo_simple()
-    test_surface()
+    test_demo_simple()
+    #test_surface()

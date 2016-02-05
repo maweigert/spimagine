@@ -1,6 +1,15 @@
-from spimagine.models.data_model import DataModel, SpimData, TiffData, NumpyData
+from spimagine.models.data_model import DataModel, DemoData,SpimData, TiffData, NumpyData
 
 import numpy as np
+
+def test_demodata():
+    m = DataModel(DemoData())
+    print m
+    for pos in (0,m.sizeT()-1):
+        print pos, np.mean(m[pos])
+
+    return m
+
 
 def test_spimdata():
     d = SpimData("/Users/mweigert/Data/HisBTub_short")
@@ -80,6 +89,7 @@ def test_data_sets():
 if __name__ == '__main__':
     
     # test_data_sets()
+    m = test_demodata()
     m = test_spimdata()
     m = test_tiffdata()
     m = test_numpydata((11,12,13))

@@ -45,7 +45,7 @@ from spimagine.models.imageprocessor import *
 
 from spimagine.gui.floatslider import FloatSlider
 
-from spimagine.models.transform_model import TransformModel
+from spimagine.models.transform_model import TransformModel, LayerTransformModel
 
 from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 
@@ -96,11 +96,13 @@ class MainWidget(QtGui.QWidget):
 
 
         self.transform = TransformModel()
+        self.layertransform = LayerTransformModel()
 
         self.initActions()
 
         self.glWidget = GLWidget(self)
         self.glWidget.setTransform(self.transform)
+        self.glWidget.setLayertransform(self.layertransform)
 
         self.sliceWidget = SliceWidget(self)
         self.sliceWidget.hide()
@@ -110,6 +112,8 @@ class MainWidget(QtGui.QWidget):
 
         
         self.sliceWidget.setTransform(self.transform)
+        self.sliceWidget.setLayertransform(self.layertransform)
+
 
         self.fwdButton = createStandardButton(self,
                 fName = absPath("images/icon_forward.png"),
@@ -237,16 +241,16 @@ class MainWidget(QtGui.QWidget):
         def func2(x):
             return np.log2(x)
 
-        self.scaleSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
-        self.transform._maxChanged.connect(lambda x:self.scaleSlider.setValue(func2(x)))
+        self.scaleSlider.floatValueChanged.connect(lambda x: self.glWidget.layertransform.setMax(func1(x)))
+        self.glWidget.layertransform._maxChanged.connect(lambda x:self.scaleSlider.setValue(func2(x)))
 
 
-        self.minSlider.floatValueChanged.connect(lambda x: self.transform.setMin(func1(x)))
-        self.transform._minChanged.connect(lambda x:self.minSlider.setValue(func2(x)))
+        self.minSlider.floatValueChanged.connect(lambda x: self.glWidget.layertransform.setMin(func1(x)))
+        self.glWidget.layertransform._minChanged.connect(lambda x:self.minSlider.setValue(func2(x)))
 
         
-        self.gammaSlider.floatValueChanged.connect(self.transform.setGamma)
-        self.transform._gammaChanged.connect(self.gammaSlider.setValue)
+        self.gammaSlider.floatValueChanged.connect(self.glWidget.layertransform.setGamma)
+        self.glWidget.layertransform._gammaChanged.connect(self.gammaSlider.setValue)
 
         # self.keyframes = KeyFrameList()
         self.keyPanel = KeyFramePanel(self.glWidget)
@@ -377,17 +381,17 @@ class MainWidget(QtGui.QWidget):
 
         self.volSettingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
 
-        self.volSettingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
+        self.volSettingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.layertransform.setAlphaPow)
 
         self.volSettingsView.sliderOcc.floatValueChanged.connect(
-            self.glWidget.transform.setOccStrength)
+            self.glWidget.layertransform.setOccStrength)
 
         self.volSettingsView.sliderOccRadius.floatValueChanged.connect(
-                self.glWidget.transform.setOccRadius)
+                self.glWidget.layertransform.setOccRadius)
         self.volSettingsView.sliderOccNPoints.floatValueChanged.connect(
-            self.glWidget.transform.setOccNPoints)
+            self.glWidget.layertransform.setOccNPoints)
 
-        self.glWidget.transform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
+        self.glWidget.layertransform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
 
         self.glWidget.transform._boundsChanged.connect(self.volSettingsView.setBounds)
 
@@ -437,7 +441,7 @@ class MainWidget(QtGui.QWidget):
         
 
     def impStateChanged(self):
-        data = self.transform.dataModel[self.transform.dataPos]
+        data = self.transform.dataModel[self.transform.dataPos][0]
 
         for imp in self.impListView.impViews:
             if imp.is_active():

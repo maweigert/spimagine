@@ -142,6 +142,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         self.transform._transformChanged.connect(self.refresh)
 
 
+    def setLayertransform(self, layertransform):
+        self.layertransform = layertransform
+        self.layertransform._layertransformChanged.connect(self.refresh)
+
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.accept()
@@ -225,17 +230,17 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         if self.dataModel:
-            self.transform.reset(amin(self.dataModel[0]),
-                                 amax(self.dataModel[0]),
-                                 self.dataModel.stackUnits())
+            self.transform.reset(self.dataModel.stackUnits())
+            self.layertransform.reset(amin(self.dataModel[0][0]),
+                                 amax(self.dataModel[0][0]))
 
             self.refresh()
 
 
     def dataSourceChanged(self):
-        self.transform.reset(amin(self.dataModel[0]),
-                             amax(self.dataModel[0]),
-                             self.dataModel.stackUnits())
+        self.transform.reset(self.dataModel.stackUnits())
+        self.layertransform.reset(amin(self.dataModel[0][0]),
+                                 amax(self.dataModel[0][0]))
         self.refresh()
 
 
@@ -265,7 +270,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         if not self.dataModel:
             return
 
-        dim = array(self.dataModel.size()[1:])[::-1].astype(np.float32)
+        dim = array(self.dataModel.size()[2:])[::-1].astype(np.float32)
 
         dim *= array(self.transform.stackUnits)
 
@@ -335,13 +340,13 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         logger.debug("render")
         if self.dataModel:
             if self.transform.sliceDim==0:
-                out = fliplr(self.dataModel[self.transform.dataPos][:,:,self.transform.slicePos].T)
+                out = fliplr(self.dataModel[self.transform.dataPos][0][:,:,self.transform.slicePos].T)
             elif self.transform.sliceDim==1:
-                out = self.dataModel[self.transform.dataPos][:,self.transform.slicePos,:]
+                out = self.dataModel[self.transform.dataPos][0][:,self.transform.slicePos,:]
             elif self.transform.sliceDim==2:
-                out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
+                out = self.dataModel[self.transform.dataPos][0][self.transform.slicePos,:,:]
 
-            self.output = (1.*(out-self.transform.minVal)/(self.transform.maxVal-self.transform.minVal))**self.transform.gamma
+            self.output = (1.*(out-self.layertransform.minVal)/(self.layertransform.maxVal-self.layertransform.minVal))**self.layertransform.gamma
 
             logger.debug("render: output range = %s"%([amin(self.output),amax(self.output)]))
 
@@ -503,10 +508,14 @@ class SliceWidget(QtGui.QWidget):
         self.checkSlice.stateChanged.connect(self.transform.setSliceDim)
         self.transform._sliceDimChanged.connect(self.update)
 
+    def setLayertransform(self, layertransform):
+        self.layertransform = layertransform
+        self.glSliceWidget.setLayertransform(layertransform)
+
 
     def update(self):
         if self.glSliceWidget.dataModel:
-            dim = self.glSliceWidget.dataModel.size()[1:][::-1][self.transform.sliceDim]
+            dim = self.glSliceWidget.dataModel.size()[2:][::-1][self.transform.sliceDim]
 
             self.sliderSlice.setRange(0,dim-1)
             self.sliderSlice.setValue(self.transform.slicePos)

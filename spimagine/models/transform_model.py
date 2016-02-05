@@ -19,12 +19,7 @@ from spimagine.models.keyframe_model import TransformData
 
 
 class TransformModel(QtCore.QObject):
-    _maxChanged = QtCore.pyqtSignal(float)
-    _minChanged = QtCore.pyqtSignal(float)
-    
-    _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
-
     _isoChanged = QtCore.pyqtSignal(bool)
 
     _perspectiveChanged = QtCore.pyqtSignal(int)
@@ -38,8 +33,6 @@ class TransformModel(QtCore.QObject):
 
     _transformChanged = QtCore.pyqtSignal()
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
-
-    _alphaPowChanged = QtCore.pyqtSignal(float)
 
     def __init__(self):
         super(TransformModel,self).__init__()
@@ -71,7 +64,7 @@ class TransformModel(QtCore.QObject):
     def setModel(self,dataModel):
         self.dataModel = dataModel
 
-    def reset(self,minVal = 0., maxVal = 256.,stackUnits=None):
+    def reset(self,stackUnits=None):
         logger.debug("reset")
         self.dataPos = 0
         self.slicePos = 0
@@ -80,14 +73,7 @@ class TransformModel(QtCore.QObject):
         self.setIso(False)
         self.isPerspective = True
         self.setPerspective()
-        self.setValueScale(minVal,maxVal)
-        self.setGamma(1.)
-        self.setAlphaPow(0)
         self.setBox(True)
-
-        self.setOccStrength()
-        self.setOccRadius()
-        self.setOccNPoints()
 
         self.eye_dist_proj = 0
         self.eye_dist_cam = 0
@@ -104,18 +90,6 @@ class TransformModel(QtCore.QObject):
         logger.debug("setting Iso %s"%isIso)
         if self._update_value("isIso",isIso):
             self._isoChanged.emit(isIso)
-            self._transformChanged.emit()
-
-    def setOccStrength(self, occ_strength = .3):
-        if self._update_value("occ_strength",occ_strength):
-            self._transformChanged.emit()
-
-    def setOccRadius(self, val = 21):
-        if self._update_value("occ_radius",val):
-            self._transformChanged.emit()
-
-    def setOccNPoints(self, val = 31):
-        if self._update_value("occ_n_points",val):
             self._transformChanged.emit()
 
     def center(self):
@@ -171,40 +145,7 @@ class TransformModel(QtCore.QObject):
         self.dataModel.setPos(pos)
         self._transformChanged.emit()
 
-    def setGamma(self, gamma):
-        logger.debug("setGamma(%s)",gamma)
 
-        self.gamma = gamma
-        self._gammaChanged.emit(self.gamma)
-        self._transformChanged.emit()
-
-
-    def setAlphaPow(self, alphaPow):
-        logger.debug("setAlphaPow(%s)",alphaPow)
-        self.alphaPow = alphaPow
-        self._alphaPowChanged.emit(self.alphaPow)
-        self._transformChanged.emit()
-
-    def setValueScale(self,minVal,maxVal):
-        logger.debug("set scale to %s,%s"%(minVal, maxVal))
-
-        self.setMin(minVal)
-        self.setMax(maxVal)
-
-    def setMin(self,minVal):
-        self.minVal = max(1.e-6,minVal)
-        logger.debug("set min to %s"%(self.minVal))
-
-        self._minChanged.emit(self.minVal)
-        self._transformChanged.emit()
-
-    def setMax(self,maxVal):
-        self.maxVal = maxVal
-        
-        logger.debug("set max to %s"%(self.maxVal))
-
-        self._maxChanged.emit(self.maxVal)
-        self._transformChanged.emit()
 
     def setStackUnits(self,px,py,pz):
         self.stackUnits = px,py,pz
@@ -279,7 +220,7 @@ class TransformModel(QtCore.QObject):
 
         #scale the interns
         if hasattr(self,"dataModel"):
-            Nz,Ny,Nx = self.dataModel.size()[1:]
+            Nz,Ny,Nx = self.dataModel.size()[2:]
             dx,dy,dz = self.stackUnits
             maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
             mScale =  mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
@@ -305,10 +246,9 @@ class TransformModel(QtCore.QObject):
         self.setBounds(*transformData.bounds)
         self.setBox(transformData.isBox)
         self.setIso(transformData.isIso)
-
-        self.setAlphaPow(transformData.alphaPow)
+        # self.setAlphaPow(transformData.alphaPow)
         self.setTranslate(*transformData.translate)
-        self.setValueScale(transformData.minVal,transformData.maxVal)
+        # self.setValueScale(transformData.minVal,transformData.maxVal)
         # self.setGamma(transformData.gamma)
 
     def toTransformData(self):
@@ -322,4 +262,129 @@ class TransformModel(QtCore.QObject):
                              isBox = self.isBox,
                              isIso = self.isIso,
                              alphaPow = self.alphaPow)
+
+
+
+
+class LayerTransformModel(QtCore.QObject):
+    _maxChanged = QtCore.pyqtSignal(float)
+    _minChanged = QtCore.pyqtSignal(float)
+    _gammaChanged = QtCore.pyqtSignal(float)
+
+    _layertransformChanged = QtCore.pyqtSignal()
+
+    _alphaPowChanged = QtCore.pyqtSignal(float)
+
+    def __init__(self):
+        super(LayerTransformModel,self).__init__()
+        self.reset()
+
+    def _update_value(self,name,newval):
+        """update self.name to newval and returns True if the
+        new value indeed was different than the new"""
+        if not hasattr(self,name):
+            setattr(self,name,newval)
+            return True
+
+        oldval = getattr(self,name)
+        is_equal = True
+
+        if isinstance(oldval,np.ndarray):
+            is_equal = np.array_equal(oldval,newval)
+        elif isinstance(oldval,Quaternion):
+            is_equal = np.array_equal(oldval.data,newval.data)
+        else:
+            is_equal = (oldval == newval)
+
+        if not is_equal:
+            setattr(self,name,newval)
+
+        return not is_equal
+
+
+    def setModel(self,dataModel):
+        self.dataModel = dataModel
+
+    def reset(self,minVal = 0., maxVal = 256.):
+        logger.debug("reset")
+        self.setValueScale(minVal,maxVal)
+        self.setGamma(1.)
+        self.setAlphaPow(0)
+        self.setOccStrength()
+        self.setOccRadius()
+        self.setOccNPoints()
+
+
+    def setOccStrength(self, occ_strength = .3):
+        if self._update_value("occ_strength",occ_strength):
+            self._layertransformChanged.emit()
+
+    def setOccRadius(self, val = 21):
+        if self._update_value("occ_radius",val):
+            self._layertransformChanged.emit()
+
+    def setOccNPoints(self, val = 31):
+        if self._update_value("occ_n_points",val):
+            self._layertransformChanged.emit()
+
+    def setGamma(self, gamma):
+        logger.debug("setGamma(%s)",gamma)
+
+        self.gamma = gamma
+        self._gammaChanged.emit(self.gamma)
+        self._layertransformChanged.emit()
+
+
+    def setAlphaPow(self, alphaPow):
+        logger.debug("setAlphaPow(%s)",alphaPow)
+        self.alphaPow = alphaPow
+        self._alphaPowChanged.emit(self.alphaPow)
+        self._layertransformChanged.emit()
+
+    def setValueScale(self,minVal,maxVal):
+        logger.debug("set scale to %s,%s"%(minVal, maxVal))
+
+        self.setMin(minVal)
+        self.setMax(maxVal)
+
+    def setMin(self,minVal):
+        self.minVal = max(1.e-6,minVal)
+        logger.debug("set min to %s"%(self.minVal))
+
+        self._minChanged.emit(self.minVal)
+        self._layertransformChanged.emit()
+
+    def setMax(self,maxVal):
+        self.maxVal = maxVal
+
+        logger.debug("set max to %s"%(self.maxVal))
+
+        self._maxChanged.emit(self.maxVal)
+        self._layertransformChanged.emit()
+    #
+    #
+    # def fromTransformData(self,transformData):
+    #     self.setQuaternion(transformData.quatRot)
+    #     self.setZoom(transformData.zoom)
+    #     self.setPos(transformData.dataPos)
+    #     self.setBounds(*transformData.bounds)
+    #     self.setBox(transformData.isBox)
+    #     self.setIso(transformData.isIso)
+    #
+    #     self.setAlphaPow(transformData.alphaPow)
+    #     self.setTranslate(*transformData.translate)
+    #     self.setValueScale(transformData.minVal,transformData.maxVal)
+    #     # self.setGamma(transformData.gamma)
+    #
+    # def toTransformData(self):
+    #     return TransformData(quatRot = self.quatRot, zoom = self.zoom,
+    #                          dataPos = self.dataPos,
+    #                          minVal = self.minVal,
+    #                          maxVal = self.maxVal,
+    #                          gamma= self.gamma,
+    #                          translate = self.translate,
+    #                          bounds = self.bounds,
+    #                          isBox = self.isBox,
+    #                          isIso = self.isIso,
+    #                          alphaPow = self.alphaPow)
 

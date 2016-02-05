@@ -131,7 +131,6 @@ class VolumeRenderer:
         self.modelView = np.zeros((4,4))
 
 
-
         if size:
             self.resize(size)
         else:
@@ -170,6 +169,7 @@ class VolumeRenderer:
 
     def resize(self,size):
         self.width, self.height = size
+
         self.reset_buffer()
 
 
