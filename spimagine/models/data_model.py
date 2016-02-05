@@ -8,6 +8,8 @@ and Tiff files (TiffData).
 Extend it if you want to and change the DataLoadModel.chooseContainer to
 accept it via dropg
 
+at the end every data nodel is assumed to be 5d (Time,Channel,ZYZ)
+
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
@@ -52,33 +54,59 @@ def absPath(myPath):
 
 ############################################################################
 """
-The next classes define simple 4d Data Structures that implement the interface
+The next classes define simple 5d (time+channel+3d) Data Structures that implement the interface
 given by GenericData
 """
 
 class GenericData():
-    """abstract base class for 4d data
+    """abstract base class for 5d data
 
     if you wanna sublass it, just overwrite self.size() and self.__getitem__()
 
     """
     dataFileError = Exception("not a valid file")
+    _DIM_WITHOUT_TIME = 4
+
     def __init__(self, name = ""):
         self.stackSize = None
         self.stackUnits = None
         self.name = name
 
-    # def setStackSize(self, stackSize):
-    #     self.stackSize  = list(stackSize)
 
     def sizeT(self):
         return self.size()[0]
+
+    def sizeC(self):
+        return self.size()[1]
 
     def size(self):
         return self.stackSize
 
     def __getitem__(self,i):
         return None
+
+    @classmethod
+    def _basic_shape_to_dim(cls, shape, ndim):
+        """reshapes shape such that its dim = _DIM_WITHOUT_TIME"""
+        if len(shape)>ndim:
+            raise ValueError("invalid data dimension! (len(shape)=%s > %s)"%
+                             (len(shape),ndim))
+
+        return (1,)*(ndim-len(shape))+shape
+
+    @classmethod
+    def shape_to_dim(cls, shape, include_time = False):
+        """reshapes shape such that its dim = _DIM_WITHOUT_TIME"""
+        if include_time:
+            return cls._basic_shape_to_dim(shape,cls._DIM_WITHOUT_TIME+1)
+        else:
+            return cls._basic_shape_to_dim(shape,cls._DIM_WITHOUT_TIME)
+
+    @classmethod
+    def reshape_to_dim(cls, data, include_time = False):
+        """reshapes data such that its dim = _DIM_WITHOUT_TIME"""
+        return data.reshape(cls.shape_to_dim(data.shape, include_time))
+
 
 
 class SpimData(GenericData):
@@ -97,6 +125,8 @@ class SpimData(GenericData):
         if fName:
             try:
                 self.stackSize = imgutils.parseIndexFile(os.path.join(fName,"data/index.txt"))
+                # no multichannel for now...
+                self.stackSize = self.stackSize[:1]+[1,]+self.stackSize[1:]
                 self.stackUnits = imgutils.parseMetaFile(os.path.join(fName,"metadata.txt"))
                 self.fName = fName
             except Exception as e:
@@ -144,8 +174,10 @@ class Img2dData(GenericData):
     def load(self,fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
-                self.img  = np.array([imgutils.openImageFile(fName)])
-                self.stackSize = (1,) + self.img.shape
+                self.img  = self.reshape_to_dim(np.array([imgutils.openImageFile(fName)]),
+                                                include_time=True)
+                self.stackSize = self.shape_to_dim(self.img.shape,
+                                                   include_time=True)
             except Exception as e:
                 print e
                 self.fName = ""
@@ -158,30 +190,29 @@ class Img2dData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            return self.img
+            return self.img[pos]
         else:
             return None
 
 
 class TiffData(GenericData):
-    """3d tiff data"""
+    """a single 3d/4d/5d tiff data"""
     def __init__(self,fName = ""):
         GenericData.__init__(self, fName)
         self.load(fName)
 
-    def load(self,fName, stackUnits = [1.,1.,1.]):
+    def load(self, fName, stackUnits = [1.,1.,1.]):
         if fName:
             try:
                 data = np.squeeze(imgutils.read3dTiff(fName))
 
-                if not data.ndim in [3,4]:
+                if not data.ndim in [3,4,5]:
                     raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
 
-                if data.ndim == 3:
-                    self.stackSize = (1,)+ data.shape
-                else:
-                    self.stackSize = data.shape
-                self.data = data
+                self.data = self.reshape_to_dim(data,include_time=True)
+                #reshape it to e.g. (1,1,100,100,100)
+                self.stackSize = self.data.shape
+
             except Exception as e:
                 print e
                 self.fName = ""
@@ -194,19 +225,14 @@ class TiffData(GenericData):
 
     def __getitem__(self,pos):
         if self.stackSize and self.fName:
-            if self.data.ndim == 3:
-                return self.data
-            else:
-                return self.data[pos]
-
-
+            return self.data[pos]
         else:
             return None
 
 
 
 class TiffFolderData(GenericData):
-    """3d tiff data inside a folder"""
+    """3d/4d tiff data inside a folder"""
     def __init__(self,fName = ""):
         GenericData.__init__(self, fName)
         self.fNames = []
@@ -223,7 +249,8 @@ class TiffFolderData(GenericData):
             
             try:
                 _tmp = imgutils.read3dTiff(self.fNames[0])
-                self.stackSize = (len(self.fNames),)+ _tmp.shape
+                self.stackSize = (len(self.fNames),)+self.shape_to_dim(_tmp.shape,
+                                                   include_time=False)
             except Exception as e:
                 print e
                 self.fName = ""
@@ -236,54 +263,52 @@ class TiffFolderData(GenericData):
 
     def __getitem__(self,pos):
         if len(self.fNames)>0 and pos<len(self.fNames):
-            return imgutils.read3dTiff(self.fNames[pos])
-
-class TiffMultipleFiles(GenericData):
-    """3d tiff data inside a folder"""
-    def __init__(self,fName = []):
-        GenericData.__init__(self, fName)
-        self.fNames = fName
-        self.load(fName)
-
-    def load(self,fNames, stackUnits = [1.,1.,1.]):
-        if fNames:
-            if len(self.fNames) == 0:
-                raise Exception("filelist %s seems to be empty"%fName)
-
-            try:
-                _tmp = imgutils.read3dTiff(self.fNames[0])
-                self.stackSize = (len(self.fNames),)+ _tmp.shape
-            except Exception as e:
-                print e
-                raise Exception("couldnt open %s as TiffData"%self.fNames[0])
-                return
-
-            self.stackUnits = stackUnits
+            return self.reshape_to_dim(imgutils.read3dTiff(self.fNames[pos]),
+                                           include_time = False)
 
 
-    def __getitem__(self,pos):
-        if len(self.fNames)>0 and pos<len(self.fNames):
-            return imgutils.read3dTiff(self.fNames[pos])
+
+# class TiffMultipleFiles(GenericData):
+#     """3d/4d tiff data inside a folder"""
+#     def __init__(self,fName = []):
+#         GenericData.__init__(self, fName)
+#         self.fNames = fName
+#         self.load(fName)
+#
+#     def load(self,fNames, stackUnits = [1.,1.,1.]):
+#         if fNames:
+#             if len(self.fNames) == 0:
+#                 raise Exception("filelist %s seems to be empty"%fName)
+#
+#             try:
+#                 _tmp = imgutils.read3dTiff(self.fNames[0])
+#                 self.stackSize = (len(self.fNames),)+ _tmp.shape
+#             except Exception as e:
+#                 print e
+#                 raise Exception("couldnt open %s as TiffData"%self.fNames[0])
+#                 return
+#
+#             self.stackUnits = stackUnits
+#
+#
+#     def __getitem__(self,pos):
+#         if len(self.fNames)>0 and pos<len(self.fNames):
+#             return imgutils.read3dTiff(self.fNames[pos])
 
 class NumpyData(GenericData):
 
     def __init__(self, data, stackUnits = [1.,1.,1.]):
         GenericData.__init__(self,"NumpyData")
 
-        if len(data.shape)==3:
-            self.stackSize = (1,) + data.shape
-            self.data = data.copy().reshape(self.stackSize)
-        elif len(data.shape)==4:
-            self.stackSize = data.shape
-            self.data = data.copy()
-        else:
-            raise TypeError("data should be 3 or 4 dimensional! shape = %s" %str(data.shape))
+        if not data.ndim in [3,4,5]:
+            raise TypeError("data should be 3, 4 or 5 dimensional! shape = %s" %str(data.shape))
 
-
+        self.data = self.reshape_to_dim(data.copy(), include_time=True)
+        self.stackSize  = self.data.shape
         self.stackUnits = stackUnits
 
     def __getitem__(self,pos):
-        return self.data[pos,...]
+        return self.data[pos]
 
 
 class DemoData(GenericData):
@@ -296,13 +321,13 @@ class DemoData(GenericData):
             logger.debug("loading precomputed demodata")
             self.data = imgutils.read3dTiff(absPath("../data/mpi_logo_80.tif")).astype(np.float32)
             N = 80
-            self.stackSize = (10,N,N,N)
+            self.stackSize = (10,1,N,N,N)
             self.fName = ""
             self.nT = 10
             self.stackUnits = (1,1,1)
 
         else:
-            self.stackSize = (1,N,N,N)
+            self.stackSize = (1,1,N,N,N)
             self.fName = ""
             self.nT = N
             self.stackUnits = (1,1,1)
@@ -318,6 +343,7 @@ class DemoData(GenericData):
 
             u2 = np.exp(-7*R2**2)
             self.data = (10000*(u + 2*u2)).astype(np.float32)
+        self.data = self.data.reshape((1,)+self.data.shape)
 
 
     def sizeT(self):
@@ -330,41 +356,17 @@ class DemoData(GenericData):
 class EmptyData(GenericData):
     def __init__(self):
         GenericData.__init__(self,"EmptyData")
-        self.stackSize = (1,1,1,1)
+        self.stackSize = (1,)*(self._DIM_WITHOUT_TIME+1)
         self.fName = ""
         self.nT = 1
         self.stackUnits = (1,1,1)
-        self.data = np.zeros((1,1,1)).astype(np.uint16)
+        self.data = np.zeros(self.stackSize).astype(np.uint16)
 
-    def sizeT(self):
-        return self.nT
 
     def __getitem__(self,pos):
         return self.data
 
 
-# class HDF5Data(GenericData):
-#     """loads hdf5 data files
-#     """
-
-#     def __init__(self,fName = None, key = None ):
-#         GenericData.__init__(self, fName)
-#         self.load(fName, key)
-
-#     def load(self,fName, key = None, stackUnits = [1.,1.,1.]):
-#         if fName:
-#             with h5py.File(fName,"r") as f:
-#                 if len(f.keys())==0 :
-#                     raise KeyError("no valid key found in file %s"%fName)
-#                 if key is None:
-#                     key = f.keys()[0]
-#                 self.data = np.asarray(f[key][:]).copy()
-#                 self.stackSize = (1,)+ self.data.shape
-#                 self.stackUnits = stackUnits
-#                 self.fName = fName
-        
-#     def __getitem__(self,pos):
-#         return self.data
 
 class CZIData(GenericData):
     """loads czi data files
@@ -380,24 +382,18 @@ class CZIData(GenericData):
             try:
                 data = np.squeeze(imgutils.readCziFile(fName))
 
-                if not data.ndim in [3,4]:
+                if not data.ndim in [3,4,5]:
                     raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName,data.ndim))
 
-                if data.ndim == 3:
-                    self.stackSize = (1,)+ data.shape
-                else:
-                    self.stackSize = data.shape
-                self.data = data
+                self.data = self.reshape_to_dim(data,include_time=True)
+                self.stackSize = self.data.shape
                 self.stackUnits = stackUnits
                 self.fName = fName
             except Exception as e:
                 print e
         
     def __getitem__(self,pos):
-        if self.data.ndim == 3:
-            return self.data
-        else:
-            return self.data[pos]
+        return self.data[pos]
 
 
 
@@ -525,6 +521,10 @@ class DataModel(QtCore.QObject):
         if self.dataContainer:
             return self.dataContainer.sizeT()
 
+    def sizeC(self):
+        if self.dataContainer:
+            return self.dataContainer.sizeC()
+
     def size(self):
         if self.dataContainer:
             return self.dataContainer.size()
@@ -566,6 +566,10 @@ class DataModel(QtCore.QObject):
 
         self.prefetch(pos)
 
+        #block until data was fetched....
+        while not self.data.has_key(pos):
+            time.sleep(1.e-4)
+
         return self.data[pos]
 
         # return self.dataContainer[pos]
@@ -577,7 +581,7 @@ class DataModel(QtCore.QObject):
         return np.arange(pos,pos+self.prefetchSize+1)%self.sizeT()
 
     def loadFromPath(self,fName, prefetchSize = 0):
-        
+
         if  isinstance(fName,(tuple,list)):
             self.setContainer(TiffMultipleFiles(fName),prefetchSize)
 
@@ -597,95 +601,10 @@ class DataModel(QtCore.QObject):
 
 
 
-
-
-def test_spimdata():
-    d = SpimData("/Users/mweigert/Data/HisGFP")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
-def test_tiffdata():
-    d = TiffData("/Users/mweigert/Data/droso_test.tif")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
-def test_numpydata():
-    d = NumpyData(np.ones((10,100,100,100)))
-
-
-    m = DataModel(d)
-
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-def test_frompath():
-    m = DataModel.fromPath("/Users/mweigert/Data/HisGFP")
-    m = DataModel.fromPath("/Users/mweigert/Data/droso_test.tif")
-
-
-def test_speed():
-    import time
-
-    fName  = "/Users/mweigert/Data/Drosophila_full"
-
-    t = []
-    d = DataModel.fromPath(fName,1)
-
-    for i in range(100):
-        print i
-
-        if i%10==0:
-            a = d[i/10]
-
-
-        time.sleep(.1)
-        t.append(time.time())
-
-
-def test_data_sets():
-    fNames = ["test_data/Drosophila_Single",
-              "test_data/HisStack_uint16_0000.tif",
-              "test_data/HisStack_uint8_0000.tif",
-              "test_data/meep.h5",
-              "test_data/retina.czi"
-          ]
-
-    
-    for fName in fNames:
-        try:
-            d = DataModel.fromPath(fName)
-            print fName, d[0].shape
-        except Exception as e:
-            print e
-            print "ERROR    could not open %s"%fName
-            
-
     
         
 
 if __name__ == '__main__':
-
-    # test_data_sets()
-    # test_spimdata()
-
-    # test_tiffdata()
-    # test_numpydata()
-
-    # test_speed()
-
-    # test_frompath()
 
 
     d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize= 0)
