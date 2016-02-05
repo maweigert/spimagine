@@ -103,7 +103,7 @@ class TransformData(object):
         self.translate = np.array(translate)
 
     @classmethod
-    def interp(cls,x1, x2, lam ,f = create_interp_func(10.)):
+    def interp(cls,x1, x2, lam ,f = create_interp_func(0.)):
         """
         f should be a function [0...1] - [0...1]
         """
