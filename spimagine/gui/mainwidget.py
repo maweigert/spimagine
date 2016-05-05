@@ -524,6 +524,7 @@ class MainWidget(QtGui.QWidget):
         # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
+        print "HUHU %s"%dataModel
         self.glWidget.setModel(dataModel)
         self.sliceWidget.setModel(dataModel)
 
@@ -552,6 +553,7 @@ class MainWidget(QtGui.QWidget):
 
         self.volSettingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
+
         if self.myparent:
             self.myparent.setWindowTitle(self.glWidget.dataModel.name())
         else:
@@ -561,8 +563,8 @@ class MainWidget(QtGui.QWidget):
 
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
-        minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
-        self.volSettingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
+        # minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
+        # self.volSettingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
 
 
 

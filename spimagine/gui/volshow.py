@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import os
 
-from PyQt4 import QtCore,QtGui
+from PyQt4 import QtCore, QtGui
 
 from collections import OrderedDict
 
@@ -57,11 +57,13 @@ def volfig(num=None, raise_window = True):
 
     logger.debug("volfig")
 
+
     app = getCurrentApp()
     app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
     
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
+
 
     if not num:
         if len(app.volfigs.keys())==0:
@@ -75,7 +77,6 @@ def volfig(num=None, raise_window = True):
     else:
         window = MainWidget()
         window.show()
-
     #make num the last window
     app.volfigs[num] = window
 

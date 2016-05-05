@@ -3,7 +3,7 @@
 
 
 #define MPI_2 6.2831853071795f
-#define INFINITY 1.e30f
+//#define INFINITY 1.e30f
 
 // returns random value between [0,1]
 
@@ -68,6 +68,13 @@ float4 mult(__constant float* M, float4 v){
   res.w = dot(v, (float4)(M[12],M[13],M[14],M[15]));
   return res;
 }
+
+
+
+__kernel void foo(__global * bar){}
+
+
+
 
 
 

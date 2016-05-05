@@ -5,6 +5,13 @@ import os
 
 from PyQt4 import Qt, QtCore, QtGui
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+
+
 class FloatSlider(QtGui.QSlider):
     floatValueChanged = QtCore.pyqtSignal(float)
     def __init__(self,*args):
@@ -22,12 +29,14 @@ class FloatSlider(QtGui.QSlider):
     def _from_float(self,x):
         ind = int(self.steps*(x-self.minVal)/(self.maxVal-self.minVal))
         ind = max(0,min(self.steps,ind))
+        logger.debug("floatslider:  index from float %s = %s"%(x,ind))
         return ind
 
     def _from_int(self,n):
         return self.minVal+1.*(self.maxVal-self.minVal)*n/self.steps
 
     def setValue(self,val):
+        logger.debug("floatslider: setValue to : %s"%val)
         self.floatValue = val
         super(FloatSlider,self).setValue(self._from_float(val))
 

@@ -67,7 +67,6 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-
     from spimagine.gui.mainwidget import MainWidget
     from spimagine.models.data_model import DemoData, DataModel
         
@@ -83,9 +82,8 @@ def main():
     if sys.platform.startswith("win"):
     	QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
 
-    
-    win = MainWidget()
 
+    win = MainWidget()
     if args.fname:
         if len(args.fname)==1:
             win.setModel(DataModel.fromPath(args.fname[0]))

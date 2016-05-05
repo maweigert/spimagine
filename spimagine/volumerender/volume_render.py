@@ -84,8 +84,11 @@ class VolumeRenderer:
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
 
-            init_device(useGPU = True, 
-                                 useDevice = spimagine.config.__OPENCLDEVICE__)
+            #FIXME
+            # device should not be reinitialized as then
+            # every other queue becomes invalid
+            # init_device(useGPU = True,
+            #             useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -105,28 +108,30 @@ class VolumeRenderer:
 
         #self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
+        build_options_basic = ["-I", "%s"%absPath("kernels/"),
+                                "-D","maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
+
+        self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+                               build_options =
+                               build_options_basic +
+                               ["-cl-finite-math-only",
+                                "-cl-fast-relaxed-math",
+                                "-cl-unsafe-math-optimizations",
+                                "-cl-mad-enable"])
         try:
-            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
-                                   build_options =
-                                   ["-cl-finite-math-only",
-                                    "-cl-fast-relaxed-math",
-                                    "-cl-unsafe-math-optimizations",
-                                    "-cl-mad-enable",
-                                    str("-I %s"%absPath("kernels/")),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__])
+            pass
         except Exception as e:
 
             logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =
-                                   [str("-I %s"%absPath("kernels/")),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__])
+                                   build_options_basic)
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
-        
+
         self.invPBuf = OCLArray.empty(16,dtype=np.float32)
-        
+
         self.projection = np.zeros((4,4))
         self.modelView = np.zeros((4,4))
 
@@ -735,7 +740,8 @@ if __name__ == "__main__":
     rend.set_data(d.astype(np.float32))
 
     t = time()
-    rend.render(maxVal = .5, method = "iso_surface")
+    #rend.render(maxVal = .5, method = "iso_surface")
+    rend.render(maxVal = .5)
     print time()-t
     out = rend.output_normals[...,0]
     out = rend.output_occlusion

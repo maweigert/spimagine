@@ -72,7 +72,7 @@ class TransformModel(QtCore.QObject):
         self.dataModel = dataModel
 
     def reset(self,minVal = 0., maxVal = 256.,stackUnits=None):
-        logger.debug("reset")
+        logger.debug("reset:  min = %s max = %s"%(minVal,maxVal))
         self.dataPos = 0
         self.slicePos = 0
         self.sliceDim = 0

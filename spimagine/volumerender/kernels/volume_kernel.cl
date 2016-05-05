@@ -124,7 +124,7 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 		maxInd = newVal>colVal?i*LOOPUNROLL+j:maxInd;
 		colVal = fmax(colVal,newVal);
 
-		
+
   		// colVal = fmax(colVal,read_imagef(volume, volumeSampler, pos).x);
 		pos += delta_pos;
   	  }
@@ -151,8 +151,6 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   	}
   }
 
-  //if ((x==250) &&(y==250))
-//	printf("kern: %.20f\n",alpha_pow);
 
 
   

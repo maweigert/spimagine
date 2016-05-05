@@ -16,6 +16,9 @@ import numpy as np
 from quaternion import Quaternion
 
 
+
+
+
 def mat4_scale(x =1.,y=1.,z=1.):
     return np.array([x, 0.0, 0.0, 0.,
                   0.0, y, 0.0, 0.0,

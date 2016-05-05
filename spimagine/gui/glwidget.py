@@ -159,7 +159,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def setModel(self,dataModel):
-        logger.debug("setModel")
+        logger.debug("setModel to %s"%dataModel)
         if self.dataModel is None or (self.dataModel != dataModel):
                 self.dataModel = dataModel
                 self.transform.setModel(dataModel)
@@ -302,7 +302,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         logger.debug("+++++++++ data model changed")
-
+        logger.debug("dataModelchanged: min %s max %s"%(np.amin(self.dataModel[0]),
+                                                         np.amax(self.dataModel[0])))
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
             self.transform.reset(minVal = np.amin(self.dataModel[0]),
@@ -320,6 +321,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         # print "SETDATA: ", self.dataModel[0].shape
+        logger.debug("dataSourcechanged: min %s max %s"%(np.amin(self.dataModel[0]),
+                                                         np.amax(self.dataModel[0])))
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
         self.transform.reset(minVal = np.amin(self.dataModel[0]),
                              maxVal = np.amax(self.dataModel[0]),

@@ -77,6 +77,7 @@ class GenericData():
     def size(self):
         return self.stackSize
 
+
     def __getitem__(self,i):
         return None
 
