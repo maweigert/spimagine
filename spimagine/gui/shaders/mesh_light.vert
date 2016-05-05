@@ -13,7 +13,7 @@ void main()
 {
   //vec3 pos = position;
   //var_pos = mvpMatrix *vec4(pos, 1.0);
-  //gl_Position = var_pos;
+  gl_Position = var_pos;
 
 
   //var_normal = mvpNormalMatrix *vec4(normal, 0.0);;
