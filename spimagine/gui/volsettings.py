@@ -164,7 +164,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderOcc.setRange(0,1.,100)
         self.sliderOcc.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderOcc.setTracking(True)
-        self.sliderOcc.setValue(.3)
+        self.sliderOcc.setValue(.1)
 
         gridBox.addWidget(QtGui.QLabel("AO strength:\t"),7,0)
         gridBox.addWidget(self.sliderOcc,7,1)

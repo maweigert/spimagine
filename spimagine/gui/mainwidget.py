@@ -253,6 +253,7 @@ class MainWidget(QtGui.QWidget):
         self.keyPanel.hide()
 
         self.impListView = ImageProcessorListView([BlurProcessor(),
+                                                   BlurXYZProcessor(),
                                                    NoiseProcessor(),
                                                    FFTProcessor(),
                                                    LucyRichProcessor()])

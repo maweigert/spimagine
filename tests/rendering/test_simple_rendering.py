@@ -43,8 +43,42 @@ def test_simple_rendering():
 
     pylab.show()
     pylab.pause(2)
+    return rend
+
+def test_surface():
+    from spimagine.utils.transform_matrices import *
+    N = 128
+    x = np.linspace(-1,1,N)
+    Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
+    R = np.sqrt(X**2+Y**2+Z**2)
+
+    data = 900.*np.exp(-10*R)
+    #data = 200*(1+Z)
+
+    rend = VolumeRenderer((400,400))
+
+
+    rend.set_modelView(mat4_translate(0,0,-5.))
+    rend.render(data=data.astype(np.uint16), maxVal = 20., method="iso_surface")
+    #rend.render(data=data.astype(np.float32), maxVal = 100., method="max_project")
+
+    # drawing
+    #pylab.ioff()
+    pylab.figure(1)
+    pylab.clf()
+
+    pylab.imshow(rend.output)
+    pylab.axis("off")
+
+    pylab.show()
+    pylab.pause(.1)
+    return rend
 
 
 if __name__ == "__main__":
+    from gputools import remove_cache_dir
 
-    test_simple_rendering()
+    remove_cache_dir()
+    #rend = test_simple_rendering()
+    rend = test_surface()
+    out = rend.output

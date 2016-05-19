@@ -77,9 +77,20 @@ class GenericData():
     def size(self):
         return self.stackSize
 
-
-    def __getitem__(self,i):
+    def __getitem__(self,pos):
         return None
+    # #this should be override by every derived class
+    # def _get_single_item(self,i):
+    #     return None
+    #
+    # def __getslice__(self, i, j):
+    #     return self.__getitem__(slice(i, j))
+    #
+    # def __getitem__(self,i):
+    #     if isinstance(key, slice):
+    #         return [self.list[i] for i in xrange(key.start, key.stop, key.step)]
+    #     else:
+    #         self._get_single_item(i)
 
 
 class SpimData(GenericData):

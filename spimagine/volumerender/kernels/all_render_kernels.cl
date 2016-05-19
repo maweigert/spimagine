@@ -7,7 +7,8 @@
  */
 
 #ifndef maxSteps
-#define maxSteps 153
+#define maxSteps 100
+
 #endif
 
 
@@ -15,13 +16,3 @@
 #include<volume_kernel.cl>
 
 #include<iso_kernel.cl>
-
-
-
-
-
-
-
-
-
-

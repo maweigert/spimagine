@@ -54,6 +54,21 @@ class BlurProcessor(ImageProcessor):
         h *= 1./sum(h)
         return gputools.convolve_sep3(data, h, h, h)
 
+
+class BlurXYZProcessor(ImageProcessor):
+
+    def __init__(self,sx=4.,sy=4.,sz=4.):
+        super(BlurXYZProcessor,self).__init__("blur_xyz",sx=sx,sy=sy,sz=sz)
+
+    def apply(self,data):
+        sigs = (self.sx,self.sy,self.sz)
+        Ns  = [2*s+1 for s in sigs]
+
+        xs = [np.arange(-N,N+1) for N in Ns]
+        hs = [np.exp(-x**2/2./s**2) for x,s in zip(xs,sigs)]
+        hs = [1.*h/sum(h) for h in hs]
+        return gputools.convolve_sep3(data, *hs)
+
 class NoiseProcessor(ImageProcessor):
     def __init__(self,sigma = 10):
         super(NoiseProcessor,self).__init__("noise",sigma = sigma)

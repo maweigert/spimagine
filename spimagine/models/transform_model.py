@@ -106,7 +106,7 @@ class TransformModel(QtCore.QObject):
             self._isoChanged.emit(isIso)
             self._transformChanged.emit()
 
-    def setOccStrength(self, occ_strength = .3):
+    def setOccStrength(self, occ_strength = .15):
         if self._update_value("occ_strength",occ_strength):
             self._transformChanged.emit()
 

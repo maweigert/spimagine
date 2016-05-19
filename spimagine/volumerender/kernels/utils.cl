@@ -75,9 +75,6 @@ __kernel void foo(__global * bar){}
 
 
 
-
-
-
 #define read_image(volume,sampler, pos,isShortType) (isShortType?1.f*read_imageui(volume, sampler, pos).x:read_imagef(volume, sampler, pos).x)
 
 #endif

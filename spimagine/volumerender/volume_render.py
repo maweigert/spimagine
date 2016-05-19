@@ -120,6 +120,7 @@ class VolumeRenderer:
                                 "-cl-mad-enable"])
         try:
             pass
+
         except Exception as e:
 
             logger.debug(str(e))
@@ -147,7 +148,7 @@ class VolumeRenderer:
         self.set_max_val()
         self.set_min_val()
 
-        self.set_occ_strength(.3)
+        self.set_occ_strength(.1)
         self.set_occ_radius(21)
         self.set_occ_n_points(30)
 
@@ -220,7 +221,7 @@ class VolumeRenderer:
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
 
-    def set_occ_strength(self, occ=.3):
+    def set_occ_strength(self, occ=.2):
         self.occ_strength = occ
 
     def set_occ_radius(self, rad =21):
@@ -423,6 +424,7 @@ class VolumeRenderer:
         """
         with ambient occlusion
         """
+
         self.proc.run_kernel("iso_surface",
                                  (self.width,self.height),
                                  None,

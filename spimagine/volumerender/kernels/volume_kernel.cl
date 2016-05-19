@@ -171,6 +171,8 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 	if (currentPart==0){
 	  d_output[x+Nx*y] = colVal;
 	  d_alpha_output[x+Nx*y] = alphaVal;
+
+
 	}
 	else{
 	  d_output[x+Nx*y] = fmax(colVal,d_output[x+Nx*y]);
