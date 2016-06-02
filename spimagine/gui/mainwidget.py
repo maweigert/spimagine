@@ -525,7 +525,7 @@ class MainWidget(QtGui.QWidget):
         # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
-        print "HUHU %s"%dataModel
+
         self.glWidget.setModel(dataModel)
         self.sliceWidget.setModel(dataModel)
 
