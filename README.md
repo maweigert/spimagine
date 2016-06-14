@@ -1,14 +1,23 @@
-# spimagine
+# Spimagine
+[Overview](#overview)  
+[Requirements](#requirements)  
+[Installation](#installation)  
+[Usage](#usage)
 
-A python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes (hence the *Spim* part). The package provides a generic 3D+t data viewer and makes use of GPU acceleration via OpenCL. 
+## Overview
+
+*Spimagine* is a python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes (hence the *Spim* part). The package provides a generic 3D+t data viewer and makes use of GPU acceleration via OpenCL. 
 If provides further an image processor interface for the GPU accelerated denoising and deconvolution methods of [gputools](https://github.com/maweigert/gputools). 
 
 Watch the following screencast for a first impression: 
 
 [![Alt text for your video](images/poster_vimeo.png)](https://vimeo.com/126597994)
 
-## Requirements (OpenCL)
 
+
+## Requirements
+
+Python 2 + a working OpenCL environment 
 
 #### Mac
 
@@ -30,7 +39,7 @@ sudo clinfo
 ```
 
 
-## Installing
+## Installation
 
 ### Mac
 
@@ -76,7 +85,9 @@ python setup.py install
 
 ## Usage
 
-### Gui Application
+Spimagine was designed with the interactive display of volemtric data from ipython in mind, but it can likewise be used as a standalone application.  
+
+### Standalone Application
 
 pip should install the standalone viewer in the local bin folder (e.g. "~/.local/bin" on Linux), run it from the command line like that
 
@@ -91,7 +102,7 @@ Right now the following formats are supported as input
 - 16 bit unsigned raw data in the format used by the Myers Group at mpi-cbg
 
 
-### interactive usage
+### Interactive 
 
 the package provides interactive visualisation to be used e.g. within IPython
 
@@ -103,7 +114,11 @@ data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
 volshow(data)       #render the data
 ````
 
-### basic configuration 
+### GUI
+
+
+
+### configuration 
 
 the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
 
@@ -113,16 +128,3 @@ max_steps  = 200
 width = 600
 colormap = hot
 ```
-
-### setting the GPU to be used:
-
-interactively:
-
-```python 
-	import gputools
-	gputools.init_device(useDevice = 1)
-```
-
-or in the config file ".spimagine" in your home folder
-
-    OPENCLDEVICE = 1
