@@ -29,16 +29,16 @@ def setOpenCLDevice(num):
 
 #this should fix an annoying file url drag drop bug in mac yosemite
 import platform
-__SYSTEM_DARWIN_14_AND_FOUNDATION__ = False
-if platform.system() =="Darwin" and platform.release()[:2] == "14":
-    try:
-        import Foundation
-        def _parseFileNameFix(fpath):
-            return Foundation.NSURL.URLWithString_("file://"+fpath).fileSystemRepresentation()
-        __SYSTEM_DARWIN_14_AND_FOUNDATION__ = True
-    except ImportError:
-        logger.info("PyObjc module not found!\nIt appears you are using Mac OSX Yosemite which need that package to fix a bug in the drag/dropping of files")
 
+__SYSTEM_DARWIN__ = False
+
+if platform.system() =="Darwin":
+    __SYSTEM_DARWIN__ = True
+    def _parseFileNameFix(fpath):
+        from subprocess import check_output
+        path  = check_output(["osascript","-e","get posix path of posix file \"file://%s\" -- kthxbai"%fpath])
+        print path[:-1]
+        return path[:-1]
 
 
 if __name__ == '__main__':

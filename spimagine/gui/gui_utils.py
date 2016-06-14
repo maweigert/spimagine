@@ -10,39 +10,41 @@ N_PREFETCH = 10
 checkBoxStyleStr = """
 QCheckBox::indicator:checked {
 background:black;
-color:black;
 border-image: url(%s);
 }
 QCheckBox::indicator:unchecked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
+
+QToolTip { color:white;}
 """
 checkNormalBoxStyleStr = """
 QCheckBox::indicator:checked {
 }
 QCheckBox::indicator:unchecked {
 background:black;
-color:white;
+color:white;}
+QToolTip { color:white;}
 """
 
 checkBoxTristateStyleStr = """
 QCheckBox::indicator:unchecked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
 
 QCheckBox::indicator:indeterminate {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
 
 QCheckBox::indicator:checked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);
 }
-
+QToolTip { color:white;}
 """
 
 
@@ -63,7 +65,7 @@ def absPath(myPath):
 
 def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
     but = QtGui.QPushButton("",parent)
-    but.setStyleSheet("background-color: black;color:black;")
+    but.setStyleSheet("background-color: black;color:black;color:lightgrey;")
     if fName:
         but.setIcon(QtGui.QIcon(fName))
     but.setIconSize(QtCore.QSize(width,width))
@@ -71,7 +73,8 @@ def createStandardButton(parent,fName = None,method = None, width = 24, tooltip 
         but.clicked.connect(method)
     but.setMaximumWidth(width)
     but.setMaximumHeight(width)
-    but.setToolTip(tooltip)
+    if tooltip:
+        but.setToolTip(tooltip)
     return but
 
 
@@ -82,7 +85,8 @@ def createImageCheckbox(parent, img1=None, img2 = None, tooltip =""):
         checkStr = checkStr.replace("\\","/")
 
     check.setStyleSheet(checkStr)
-    check.setToolTip(tooltip)
+    if tooltip:
+        check.setToolTip(tooltip)
     return check
 
 def createStandardCheckbox(parent,  tooltip =""):

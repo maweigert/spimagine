@@ -22,6 +22,7 @@ from spimagine.models.keyframe_model import KeyFrame, KeyFrameList
 from spimagine.models.data_model import DataModel, DemoData
 
 
+from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 
 from spimagine.models.transform_model import TransformModel
 
@@ -442,7 +443,7 @@ class KeyListView(QGraphicsView):
             event.accept()
             path = url.toLocalFile().toLocal8Bit().data()
 
-            if spimagine.config.__SYSTEM_DARWIN_14_AND_FOUNDATION__:
+            if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
 
             self.load_from_JSON(path)
@@ -473,48 +474,45 @@ class KeyFramePanel(QWidget):
         self.recordTimer.timeout.connect(self.onRecordTimer)
 
 
-        self.playButton = QPushButton("",self)
-        self.playButton.setStyleSheet("background-color: black")
-        self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
-        self.playButton.setIconSize(QSize(24,24))
-        self.playButton.clicked.connect(self.onPlay)
+        self.playButton = createStandardButton(self,
+                        fName = absPath("images/icon_start.png"),
+                        method = self.onPlay,
+                        tooltip = "play animation")
         self.playButton.setMaximumWidth(24)
         self.playButton.setMaximumHeight(24)
 
-        self.recordButton = QPushButton("",self)
-        self.recordButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_record.png"))
-        self.recordButton.setIcon(QIcon(absPath("images/icon_record.png")))
-        self.recordButton.setIconSize(QSize(24,24))
-        self.recordButton.clicked.connect(self.onRecord)
+
+        self.recordButton = createStandardButton(self,
+                        fName = absPath("images/icon_record.png"),
+                        method = self.onRecord,
+                        tooltip = "render images to folder")
+
         self.recordButton.setMaximumWidth(24)
         self.recordButton.setMaximumHeight(24)
 
-        self.distributeButton = QPushButton("",self)
-        self.distributeButton.setToolTip("distribute data times according to keyframes")
-        self.distributeButton.setStyleSheet("background-color: black; color:black")
-        self.distributeButton.setIcon(QIcon(absPath("images/icon_distribute.png")))
-        self.distributeButton.setIconSize(QSize(24,24))
-        self.distributeButton.clicked.connect(self.onDistribute)
+
+        self.distributeButton  = createStandardButton(self,
+                        fName = absPath("images/icon_distribute.png"),
+                        method = self.onDistribute,
+                        tooltip = "sync data timepoints to data keyframe position")
+
         self.distributeButton.setMaximumWidth(24)
         self.distributeButton.setMaximumHeight(24)
 
-        self.saveButton = QPushButton("",self)
-        self.saveButton.setToolTip("save keyframes as json")
-        self.saveButton.setStyleSheet("background-color: black; color:black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
-        self.saveButton.setIcon(QIcon(absPath("images/icon_save.png")))
-        self.saveButton.setIconSize(QSize(24,24))
-        self.saveButton.clicked.connect(self.onSave)
+        self.saveButton = createStandardButton(self,
+                        fName = absPath("images/icon_save.png"),
+                        method = self.onDistribute,
+                        tooltip = "save keyframes as json")
+
+
         self.saveButton.setMaximumWidth(24)
         self.saveButton.setMaximumHeight(24)
 
-        self.trashButton = QPushButton("",self)
-        self.trashButton.setStyleSheet("background-color: black")
-        # logger.debug("absPATH: %s"%absPath("images/icon_play.png"))
-        self.trashButton.setIcon(QIcon(absPath("images/icon_trash.png")))
-        self.trashButton.setIconSize(QSize(24,24))
-        self.trashButton.clicked.connect(self.onTrash)
+        self.trashButton =createStandardButton(self,
+                        fName = absPath("images/icon_trash.png"),
+                        method = self.onTrash,
+                        tooltip = "delet all keyframes")
+
         self.trashButton.setMaximumWidth(24)
         self.trashButton.setMaximumHeight(24)
 
@@ -684,16 +682,11 @@ class MainWindow(QMainWindow):
 
 
         k = KeyFrameList()
-        k.addItem(KeyFrame(0.1))
-        k.addItem(KeyFrame(0.9))
+        k.addItem(KeyFrame(0.))
+        k.addItem(KeyFrame(1.))
 
-        # k = KeyFrameList._from_JSON(open("test.json").read())
+        self.keyPanel.setModel(k)
 
-        # print k
-
-        # self.keyPanel.setModel(k)
-
-        self.keyPanel.load_from_JSON("test.json")
 
         self.setCentralWidget(self.keyPanel)
 

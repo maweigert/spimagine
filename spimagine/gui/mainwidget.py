@@ -627,19 +627,34 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.refresh()
 
     def openFile(self,e):
-        path = QtGui.QFileDialog.getOpenFileName(self, 'Open Tif File',
-                                                     '.', selectedFilter='*.tif')
+        # path = QtGui.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
+        #                                              '.', selectedFilter='*.tif')
 
-        
-        path = str(path)
+
+        f = QtGui.QFileDialog()
+        f.setWindowTitle('Open Path (File or Folder)')
+        f.setFileMode(QtGui.QFileDialog.ExistingFile & QtGui.QFileDialog.Directory)
+        f.exec_()
+        path = f.selectedFiles()
+
+        if len(path)==0:
+            return
+
+        path = str(path[0])
         print path
         if path:
-            if self.glWidget.dataModel:
-                self.glWidget.dataModel.loadFromPath(path,
-                    prefetchSize = self.glWidget.N_PREFETCH)
-            else:
-                self.glWidget.setModel(DataModel.fromPath(path,
-                    prefetchSize = self.glWidget.N_PREFETCH))
+            try:
+                if self.glWidget.dataModel:
+                    self.glWidget.dataModel.loadFromPath(path,
+                        prefetchSize = self.glWidget.N_PREFETCH)
+                else:
+                    self.glWidget.setModel(DataModel.fromPath(path,
+                        prefetchSize = self.glWidget.N_PREFETCH))
+            except Exception as e:
+                mbox = QtGui.QMessageBox()
+                mbox.setText(str(e))
+                mbox.setIcon(QtGui.QMessageBox.Warning)
+                mbox.exec_()
 
     def saveFile(self,e):
         path = QtGui.QFileDialog.getSaveFileName(self, 'Save as Tif File',
