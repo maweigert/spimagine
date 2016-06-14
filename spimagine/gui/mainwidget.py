@@ -47,7 +47,7 @@ from spimagine.gui.floatslider import FloatSlider
 
 from spimagine.models.transform_model import TransformModel
 
-from spimagine.gui.gui_utils import  createStandardCheckbox,createStandardButton
+from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 
 from spimagine.utils.imgutils import write3dTiff
 
@@ -144,31 +144,31 @@ class MainWidget(QtGui.QWidget):
                         fName = absPath("images/icon_filesave.png"),
                         method = self.saveFile, tooltip = "save file as tif")
         
-        self.checkVolSettings = createStandardCheckbox(self,
-            absPath("images/icon_volsettings_active.png"),
-            absPath("images/icon_volsettings_inactive.png"),
-                tooltip="volume settings")
+        self.checkVolSettings = createImageCheckbox(self,
+                                                    absPath("images/icon_volsettings_active.png"),
+                                                    absPath("images/icon_volsettings_inactive.png"),
+                                                    tooltip="volume settings")
 
-        self.checkSettings = createStandardCheckbox(self,
-                absPath("images/icon_mainsettings_active.png"),
-                absPath("images/icon_mainsettings_inactive.png"),
-                tooltip="general settings")
-
-
-        self.checkKey = createStandardCheckbox(self,absPath("images/video.png"),absPath("images/video_inactive.png"), tooltip="keyframe editor")
-
-        self.checkIsoView = createStandardCheckbox(self,
-            absPath("images/icon_method_vol.png"),
-            absPath("images/icon_method_iso.png"),
-            tooltip="iso surface")
-
-        self.checkProcView = createStandardCheckbox(self,
-            absPath("images/icon_process_active.png"),
-            absPath("images/icon_process_inactive.png"),
-            tooltip="image processors")
+        self.checkSettings = createImageCheckbox(self,
+                                                 absPath("images/icon_mainsettings_active.png"),
+                                                 absPath("images/icon_mainsettings_inactive.png"),
+                                                 tooltip="general settings")
 
 
-        self.checkSliceView = createStandardCheckbox(
+        self.checkKey = createImageCheckbox(self, absPath("images/video.png"), absPath("images/video_inactive.png"), tooltip="keyframe editor")
+
+        self.checkIsoView = createImageCheckbox(self,
+                                                absPath("images/icon_method_vol.png"),
+                                                absPath("images/icon_method_iso.png"),
+                                                tooltip="iso surface")
+
+        self.checkProcView = createImageCheckbox(self,
+                                                 absPath("images/icon_process_active.png"),
+                                                 absPath("images/icon_process_inactive.png"),
+                                                 tooltip="image processors")
+
+
+        self.checkSliceView = createImageCheckbox(
             self,
             absPath("images/icon_slice.png"),
             absPath("images/icon_slice_inactive.png"), tooltip="slice view")
@@ -206,7 +206,7 @@ class MainWidget(QtGui.QWidget):
 
         
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
-        self.gammaSlider.setRange(.25,2.)
+        self.gammaSlider.setRange(.01,2.,200)
 
         self.gammaSlider.setToolTip("value gamma")
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -253,6 +253,7 @@ class MainWidget(QtGui.QWidget):
         self.keyPanel.hide()
 
         self.impListView = ImageProcessorListView([BlurProcessor(),
+                                                   BlurXYZProcessor(),
                                                    NoiseProcessor(),
                                                    FFTProcessor(),
                                                    LucyRichProcessor()])
@@ -293,8 +294,6 @@ class MainWidget(QtGui.QWidget):
         hbox.addWidget(self.fwdButton)
         hbox.addWidget(self.sliderTime)
         hbox.addWidget(self.spinTime)
-        # hbox.addWidget(self.checkProj)
-        # hbox.addWidget(self.checkBox)
 
         hbox.addWidget(self.centerButton)
 
@@ -353,16 +352,24 @@ class MainWidget(QtGui.QWidget):
         self.playDir = 1
 
         # a decorator as checkboxe state is  2 if checked
-        def stateToBool(objFunc):
+        def stateToBool(objFunc, invert = False):
             def _foo(x):
-                return objFunc(x!=0)
+                if invert:
+                    return objFunc(x!=2)
+                else:
+                    return objFunc(x==2)
             return _foo
 
-        self.volSettingsView.checkBox.stateChanged.connect(self.glWidget.transform.setBox)
+        self.volSettingsView.checkBox.stateChanged.connect(
+            self.glWidget.transform.setBox)
+
+        self.volSettingsView.checkInvert.stateChanged.connect(
+            stateToBool(self.glWidget.set_background_mode_black,invert = True))
 
         self.settingsView._substepsChanged.connect(self.substepsChanged)
 
-        self.checkIsoView.stateChanged.connect(stateToBool(self.glWidget.transform.setIso))
+        self.checkIsoView.stateChanged.connect(
+            stateToBool(self.glWidget.transform.setIso))
 
         self.transform._isoChanged.connect(self.checkIsoView.setChecked)
 
@@ -372,6 +379,14 @@ class MainWidget(QtGui.QWidget):
         self.volSettingsView._boundsChanged.connect(self.glWidget.transform.setBounds)
 
         self.volSettingsView.sliderAlphaPow.floatValueChanged.connect(self.glWidget.transform.setAlphaPow)
+
+        self.volSettingsView.sliderOcc.floatValueChanged.connect(
+            self.glWidget.transform.setOccStrength)
+
+        self.volSettingsView.sliderOccRadius.floatValueChanged.connect(
+                self.glWidget.transform.setOccRadius)
+        self.volSettingsView.sliderOccNPoints.floatValueChanged.connect(
+            self.glWidget.transform.setOccNPoints)
 
         self.glWidget.transform._alphaPowChanged.connect(self.volSettingsView.sliderAlphaPow.setValue)
 
@@ -420,7 +435,7 @@ class MainWidget(QtGui.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
-
+        
 
     def impStateChanged(self):
         data = self.transform.dataModel[self.transform.dataPos]
@@ -510,6 +525,7 @@ class MainWidget(QtGui.QWidget):
         # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
+
         self.glWidget.setModel(dataModel)
         self.sliceWidget.setModel(dataModel)
 
@@ -538,6 +554,7 @@ class MainWidget(QtGui.QWidget):
 
         self.volSettingsView.dimensionLabel.setText("Dim: %s"%str(tuple(self.glWidget.dataModel.size()[::-1])))
 
+
         if self.myparent:
             self.myparent.setWindowTitle(self.glWidget.dataModel.name())
         else:
@@ -547,8 +564,8 @@ class MainWidget(QtGui.QWidget):
 
 
         d = self.glWidget.dataModel[self.glWidget.dataModel.pos]
-        minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
-        self.volSettingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
+        # minMaxMean = (np.amin(d),np.amax(d),np.mean(d))
+        # self.volSettingsView.statsLabel.setText("Min:\t%.2f\nMax:\t%.2f \nMean:\t%.2f"%minMaxMean)
 
 
 
@@ -582,6 +599,18 @@ class MainWidget(QtGui.QWidget):
             self.glWidget.saveFrame(str(fileName))
 
 
+    def set_colormap(self, name):
+        self.glWidget.set_colormap(name)
+
+    def set_colormap_rgb(self, color):
+        self.glWidget.set_colormap_rgb(color)
+
+
+    def saveFrame(self, fName):
+        self.glWidget.saveFrame(fName)
+
+
+
     def setLoopBounce(self,loopBounce):
         #if loopBounce = True, then while playing it should loop back and forth
         self.loopBounce = loopBounce
@@ -598,19 +627,34 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.refresh()
 
     def openFile(self,e):
-        path = QtGui.QFileDialog.getOpenFileName(self, 'Open Tif File',
-                                                     '.', selectedFilter='*.tif')
+        # path = QtGui.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
+        #                                              '.', selectedFilter='*.tif')
 
-        
-        path = str(path)
+
+        f = QtGui.QFileDialog()
+        f.setWindowTitle('Open Path (File or Folder)')
+        f.setFileMode(QtGui.QFileDialog.ExistingFile & QtGui.QFileDialog.Directory)
+        f.exec_()
+        path = f.selectedFiles()
+
+        if len(path)==0:
+            return
+
+        path = str(path[0])
         print path
         if path:
-            if self.glWidget.dataModel:
-                self.glWidget.dataModel.loadFromPath(path,
-                    prefetchSize = self.glWidget.N_PREFETCH)
-            else:
-                self.glWidget.setModel(DataModel.fromPath(path,
-                    prefetchSize = self.glWidget.N_PREFETCH))
+            try:
+                if self.glWidget.dataModel:
+                    self.glWidget.dataModel.loadFromPath(path,
+                        prefetchSize = self.glWidget.N_PREFETCH)
+                else:
+                    self.glWidget.setModel(DataModel.fromPath(path,
+                        prefetchSize = self.glWidget.N_PREFETCH))
+            except Exception as e:
+                mbox = QtGui.QMessageBox()
+                mbox.setText(str(e))
+                mbox.setIcon(QtGui.QMessageBox.Warning)
+                mbox.exec_()
 
     def saveFile(self,e):
         path = QtGui.QFileDialog.getSaveFileName(self, 'Save as Tif File',
@@ -671,7 +715,7 @@ class MainWidget(QtGui.QWidget):
             
             # self.glWidget.setParent(None)
             # free the gpu resources....
-            logger.debug("deleteing the renderer")
+            logger.debug("deleting the renderer")
             del self.glWidget.renderer
             event.accept()
 
@@ -745,5 +789,45 @@ def test_sphere():
 
     sys.exit(app.exec_())
 
+
+def test_surface():
+    from spimagine import DataModel, NumpyData, DemoData
+    from spimagine.gui.mesh import SphericalMesh
+
+    app = QtGui.QApplication(sys.argv)
+
+    win = MainWidget()
+
+
+    x = np.linspace(-1,1,128)
+    Z,Y,X = np.meshgrid(x,x,x)
+    d = np.exp(-10*X**2)
+
+
+
+    #win.setModel(DataModel(NumpyData(d)))
+    win.setModel(DataModel(DemoData()))
+
+    # win.glWidget.add_surface_ellipsoid((1.,0,0),
+    #                                    (.2,.2,.2),
+    #                                    facecolor = (1.,.3,.1,.5),
+    #                                    edgecolor = (1.,1.,1.,.2),
+    #                                    Nphi =20, Ntheta=10)
+
+    # win.glWidget.add_mesh(SphericalMesh(facecolor = (1.,1.,1.),
+    #                            edgecolor = None))
+
+
+    win.show()
+
+    win.raise_()
+
+
+    sys.exit(app.exec_())
+
+
+
 if __name__ == '__main__':
-    test_sphere()
+    #test_sphere()
+
+    test_surface()

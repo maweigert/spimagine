@@ -61,6 +61,8 @@ from spimagine.models.transform_model import TransformModel
 from spimagine.models.data_model import DataModel
 
 
+from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
+
 
 import numpy as np
 from spimagine.gui.gui_utils import *
@@ -79,182 +81,9 @@ from spimagine.utils.quaternion import Quaternion
 
 # logger.setLevel(logging.DEBUG)
 
-
-vertShaderTex ="""
-attribute vec2 position;
-attribute vec2 texcoord;
-varying vec2 mytexcoord;
-
-void main()
-{
-    gl_Position = vec4(position, 0., 1.0);
-    mytexcoord = texcoord;
-}
-"""
-
-fragShaderTex = """
-uniform sampler2D texture;
-uniform sampler2D texture_alpha;
-uniform sampler2D texture_LUT;
-varying vec2 mytexcoord;
-
-void main()
-{
-  vec4 col = texture2D(texture,mytexcoord);
-  vec4 alph = texture2D(texture_alpha,mytexcoord);
-
-  vec4 lut = texture2D(texture_LUT,col.xy);
-
-  gl_FragColor = vec4(lut.xyz,col.x);
-
-  gl_FragColor.w = 1.0*length(col.xyz);
-
-  //gl_FragColor.w = 1.;
-  //gl_FragColor *= (alph.x==0.)?0.:1.;
-
-  //gl_FragColor.w = (alph.x==0.)?0.:gl_FragColor.w+1./255.;
-
- // gl_FragColor = (alph.x==0.)?0.:gl_FragColor+1./255.;
-  
-//   gl_FragColor.x = (alph.x==0.)?0.:gl_FragColor.x+6./255.;
-
-
-}
-"""
-
-fragShaderStereo = """
-uniform sampler2D texture;
-uniform vec4 col0;
-varying vec2 mytexcoord;
-
-void main()
-{
-  vec4 col = texture2D(texture,mytexcoord);
-  
-  gl_FragColor = col0*col.x;
-
-  gl_FragColor.w = 1.0*length(col.xyz);
-
-
-}
-"""
-
-vertShaderSliceTex ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-attribute vec2 texcoord;
-varying vec2 mytexcoord;
-
-void main()
-{
-    vec3 pos = position;
-    gl_Position = mvpMatrix *vec4(pos, 1.0);
-
-    mytexcoord = texcoord;
-}
-"""
-
-fragShaderSliceTex = """
-uniform sampler2D texture;
-uniform sampler2D texture_LUT;
-varying vec2 mytexcoord;
-
-void main()
-{
-   vec4 col = texture2D(texture,mytexcoord);
-
-   vec4 lut = texture2D(texture_LUT,col.xy);
-
-  gl_FragColor = vec4(lut.xyz,1.);
-
-  gl_FragColor.w = 1.0*length(gl_FragColor.xyz);
-  gl_FragColor.w = 1.0;
-
-
-
-}
-"""
-
-vertShaderCube ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-
-varying float zPos;
-varying vec2 texcoord;
-void main()
-{
-  vec3 pos = position;
-  gl_Position = mvpMatrix *vec4(pos, 1.0);
-
-  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
-  zPos = 0.04+gl_Position.z;
-}
-"""
-
-fragShaderCube = """
-
-uniform vec4 color;
-uniform sampler2D texture_alpha;
-varying float zPos;
-varying vec2 texcoord;
-void main()
-{
-
-  // float tnear = texture2D(texture_alpha,mytexcoord.xy).x;
-
-  float tnear = texture2D(texture_alpha,texcoord).x;
-
-  float att = exp(-.5*(zPos-tnear));
-
-  gl_FragColor = color*att;
-
-//  gl_FragColor = vec4(att,att,att,.3);
-
-// gl_FragColor = vec4(0.,0.,0.,1.);
-
-//gl_FragColor.w =1.;
-}
-"""
-
-
-vertShaderOverlay ="""
-attribute vec3 position;
-uniform mat4 mvpMatrix;
-varying float zPos;
-varying vec2 texcoord;
-
-void main()
-{
-  gl_Position = mvpMatrix *vec4(position, 1.0);
-
-  texcoord = .5*(1.+.98*gl_Position.xy/gl_Position.w);
-  zPos = 0.04+gl_Position.z;
-}
-"""
-
-fragShaderOverlay = """
-varying float zPos;
-varying vec2 texcoord;
-uniform sampler2D texture_alpha;
-
-void main()
-{
-
-  gl_FragColor = vec4(1.,1.,1.,.3);
-
-  float tnear = texture2D(texture_alpha,texcoord).x;
-  float att = exp(-1.*(zPos-tnear));
-
-  att = tnear<0.000001?1.:att;
-  gl_FragColor = vec4(att,att,att,.3);
-
-}
-"""
-
 def _next_golden(n):
     res = round((np.sqrt(5)-1.)/2.*n)
     return int(round((np.sqrt(5)-1.)/2.*n))
-
 
 
 def absPath(myPath):
@@ -272,7 +101,12 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-    
+    _foo= QtCore.pyqtSignal()
+
+    _BACKGROUND_BLACK = (0.,0.,0.,0.)
+    _BACKGROUND_WHITE = (1.,1.,1.,0.)
+
+
     def __init__(self, parent=None, N_PREFETCH = 0,**kwargs):
         logger.debug("init")
 
@@ -306,28 +140,37 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.NSubrenderSteps = 1
 
-
         self.dataModel = None
+
+        self.meshes = []
 
         # self.setMouseTracking(True)
 
+        self._dataModelChanged.connect(self.dataModelChanged)
+
+        self.refresh()
+
+
+    def set_background_mode_black(self, mode_back = True):
+        self._background_mode_black = mode_back
         self.refresh()
 
 
 
 
     def setModel(self,dataModel):
-        logger.debug("setModel")
+        logger.debug("setModel to %s"%dataModel)
+        if self.dataModel is None or (self.dataModel != dataModel):
+                self.dataModel = dataModel
+                self.transform.setModel(dataModel)
+                self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
+                self.dataModel._dataPosChanged.connect(self.dataPosChanged)
+                self._dataModelChanged.emit()
 
-        self.dataModel = dataModel
 
-        if self.dataModel:
-            self.transform.setModel(dataModel)
 
-            self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
-            self.dataModel._dataPosChanged.connect(self.dataPosChanged)
-            self._dataModelChanged.connect(self.dataModelChanged)
-            self._dataModelChanged.emit()
+    def foo(self):
+        print "fooooooooooooooo"
 
 
 
@@ -340,8 +183,11 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dropEvent(self, event):
 
         for url in event.mimeData().urls():
+
             path = url.toLocalFile().toLocal8Bit().data()
-            if spimagine.config.__SYSTEM_DARWIN_14_AND_FOUNDATION__:
+
+            if spimagine.config.__SYSTEM_DARWIN__:
+
                 path = spimagine.config._parseFileNameFix(path)
 
             self.setCursor(QtCore.Qt.BusyCursor)
@@ -360,8 +206,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         try:
             arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
-        except:
-            print "could not load colormap %s"%name
+        except KeyError:
+            print "could not load colormap '%s'"%name
+            print "valid names: %s"%spimagine.config.__COLORMAPDICT__.keys()
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
@@ -376,50 +223,37 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         self.refresh()
 
-    
+    def _shader_from_file(self,fname_vert,fname_frag):
+        shader = QtOpenGL.QGLShaderProgram()
+        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex,fname_vert)
+        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment,fname_frag)
+        shader.link()
+        shader.bind()
+        logger.debug("GLSL program log:%s",shader.log())
+        return shader
+
     def initializeGL(self):
 
         self.resized = True
 
         logger.debug("initializeGL")
 
-        self.programTex = QtOpenGL.QGLShaderProgram()
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
-        self.programTex.link()
-        self.programTex.bind()
-        logger.debug("GLSL programTex log:%s",self.programTex.log())
+        self.programTex = self._shader_from_file(absPath("shaders/texture.vert"),
+                                                 absPath("shaders/texture.frag"))
 
+        self.programCube = self._shader_from_file(absPath("shaders/box.vert"),
+                                                  absPath("shaders/box.frag"))
 
-        self.programStereo = QtOpenGL.QGLShaderProgram()
-        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programStereo.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderStereo)
-        self.programStereo.link()
-        self.programStereo.bind()
-        logger.debug("GLSL programStereo log:%s",self.programStereo.log())
+        self.programSlice = self._shader_from_file(absPath("shaders/slice.vert"),
+                                                   absPath("shaders/slice.frag"))
 
-        self.programCube = QtOpenGL.QGLShaderProgram()
-        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderCube)
-        self.programCube.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderCube)
-        self.programCube.link()
-        self.programCube.bind()
-        logger.debug("GLSL programCube log:%s",self.programCube.log())
+        self.programMesh = self._shader_from_file(absPath("shaders/mesh.vert"),
+                                                  absPath("shaders/mesh.frag"))
 
-        self.programSlice = QtOpenGL.QGLShaderProgram()
-        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,
-                                                  vertShaderSliceTex)
-        self.programSlice.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment,
-                                                  fragShaderSliceTex)
-        self.programSlice.link()
-        self.programSlice.bind()
-        logger.debug("GLSL programCube log:%s",self.programSlice.log())
+        self.programMeshLight = self._shader_from_file(
+            absPath("shaders/mesh_light.vert"),
+            absPath("shaders/mesh_light.frag"))
 
-        self.programOverlay = QtOpenGL.QGLShaderProgram()
-        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderOverlay)
-        self.programOverlay.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderOverlay)
-        self.programOverlay.link()
-        self.programOverlay.bind()
-        logger.debug("GLSL programOverlay log:%s",self.programOverlay.log())
 
 
         self.texture = None
@@ -455,7 +289,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable( GL_LINE_SMOOTH );
         glDisable(GL_DEPTH_TEST)
 
-        self.set_background_color(0,0,0,.0)
+        #self.set_background_color(0,0,0,.0)
+        self.set_background_mode_black(True)
         # self.set_background_color(1,1,1,.6)
 
 
@@ -469,12 +304,15 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
     def dataModelChanged(self):
+        logger.debug("+++++++++ data model changed")
+        logger.debug("dataModelchanged: min %s max %s"%(np.amin(self.dataModel[0]),
+                                                         np.amax(self.dataModel[0])))
         if self.dataModel:
             self.renderer.set_data(self.dataModel[0], autoConvert = True)
             self.transform.reset(minVal = np.amin(self.dataModel[0]),
                                  maxVal = np.amax(self.dataModel[0]),
                                  stackUnits= self.dataModel.stackUnits())
-
+            self.meshes = []
             self.refresh()
 
 
@@ -486,10 +324,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
         # print "SETDATA: ", self.dataModel[0].shape
+        logger.debug("dataSourcechanged: min %s max %s"%(np.amin(self.dataModel[0]),
+                                                         np.amax(self.dataModel[0])))
         self.renderer.set_data(self.dataModel[0],autoConvert = True)
         self.transform.reset(minVal = np.amin(self.dataModel[0]),
                              maxVal = np.amax(self.dataModel[0]),
                              stackUnits= self.dataModel.stackUnits())
+
         self.refresh()
 
 
@@ -526,6 +367,285 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.resized = True
 
+    def add_mesh(self, mesh = SphericalMesh()):
+        """
+        adds a mesh with vertices and facecolor/edgecolor to be drawn
+
+        mesh is an instance of spimagine.gui.Mesh, e.g.
+
+        mesh = Mesh(vertices = [[0,1,0],[0,1,0],...],
+                    normals = [[0,1,0],[0,1,0],...],
+                    facecolor = (1.,.4,.4,.2),
+                    edgecolor = None,...)
+
+        there are some predefined meshes like
+        SphericalMesh, EllipsoidMesh ...
+        """
+
+
+        self.meshes.append(mesh)
+
+        #sort according to opacity as the opaque objects should be drawn first
+        self.meshes.sort(key = lambda x:x.alpha, reverse = True)
+
+
+    # def add_surface_sphere(self,pos = (0,0,0),
+    #                        radius = .2,
+    #                        Nphi = 40, Ntheta = 30,
+    #                        facecolor = (1.,1.,1.,1.),
+    #                        edgecolor = None):
+    #
+    #     coords = np.array(pos)+create_sphere_coords(radius,radius,radius,Nphi, Ntheta)
+    #     self.add_surface(coords,
+    #                      facecolor = facecolor,
+    #                      edgecolor = edgecolor)
+    #
+    # def add_surface_ellipsoid(self,pos = (0,0,0),
+    #                        rs = (.2,.2,.2),
+    #                        Nphi = 40, Ntheta = 30,
+    #                           facecolor = (1.,1.,1.,1.),
+    #                        edgecolor = None):
+    #     coords = np.array(pos)+create_sphere_coords(rs[0],rs[1],rs[2],Nphi, Ntheta)
+    #     self.add_surface(coords,
+    #                      edgecolor = edgecolor,
+    #                      facecolor = facecolor)
+    #
+
+    def _paintGL_render(self):
+        # Draw the render texture
+        self.programTex.bind()
+
+        self.texture = fillTexture2d(self.output,self.texture)
+
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+
+        self.programTex.enableAttributeArray("position")
+        self.programTex.enableAttributeArray("texcoord")
+        self.programTex.setAttributeArray("position", self.quadCoord)
+        self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+
+
+        self.programTex.setUniformValue("is_mode_black",self._background_mode_black)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        self.programTex.setUniformValue("texture",0)
+
+        glActiveTexture(GL_TEXTURE1)
+        glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+        self.programTex.setUniformValue("texture_alpha",1)
+
+        glActiveTexture(GL_TEXTURE2)
+        glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+        self.programTex.setUniformValue("texture_LUT",2)
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
+
+
+
+
+    def _paintGL_slice(self):
+        #draw the slice
+        self.programSlice.bind()
+        self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programSlice.enableAttributeArray("position")
+
+        pos, dim = self.transform.slicePos,self.transform.sliceDim
+
+        coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
+
+        texcoords = [[0.,0.],[1,0.],[1.,1.],
+                     [1.,1.],[0.,1.],[0.,0.]]
+
+
+
+        self.programSlice.setAttributeArray("position", coords)
+        self.programSlice.setAttributeArray("texcoord", texcoords)
+
+        self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
+
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.textureSlice)
+        self.programSlice.setUniformValue("texture",0)
+
+
+        glActiveTexture(GL_TEXTURE1)
+        glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
+        self.programSlice.setUniformValue("texture_LUT",1)
+
+
+        glDrawArrays(GL_TRIANGLES,0,len(coords))
+
+
+
+
+
+    def _paintGL_box(self):
+
+        # Draw the cube
+        self.programCube.bind()
+        self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programCube.enableAttributeArray("position")
+
+        if self._background_mode_black:
+            self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(1,1,1,0.6))
+        else:
+            self.programCube.setUniformValue("color",
+                                                 QtGui.QVector4D(0,0,0,0.6))
+
+        self.programCube.setAttributeArray("position", self.cubeCoords)
+
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
+        self.programCube.setUniformValue("texture_alpha",0)
+
+        glEnable(GL_DEPTH_TEST)
+        # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        glDrawArrays(GL_LINES,0,len(self.cubeCoords))
+        glDisable(GL_DEPTH_TEST)
+
+
+    def _paintGL_mesh(self, mesh):
+        """
+        paint a mesh (which has all the coordinates and colors in it
+        """
+        # Draw the cube
+
+
+        #whether we use phong lightning or not
+        prog = self.programMesh
+
+
+        prog.bind()
+        prog.setUniformValue("mvpMatrix",
+                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
+
+        glDisable(GL_DEPTH_TEST)
+        glEnable( GL_BLEND )
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+        if mesh.facecolor:
+
+            r,g,b = mesh.facecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.vertices)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+
+            glDrawArrays(GL_TRIANGLES,0,len(mesh.vertices))
+
+            glDisable(GL_DEPTH_TEST)
+
+        if mesh.edgecolor:
+            r,g,b = mesh.edgecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.edges)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+
+            glDrawArrays(GL_LINES,0,len(mesh.edges))
+
+
+    #FIXME this should be the new default....
+    def _paintGL_mesh_light(self, mesh):
+        """
+        paint a mesh (which has all the coordinates and colors in it
+        """
+        # Draw the cube
+
+
+        #whether we use phong lightning or not
+        if mesh.light:
+            prog = self.programMeshLight
+        else:
+            prog = self.programMesh
+
+
+        prog.bind()
+        prog.setUniformValue("mvpMatrix",
+                        QtGui.QMatrix4x4(*self.finalMat.flatten()))
+
+        glDisable(GL_DEPTH_TEST)
+        glEnable( GL_BLEND )
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+        if mesh.facecolor:
+            r,g,b = mesh.facecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.vertices)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+            if mesh.light:
+                prog.enableAttributeArray("normal")
+                prog.setAttributeArray("normal", mesh.normals)
+                prog.setUniformValue("light",
+                                         QtGui.QVector3D(*mesh.light))
+
+
+            # glDisable(GL_DEPTH_TEST)
+            # glEnable( GL_BLEND )
+            # glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+            # #glBlendFunc(GL_SRC_ALPHA,GL_ONE)
+            # print mesh.alpha
+            # # if mesh.alpha>=1.:
+            #     glEnable(GL_DEPTH_TEST)
+            #     glDisable( GL_BLEND )
+            #     glDepthFunc(GL_LESS)
+            #     glBlendFunc(GL_SRC_ALPHA,GL_ONE)
+            #
+            # else:
+            #     glEnable(GL_DEPTH_TEST)
+            #     glEnable( GL_BLEND )
+            #     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+
+
+
+            glDrawArrays(GL_TRIANGLES,0,len(mesh.vertices))
+
+            glDisable(GL_DEPTH_TEST)
+
+        if mesh.edgecolor:
+            r,g,b = mesh.edgecolor
+            a = mesh.alpha
+
+            prog.enableAttributeArray("position")
+            prog.setAttributeArray("position", mesh.edges)
+
+            prog.setUniformValue("color",
+                                         QtGui.QVector4D(r,g,b,a))
+
+            # if mesh.alpha>=1.:
+            #     glEnable(GL_DEPTH_TEST)
+            # else:
+            #     glDisable(GL_DEPTH_TEST)
+
+            # glEnable(GL_DEPTH_TEST)
+            # glEnable( GL_BLEND )
+            # glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+            # print mesh.alpha
+
+            glDrawArrays(GL_LINES,0,len(mesh.edges))
+
+
+
     def paintGL(self):
 
         self.makeCurrent()
@@ -539,115 +659,44 @@ class GLWidget(QtOpenGL.QGLWidget):
             glViewport((self.width-w)/2,(self.height-w)/2,w,w)
             self.resized = False
 
-
+        if self._background_mode_black:
+            glClearColor(*self._BACKGROUND_BLACK)
+        else:
+            glClearColor(*self._BACKGROUND_WHITE)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        modelView = self.transform.getModelView()
+
+        proj = self.transform.getProjection()
+
+
+
+        self.finalMat = np.dot(proj,modelView)
 
         if self.dataModel:
-            modelView = self.transform.getModelView()
-
-            proj = self.transform.getProjection()
-
-            self.finalMat = np.dot(proj,modelView)
 
 
             self.textureAlpha = fillTexture2d(self.output_alpha,self.textureAlpha)
 
             if self.transform.isBox:
-                # Draw the cube
-                self.programCube.bind()
-                self.programCube.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programCube.enableAttributeArray("position")
-
-                r,g,b,a = self._background_color
-                self.programCube.setUniformValue("color",
-                                                 QtGui.QVector4D(1-r,1-g,1-b,0.6))
-                self.programCube.setAttributeArray("position", self.cubeCoords)
-
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-                self.programCube.setUniformValue("texture_alpha",0)
-
-                glEnable(GL_DEPTH_TEST)
-
-                # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
-                glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-
-                glDrawArrays(GL_LINES,0,len(self.cubeCoords))
-
-
-                glDisable(GL_DEPTH_TEST)
+                self._paintGL_box()
 
             if self.transform.isSlice and self.sliceOutput is not None:
-                #draw the slice
-                self.programSlice.bind()
-                self.programSlice.setUniformValue("mvpMatrix",QtGui.QMatrix4x4(*self.finalMat.flatten()))
-                self.programSlice.enableAttributeArray("position")
+                self._paintGL_slice()
 
-                pos, dim = self.transform.slicePos,self.transform.sliceDim
+            self._paintGL_render()
 
-                coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1],dim)
-
-                texcoords = [[0.,0.],[1,0.],[1.,1.],
-                             [1.,1.],[0.,1.],[0.,0.]]
+        for m in self.meshes:
+            self._paintGL_mesh(m)
 
 
-
-                self.programSlice.setAttributeArray("position", coords)
-                self.programSlice.setAttributeArray("texcoord", texcoords)
-
-                self.textureSlice = fillTexture2d(self.sliceOutput,self.textureSlice)
-
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.textureSlice)
-                self.programSlice.setUniformValue("texture",0)
-
-
-                glActiveTexture(GL_TEXTURE1)
-                glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-                self.programSlice.setUniformValue("texture_LUT",1)
-
-
-                glDrawArrays(GL_TRIANGLES,0,len(coords))
-
-
-
-            # Draw the render texture
-            self.programTex.bind()
-
-            self.texture = fillTexture2d(self.output,self.texture)
-
-            glEnable(GL_TEXTURE_2D)
-            glDisable(GL_DEPTH_TEST)
-
-            self.programTex.enableAttributeArray("position")
-            self.programTex.enableAttributeArray("texcoord")
-            self.programTex.setAttributeArray("position", self.quadCoord)
-            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
-
-
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
-            self.programTex.setUniformValue("texture",0)
-
-            glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, self.textureAlpha)
-            self.programTex.setUniformValue("texture_alpha",1)
-
-            glActiveTexture(GL_TEXTURE2)
-            glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
-            self.programTex.setUniformValue("texture_LUT",2)
-
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-            glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
 
 
     def render(self):
         logger.debug("render")
+
+
 
         if self.dataModel:
             
@@ -659,13 +708,18 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_gamma(self.transform.gamma)
             self.renderer.set_alpha_pow(self.transform.alphaPow)
 
+            self.renderer.set_occ_strength(self.transform.occ_strength)
+            self.renderer.set_occ_radius(self.transform.occ_radius)
+            self.renderer.set_occ_n_points(self.transform.occ_n_points)
+
             if self.transform.isIso:
                 renderMethod = "iso_surface"
                 
             else:
-                renderMethod = "max_project_part"
+                renderMethod = "max_project"
 
-            self.output, self.output_alpha = self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
+            self.renderer.render(method = renderMethod, return_alpha = True, numParts = self.NSubrenderSteps, currentPart = (self.renderedSteps*_next_golden(self.NSubrenderSteps)) %self.NSubrenderSteps)
+            self.output, self.output_alpha = self.renderer.output, self.renderer.output_alpha
 
             if self.transform.isSlice:
                 if self.transform.sliceDim==0:
@@ -678,12 +732,14 @@ class GLWidget(QtOpenGL.QGLWidget):
                 self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
 
 
+
     def getFrame(self):
         self.render()
         self.paintGL()
         glFlush()
         im = self.grabFrameBuffer()
         im = im.convertToFormat(QtGui.QImage.Format_RGB32)
+
 
         width = im.width()
         height = im.height()
@@ -873,8 +929,44 @@ def test_demo_simple():
     sys.exit(app.exec_())
 
 
+def test_surface():
+    from spimagine import DataModel, DemoData
+
+    app = QtGui.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(800,800))
+
+
+    win.setModel(DataModel(DemoData()))
+
+    # win.add_surface_sphere((0,0,0), 1., facecolor = (.0,.3,1.,.5),
+    #                                 Nphi = 30, Ntheta=20)
+
+    # win.add_mesh(SphericalMesh(r = .8,
+    #                            facecolor = (1.,0.,0.),
+    #                            #edgecolor = (1.,1.,1.),
+    #                            edgecolor = None,
+    #                            alpha = .3))
+
+    # win.add_mesh(EllipsoidMesh(rs = (.3,.6,.6),
+    #                             pos = (0,0,-.5),
+    #
+    #                            facecolor = (0.,1.,1.),
+    #                            #edgecolor = (1.,1.,1.),
+    #                            edgecolor = None,
+    #                            alpha = .4))
+    #
+
+    win.show()
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
+
 if __name__ == '__main__':
 
     # test_sphere()
 
-    test_demo_simple()
+    #test_demo_simple()
+    test_surface()

@@ -83,8 +83,12 @@ class VolumeRenderer:
 
             # self.dev = OCLDevice(useGPU = True, 
             #                      useDevice = spimagine.__OPENCLDEVICE__)
-            init_device(useGPU = True, 
-                                 useDevice = spimagine.config.__OPENCLDEVICE__)
+
+            #FIXME
+            # device should not be reinitialized as then
+            # every other queue becomes invalid
+            # init_device(useGPU = True,
+            #             useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
             self.dtypes = [np.float32,np.uint16]
 
@@ -100,35 +104,40 @@ class VolumeRenderer:
                 print e
                 print "could not find any OpenCL device ... sorry"
 
-        self.memMax = .4*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        self.memMax = .7*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
+        #self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
+        build_options_basic = ["-I", "%s"%absPath("kernels/"),
+                                "-D","maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
+
+        self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+                               build_options =
+                               build_options_basic +
+                               ["-cl-finite-math-only",
+                                "-cl-fast-relaxed-math",
+                                "-cl-unsafe-math-optimizations",
+                                "-cl-mad-enable"])
         try:
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                   build_options =
-                                   ["-cl-fast-relaxed-math",
-                                    "-cl-unsafe-math-optimizations",
-                                    "-cl-mad-enable",
-                                    "-I %s" %absPath("kernels/"),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
-                                   )
+            pass
+
         except Exception as e:
+
             logger.debug(str(e))
-            self.proc = OCLProgram(absPath("kernels/volume_render.cl"),
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options =
-                                   ["-I %s" %absPath("kernels/"),
-                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
-            )
+                                   build_options_basic)
 
 
         self.invMBuf = OCLArray.empty(16,dtype=np.float32)
-        
+
         self.invPBuf = OCLArray.empty(16,dtype=np.float32)
-        
+
         self.projection = np.zeros((4,4))
         self.modelView = np.zeros((4,4))
-                
+
+
+
         if size:
             self.resize(size)
         else:
@@ -138,6 +147,10 @@ class VolumeRenderer:
         self.set_gamma()
         self.set_max_val()
         self.set_min_val()
+
+        self.set_occ_strength(.1)
+        self.set_occ_radius(21)
+        self.set_occ_n_points(30)
 
         self.set_alpha_pow()
         self.set_box_boundaries()
@@ -168,13 +181,20 @@ class VolumeRenderer:
 
     def reset_buffer(self):
         self.buf = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufAlpha = OCLArray.empty((self.height,self.width),dtype=np.float32)
-        self.bufDepth = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.buf_alpha = OCLArray.empty((self.height, self.width), dtype=np.float32)
+        self.buf_depth = OCLArray.empty((self.height, self.width), dtype=np.float32)
+        self.buf_normals = OCLArray.empty((self.height,self.width,3),dtype=np.float32)
+        self.buf_tmp = OCLArray.empty((self.height,self.width),dtype=np.float32)
+        self.buf_tmp_vec = OCLArray.empty((self.height,self.width,3),dtype=np.float32)
 
-        # self.bufNormals = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
+        self.buf_occlusion = OCLArray.empty((self.height,self.width),dtype=np.float32)
 
-        # self.bufNormalsScratch = OCLArray.empty(3*self.height*self.width,dtype=np.float32)
-        
+        self.output = np.zeros((self.height,self.width),dtype=np.float32)
+        self.output_alpha = np.zeros((self.height,self.width),dtype=np.float32)
+        self.output_depth = np.zeros((self.height,self.width),dtype=np.float32)
+
+
+
 
 
     def _get_downsampled_data_slices(self,data):
@@ -201,11 +221,23 @@ class VolumeRenderer:
     def set_gamma(self,gamma = 1.):
         self.gamma = gamma
 
-    def set_alpha_pow(self,alphaPow = 10.):
+    def set_occ_strength(self, occ=.2):
+        self.occ_strength = occ
+
+    def set_occ_radius(self, rad =21):
+        self.occ_radius = rad
+
+    def set_occ_n_points(self, n_points = 31):
+        self.occ_n_points = n_points
+
+
+    def set_alpha_pow(self,alphaPow = 0.):
         self.alphaPow = alphaPow
 
 
     def set_data(self,data, autoConvert = True, copyData = False):
+        logger.debug("set_data")
+
         if not autoConvert and not data.dtype in self.dtypes:
             raise NotImplementedError("data type should be either %s not %s"%(self.dtypes,data.dtype))
 
@@ -270,7 +302,7 @@ class VolumeRenderer:
     def set_units(self,stackUnits = np.ones(3)):
         self.stackUnits = np.array(stackUnits)
 
-    def set_projection(self,projection = mat4_identity()):
+    def set_projection(self,projection = mat4_perspective()):
         self.projection = projection
         self.update_matrices()
 
@@ -287,11 +319,6 @@ class VolumeRenderer:
             invP = inv(self.projection)
             self.invPBuf.write_array(invP.flatten().astype(np.float32))
 
-    # def _get_user_coords(self,x,y,z):
-    #     p = array([x,y,z,1])
-    #     worldp = dot(self.modelView,p)[:-2]
-    #     userp = (worldp+[1.,1.])*.5*array([self.width,self.height])
-    #     return userp[0],userp[1]
 
     def _stack_scale_mat(self):
         # scaling the data according to size and units
@@ -301,6 +328,163 @@ class VolumeRenderer:
         # mScale =  scaleMat(1.,1.*dx*Nx/dy/Ny,1.*dx*Nx/dz/Nz)
         maxDim = max(d*N for d,N in zip([dx,dy,dz],[Nx,Ny,Nz]))
         return mat4_scale(1.*dx*Nx/maxDim,1.*dy*Ny/maxDim,1.*dz*Nz/maxDim)
+
+
+    def _render_max_project(self,dtype=np.float32, numParts = 1,currentPart = 0):
+        if dtype == np.uint16:
+            method = "max_project_short"
+        elif dtype == np.float32:
+            method = "max_project_float"
+        else:
+            raise NotImplementedError("wrong dtype: %s",dtype)
+
+        self.proc.run_kernel(method,
+                    (self.width,self.height),
+                    None,
+                    self.buf.data, self.buf_alpha.data,
+                             self.buf_depth.data,
+                    np.int32(self.width), np.int32(self.height),
+                    np.float32(self.boxBounds[0]),
+                    np.float32(self.boxBounds[1]),
+                             np.float32(self.boxBounds[2]),
+                             np.float32(self.boxBounds[3]),
+                             np.float32(self.boxBounds[4]),
+                             np.float32(self.boxBounds[5]),
+                             np.float32(self.minVal),
+                             np.float32(self.maxVal),
+                             np.float32(self.gamma),
+                             np.float32(self.alphaPow),
+                             np.int32(numParts),
+                             np.int32(currentPart),
+                             self.invPBuf.data,
+                             self.invMBuf.data,
+                             self.dataImg)
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+
+    def _convolve_scalar(self,buf,radius=11):
+
+        self.proc.run_kernel("conv_x",
+                             (self.width,self.height),None,
+                             buf.data,
+                             self.buf_tmp.data,
+                             np.int32(radius))
+        self.proc.run_kernel("conv_y",
+                             (self.width,self.height),None,
+                             self.buf_tmp.data,
+                             buf.data ,
+                             np.int32(radius))
+
+
+
+    def _convolve_vec(self,buf,radius=11):
+        self.proc.run_kernel("conv_vec_x",
+                             (self.width,self.height),None,
+                             buf.data,
+                             self.buf_tmp_vec.data,
+                             np.int32(radius))
+
+        self.proc.run_kernel("conv_vec_y",
+                             (self.width,self.height),None,
+                             self.buf_tmp_vec.data,
+                             buf.data,
+                             np.int32(radius))
+
+    def _render_isosurface2(self):
+        self.proc.run_kernel("iso_surface",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 self.buf_depth.data,self.buf_normals.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.maxVal/2),
+                                 np.float32(self.gamma),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg,
+                                 np.int32(self.dtype == np.uint16)
+                                 )
+
+
+        self._convolve_vec(self.buf_normals,5)
+
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+        self.output_normals = self.buf_normals.get()
+
+    def _render_isosurface(self):
+        """
+        with ambient occlusion
+        """
+
+        self.proc.run_kernel("iso_surface",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 self.buf_depth.data,self.buf_normals.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.float32(self.boxBounds[0]),
+                                 np.float32(self.boxBounds[1]),
+                                 np.float32(self.boxBounds[2]),
+                                 np.float32(self.boxBounds[3]),
+                                 np.float32(self.boxBounds[4]),
+                                 np.float32(self.boxBounds[5]),
+                                 np.float32(self.maxVal/2),
+                                 np.float32(self.gamma),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                 self.dataImg,
+                                 np.int32(self.dtype == np.uint16)
+                                 )
+        self._convolve_vec(self.buf_normals,7)
+
+
+        self.proc.run_kernel("occlusion",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf_occlusion.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 np.int32(self.occ_radius),
+                                 np.int32(self.occ_n_points),
+                             self.buf_depth.data,
+                             self.buf_normals.data,
+                                 )
+
+        self._convolve_scalar(self.buf_occlusion,5)
+        #self._convolve_vec(self.buf_normals,5)
+
+        self.proc.run_kernel("shading",
+                                 (self.width,self.height),
+                                 None,
+                                 self.buf.data, self.buf_alpha.data,
+                                 np.int32(self.width), np.int32(self.height),
+                                 self.invPBuf.data,
+                                 self.invMBuf.data,
+                                np.float32(self.occ_strength),
+                                 self.buf_normals.data,
+                                self.buf_depth.data,
+                                self.buf_occlusion.data,
+
+                             )
+
+
+        #self._convolve_scalar(self.buf,13)
+        #self._convolve_vec(self.buf_normals,101)
+
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+        self.output_normals = self.buf_normals.get()
+        self.output_occlusion = self.buf_occlusion.get()
+
 
 
     def render(self,data = None, stackUnits = None,
@@ -332,103 +516,18 @@ class VolumeRenderer:
 
         if not hasattr(self,'dataImg'):
             print "no data provided, set_data(data) before"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
-            else:
-                return self.buf.get()
-
+            return
 
         if  modelView is None and not hasattr(self,'modelView'):
             print "no modelView provided and set_modelView() not called before!"
-            if return_alpha:
-                return self.buf.get(), self.bufAlpha.get()
-            else:
-                return self.buf.get()
-
-        # mScale = self._stack_scale_mat()
-        # invM = inv(np.dot(self.modelView,mScale))
-        # self.dev.writeBuffer(self.invMBuf,invM.flatten().astype(np.float32))
-
-        # invP = inv(self.projection)
-        # self.dev.writeBuffer(self.invPBuf,invP.flatten().astype(np.float32))
+            return
 
         if method=="max_project":
-            if self.dtype == np.uint16:
-                method = "max_project_short"
-            else:
-                method = "max_project_float"
-
-            self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
-
-
-        if method=="max_project_part":
-            if self.dtype == np.uint16:
-                method = "max_project_part_short"
-            else:
-                method = "max_project_part_float"
-
-            self.proc.run_kernel(method,
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.minVal),                                
-                            np.float32(self.maxVal),
-                            np.float32(self.gamma),
-                            np.float32(self.alphaPow),
-                            np.int32(numParts),
-                            np.int32(currentPart),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg)
+            self._render_max_project(self.dtype,numParts,currentPart)
 
         if method=="iso_surface":
-            self.proc.run_kernel("iso_surface",
-                            (self.width,self.height),
-                            None,
-                            self.buf.data,self.bufAlpha.data,
-                            np.int32(self.width),np.int32(self.height),
-                            np.float32(self.boxBounds[0]),
-                            np.float32(self.boxBounds[1]),
-                            np.float32(self.boxBounds[2]),
-                            np.float32(self.boxBounds[3]),
-                            np.float32(self.boxBounds[4]),
-                            np.float32(self.boxBounds[5]),
-                            np.float32(self.maxVal/2),
-                            np.float32(self.gamma),
-                            self.invPBuf.data,
-                            self.invMBuf.data,
-                            self.dataImg,
-                            np.int32(self.dtype == np.uint16)
-                            )
+            self._render_isosurface()
 
-        if return_alpha:
-            return self.buf.get(), self.bufAlpha.get()
-        else:
-            return self.buf.get()
 
 
 def renderSpimFolder(fName, outName,width, height, start =0, count =-1,
@@ -475,7 +574,8 @@ def test_simple():
     rend = VolumeRenderer((400,400))
 
     rend.set_data(d)
-    out = rend.render()
+    rend.render()
+    out = rend.output
     pylab.imshow(out)
     pylab.show()
 
@@ -506,7 +606,8 @@ def test_simple2():
     t2 = time.time()
 
     rend.dev.queue.finish()
-    out = rend.render(maxVal = 10000.)
+    rend.render(maxVal = 10000.)
+    out =  rend.output
     rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
@@ -543,7 +644,8 @@ def test_new_iso():
     t2 = time.time()
 
     rend.dev.queue.finish()
-    out = rend.render(maxVal = 1000., method="iso_surface_new")
+    rend.render(maxVal = 1000., method="iso_surface_new")
+    out = rend.output
     rend.dev.queue.finish()
 
     print "time to set data %s^3:\t %.2f ms"%(N,1000*(t2-t1))
@@ -569,13 +671,13 @@ def test_real():
     rend.set_units([1.,1.,6.])
     t2 = time.time()
 
-    out = rend.render(maxVal = 200.)
+    rend.render(maxVal = 200.)
 
     print "time to set data :\t %.2f ms"%(1000*(t2-t1))
 
     print "time to render:\t %.2f ms"%(1000*(time.time()-t2))
 
-    return d, rend, out
+    return d, rend, rend.output
 
 
 def test_speed(N=128,renderWidth = 400, numParts = 1):
@@ -597,7 +699,7 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
     t2 = time.time()
     rend.dev.queue.finish()
     for i in range(10):
-        out = rend.render(method = "max_project_part", maxVal = 200.,
+        rend.render(method = "max_project_part", maxVal = 200.,
                           currentPart=0,numParts=numParts)
     rend.dev.queue.finish()
 
@@ -611,29 +713,48 @@ def test_speed(N=128,renderWidth = 400, numParts = 1):
 
     
 if __name__ == "__main__":
+    from time import time
     # test_simple()
     # test_speed(256)
+    from gputools.utils.utils import remove_cache_dir, get_cache_dir
+    remove_cache_dir()
 
-    import os
-    os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
-    os.environ['PYOPENCL_NO_CACHE'] = '1'
-    
-    N= 64
+
+    N = 128
 
     x = np.linspace(-1,1,N)
-    R = np.sqrt(np.sum([_X**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
+    #R1 = np.sqrt(np.sum([(_X-.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
+    #R2 = np.sqrt(np.sum([(_X+.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
 
-    d = np.exp(-50*(R-.3)**2)
-    
+    Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
+    R1 = np.sqrt((X-.2)**2+Y**2+Z**2)
+    R2 = np.sqrt((X+.2)**2+Y**2+Z**2)
+
+    d = np.exp(-30*R1**2)+ np.exp(-30*R2**2)
+    #d += .03*np.random.uniform(0.,1.,d.shape)
+
     rend = VolumeRenderer((400,400))
-    rend.set_modelView(mat4_translate(0,0,5.))
+
+
+    rend.set_modelView(np.dot(mat4_translate(0,0,-2.),mat4_rotation(0.,0.,1.,0.)))
+
 
     rend.set_data(d.astype(np.float32))
-    out = rend.render(maxVal = 1., method = "max_project_part")
-    # out = rend.render(maxVal = 1., method = "iso_surface")
+
+    t = time()
+    #rend.render(maxVal = .5, method = "iso_surface")
+    rend.render(maxVal = .5)
+    print time()-t
+    out = rend.output_normals[...,0]
+    out = rend.output_occlusion
+    #out[rend.output_depth>10] = 0.6
+    #out = rend.output_depth
 
     import pylab
     pylab.figure(1)
     pylab.clf()
-    pylab.imshow(out)
+    ss = (slice(100,300),slice(120,280))
+    #pylab.imshow(out[140:260,140:260])
+    pylab.imshow(out[ss])
+
     pylab.show()

@@ -17,6 +17,7 @@ class MyConfigParser(ConfigParser.ConfigParser):
             self.read(fName)
 
 
+
     def read(self, fName):
         try:
             text = open(fName).read()

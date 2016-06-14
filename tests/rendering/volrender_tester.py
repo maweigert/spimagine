@@ -28,7 +28,7 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 
-        
+
 class MyWidget(MainWidget):
     def __init__(self):
         super(MyWidget,self).__init__()
@@ -37,7 +37,7 @@ class MyWidget(MainWidget):
         self.compileTimer.setInterval(1000)
         self.compileTimer.timeout.connect(self.on_compile_timer)
         self.compileTimer.start()
-        
+
     def on_compile_timer(self):
         for c in CACHEDIRS:
             if os.path.exists(c):
@@ -46,36 +46,43 @@ class MyWidget(MainWidget):
 
         print "compiling..."
 
+
         try:
-            proc = OCLProgram(absPath("kernels/volume_render.cl"),
-                                   build_options = """-I %s\
-                                   -D maxSteps=%s"""%(
-                                           absPath("kernels"),
-                                           spimagine.config.__DEFAULTMAXSTEPS__)
+            dirname = os.path.dirname(spimagine.volumerender.__file__)
+            proc = OCLProgram(os.path.join(dirname,"kernels/volume_kernel.cl"),
+                                   build_options =
+                                      ["-cl-fast-relaxed-math",
+                                    "-cl-unsafe-math-optimizations",
+                                    "-cl-mad-enable",
+                                    "-I %s" %os.path.join(dirname,"kernels/"),
+                                    "-D maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
                                    )
+
             self.glWidget.renderer.proc = proc
             self.glWidget.refresh()
-            print np.amin(self.glWidget.output),np.amax(self.glWidget.output),
+            print np.amin(self.glWidget.output),np.amax(self.glWidget.output)
+
+
 
         except Exception as e:
             print e
 
-        
-    
-            
-        
 
-        
+
+
+
+
+
 
 if __name__ == '__main__':
-    
+
 
     x = np.linspace(-1,1,128)
     Z,Y,X = np.meshgrid(x,x,x)
     R1 = np.sqrt((X+.2)**2+(Y+.2)**2+(Z+.2)**2)
     R2 = np.sqrt((X-.2)**2+(Y-.2)**2+(Z-.2)**2)
     d = np.exp(-10*R1**2)+np.exp(-10*R2**2)
-    
+
     app = QtGui.QApplication(sys.argv)
 
     win = MyWidget()

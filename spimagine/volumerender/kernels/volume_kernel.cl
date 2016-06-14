@@ -13,25 +13,30 @@
 #include<utils.cl>
 
 
-// #define read_image(volume,sampler, pos,isShortType) (isShortType?1.f*read_imageui(volume, sampler, pos).x:read_imagef(volume, sampler, pos).x)
+#define LOOPUNROLL 16
 
 
+// the basic max_project ray casting
 __kernel void
-max_project_float(__global float *d_output, __global float *d_alpha_output, 
-			uint Nx, uint Ny,
-			float boxMin_x,
-			float boxMax_x,
-			float boxMin_y,
-			float boxMax_y,
-			float boxMin_z,
-			float boxMax_z,
-			float minVal,
-			float maxVal,
-			float gamma,
-			float alpha_pow,
-			__constant float* invP,
-			__constant float* invM,
-			__read_only image3d_t volume)
+max_project_float(__global float *d_output, __global float *d_alpha_output,
+ __global float *d_depth_output,
+				 uint Nx, uint Ny,
+				 float boxMin_x,
+				 float boxMax_x,
+				 float boxMin_y,
+				 float boxMax_y,
+				 float boxMin_z,
+				 float boxMax_z,
+				 float minVal,
+				 float maxVal,
+				 float gamma,
+				 float alpha_pow,
+				 int numParts,
+				 int currentPart,
+				 __constant float* invP,
+				 __constant float* invM,
+				 __read_only image3d_t volume
+				 )
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
@@ -50,11 +55,10 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 
   // calculate eye ray in world space
   float4 orig0, orig;
-  float4 direc0, direc;
+  float4  direc;
   float4 temp;
   float4 back,front;
-
-
+   
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
   
@@ -74,15 +78,11 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   direc.w = 0.0f;
   
 
-
   // find intersection with box
   float tnear, tfar;
   int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
 
-  // if (x==300 && y == 300)
-  // 	printf("%.2f  %.2f %.2f  %.2f \n",invP[0],invP[1],invP[2],invP[3]);
 
-  
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
@@ -90,52 +90,106 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
   	}
   	return;
   }
-  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
+  // clamp to near plane
+  if (tnear < 0.0f) tnear = 0.0f;  
 
+
+  // the color values we want 
   float colVal = 0;
   float alphaVal = 0;
-  
-  float t = tnear;
-  float dt = (tfar-tnear)/maxSteps;
 
-
+  const int reducedSteps = maxSteps/numParts;
   
-  //dither the original
+  const float dt = fabs(tfar-tnear)/((reducedSteps/LOOPUNROLL)*LOOPUNROLL);
+
+  //apply the shift if mulitpass
+  
+  orig += currentPart*dt*direc;
+
+  //  dither the original
   uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
-  orig += dt*random(entropy+x,entropy+y)*direc;
+  // orig += dt*random(entropy+x,entropy+y)*direc;
 
-  float4 dpos = .5f*dt*direc;
+  float4 delta_pos = .5f*dt*direc;
   float4 pos = 0.5f *(1.f + orig + tnear*direc);
 
-  uint i;
+  float newVal = 0.f;
 
-  for(i=0; i<=maxSteps; i++) {
-	colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*dpos).x);
+  int maxInd = 0;
+  
+  if (alpha_pow==0){
+  	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
+  	  for (int j = 0; j < LOOPUNROLL; ++j){
+		newVal = read_imagef(volume, volumeSampler, pos).x;
+		maxInd = newVal>colVal?i*LOOPUNROLL+j:maxInd;
+		colVal = fmax(colVal,newVal);
+
+
+  		// colVal = fmax(colVal,read_imagef(volume, volumeSampler, pos).x);
+		pos += delta_pos;
+  	  }
+  	}
+  	colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+  	alphaVal = colVal;
+  
   }
-  
-  colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
-  
-  alphaVal = colVal;
-  
-  colVal = pow(colVal,gamma);	
+  else	{
+    float cumsum = 1.f;
+  	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
+  	  for (int j = 0; j < LOOPUNROLL; ++j){
+  		newVal = read_imagef(volume, volumeSampler, pos).x;
+  		newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
+  		maxInd = cumsum*newVal>colVal?i*LOOPUNROLL+j:maxInd;
+  		colVal = fmax(colVal,cumsum*newVal);
 
-  colVal = clamp(colVal,0.f,1.f);
+  		cumsum  *= (1.f-.1f*alpha_pow*newVal);
+  		pos += delta_pos;
+  		if (cumsum<=0.02f)
+  		  break;
 
-  alphaVal = clamp(alphaVal,0.f,1.f);
+  	  }
+  	}
+  }
+
+
+
+  
+  colVal = clamp(pow(colVal,gamma),0.f,1.f);
+
+  alphaVal = clamp(colVal,0.f,1.f);
 
   // for depth test...
   alphaVal = tnear;
+  //if (maxInd>-1)
+  //  alphaVal = maxInd*dt;
+  //else
+  // alphaVal = 0.f;
+
+
 
   if ((x < Nx) && (y < Ny)){
-	d_output[x+Nx*y] = colVal;	
-	d_alpha_output[x+Nx*y] = alphaVal;
+	if (currentPart==0){
+	  d_output[x+Nx*y] = colVal;
+	  d_alpha_output[x+Nx*y] = alphaVal;
+
+
+	}
+	else{
+	  d_output[x+Nx*y] = fmax(colVal,d_output[x+Nx*y]);
+	  d_alpha_output[x+Nx*y] = fmax(alphaVal,d_alpha_output[x+Nx*y]);
+	}
+	
   }
+
+
 }
 
 
 
 __kernel void
-max_project_part_float(__global float *d_output, __global float *d_alpha_output, 
+max_project_short(__global float *d_output,
+                __global float *d_alpha_output,
+                __global float *d_depth_output,
 				 uint Nx, uint Ny,
 				 float boxMin_x,
 				 float boxMax_x,
@@ -171,11 +225,10 @@ max_project_part_float(__global float *d_output, __global float *d_alpha_output,
 
   // calculate eye ray in world space
   float4 orig0, orig;
-  float4 direc0, direc;
+  float4  direc;
   float4 temp;
   float4 back,front;
-
-
+   
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
   
@@ -200,224 +253,90 @@ max_project_part_float(__global float *d_output, __global float *d_alpha_output,
   int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
 
 
-
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
 	  d_alpha_output[x+Nx*y] = 0.f;
-
   	}
   	return;
   }
-  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
+  // clamp to near plane
+  if (tnear < 0.0f) tnear = 0.0f;  
 
-  // dt = tstep;
 
-
+  // the color values we want 
   float colVal = 0;
   float alphaVal = 0;
-  
-  float dt = (tfar-tnear)/maxSteps*numParts;
-  float t0 = tnear + dt*currentPart/numParts;
 
+  const int reducedSteps = maxSteps/numParts;
+  
+  const float dt = fabs(tfar-tnear)/((reducedSteps/LOOPUNROLL)*LOOPUNROLL);
+
+  //apply the shift if mulitpass
+  
+  orig += currentPart*dt*direc;
 
   //  dither the original
   uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
-  orig += dt*random(entropy+x,entropy+y)*direc;
+  // orig += dt*random(entropy+x,entropy+y)*direc;
 
   float4 delta_pos = .5f*dt*direc;
-  float4 pos = 0.5f *(1.f + orig + t0*direc);
+  float4 pos = 0.5f *(1.f + orig + tnear*direc);
 
-  uint i;
+  float newVal = 0.f;
 
-  float cumsum = 1;
-  float newVal;
+
+
+  if (alpha_pow==0){
+  	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
+  	  for (int j = 0; j < LOOPUNROLL; ++j){
+  		colVal = fmax(colVal,1.f*read_imageui(volume, volumeSampler, pos).x);
+		pos += delta_pos;
+  	  }
+  	}
+  	colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+  	alphaVal = colVal;
   
-  for(i=0; i<=maxSteps/numParts; i++) {
-	// colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*delta_pos).x);
-	newVal = read_imagef(volume, volumeSampler, pos+i*delta_pos).x;
-	newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
-	colVal = max(colVal,cumsum*newVal);
-	cumsum *= (1.f-.1f*alpha_pow*newVal);
+  }
+  else	{
+  	float cumsum = 1.f;
+  	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
+  	  for (int j = 0; j < LOOPUNROLL; ++j){
+  		newVal = 1.f*read_imageui(volume, volumeSampler, pos).x;
+  		newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
+  		colVal = fmax(colVal,cumsum*newVal);
 
+  		cumsum  *= (1.f-.1f*alpha_pow*newVal);
+  		pos += delta_pos;
+  		if (cumsum<=0.02f)
+  		  break;
+      }
+  	}
   }
 
-  // colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
+ // if ((x==250) &&(y==250))
+//	printf("kern: %.20f\n",pos.z);
   
-  alphaVal = colVal;
-
   
-  colVal = pow(colVal,gamma);	
+  colVal = clamp(pow(colVal,gamma),0.f,1.f);
 
-  colVal = clamp(colVal,0.f,1.f);
-
-  alphaVal = clamp(alphaVal,0.f,1.f);
+  // alphaVal = clamp(alphaVal,0.f,1.f);
 
   // for depth test...
   alphaVal = tnear;
 
 
-  // if ((x == Nx/2) && (y == Ny/2))
-  // 	printf("%.5f %.5f\n",tnear,tfar);
-  
-
-  
   if ((x < Nx) && (y < Ny)){
 	if (currentPart==0){
 	  d_output[x+Nx*y] = colVal;
 	  d_alpha_output[x+Nx*y] = alphaVal;
 	}
 	else{
-	  d_output[x+Nx*y] = max(colVal,d_output[x+Nx*y]);
-	  d_alpha_output[x+Nx*y] = max(alphaVal,d_alpha_output[x+Nx*y]);
+	  d_output[x+Nx*y] = fmax(colVal,d_output[x+Nx*y]);
+	  d_alpha_output[x+Nx*y] = fmax(alphaVal,d_alpha_output[x+Nx*y]);
 	}
 	
   }
 
 
 }
-
-__kernel void
-max_project_part_short(__global float *d_output, __global float *d_alpha_output, 
-				 uint Nx, uint Ny,
-				 float boxMin_x,
-				 float boxMax_x,
-				 float boxMin_y,
-				 float boxMax_y,
-				 float boxMin_z,
-				 float boxMax_z,
-				 float minVal,
-				 float maxVal,
-				 float gamma,
-				 float alpha_pow,
-				 int numParts,
-				 int currentPart,
-				 __constant float* invP,
-				 __constant float* invM,
-				 __read_only image3d_t volume
-				 )
-{
-  const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |
-	// CLK_FILTER_NEAREST ;
-	CLK_FILTER_LINEAR ;
-  
-  uint x = get_global_id(0);
-  uint y = get_global_id(1);
-
-  float u = (x / (float) Nx)*2.0f-1.0f;
-  float v = (y / (float) Ny)*2.0f-1.0f;
-
-  float4 boxMin = (float4)(boxMin_x,boxMin_y,boxMin_z,1.f);
-  float4 boxMax = (float4)(boxMax_x,boxMax_y,boxMax_z,1.f);
-
-
-  // calculate eye ray in world space
-  float4 orig0, orig;
-  float4 direc0, direc;
-  float4 temp;
-  float4 back,front;
-
-
-  front = (float4)(u,v,-1,1);
-  back = (float4)(u,v,1,1);
-  
-
-  orig0 = mult(invP,front);  
-  orig0 *= 1.f/orig0.w;
-
-
-  orig = mult(invM,orig0);
-  orig *= 1.f/orig.w;
-  
-  temp = mult(invP,back);
-
-  temp *= 1.f/temp.w;
-
-  direc = mult(invM,normalize(temp-orig0));
-  direc.w = 0.0f;
-  
-
-  // find intersection with box
-  float tnear, tfar;
-  int hit = intersectBox(orig,direc, boxMin, boxMax, &tnear, &tfar);
-
-
-
-  if (!hit) {
-  	if ((x < Nx) && (y < Ny)) {
-  	  d_output[x+Nx*y] = 0.f;
-	  d_alpha_output[x+Nx*y] = 0.f;
-
-  	}
-  	return;
-  }
-  if (tnear < 0.0f) tnear = 0.0f;     // clamp to near plane
-
-  // dt = tstep;
-
-
-  float colVal = 0;
-  float alphaVal = 0;
-  
-  float dt = (tfar-tnear)/maxSteps*numParts;
-  float t0 = tnear + dt*currentPart/numParts;
-
-
-  //  dither the original
-  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
-  orig += dt*random(entropy+x,entropy+y)*direc;
-
-  float4 delta_pos = .5f*dt*direc;
-  float4 pos = 0.5f *(1.f + orig + t0*direc);
-
-  uint i;
-
-  float cumsum = 1;
-  float newVal;
-  
-  for(i=0; i<=maxSteps/numParts; i++) {
-	// colVal = max(colVal, read_imagef(volume, volumeSampler, pos+i*delta_pos).x);
-	newVal = 1.f*read_imageui(volume, volumeSampler, pos+i*delta_pos).x;
-	newVal = (maxVal == 0)?newVal:(newVal-minVal)/(maxVal-minVal);
-	colVal = max(colVal,cumsum*newVal);
-	cumsum *= (1.f-.1f*alpha_pow*newVal);
-
-  }
-
-  // colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
-  
-  alphaVal = colVal;
-
-  
-  colVal = pow(colVal,gamma);	
-
-  colVal = clamp(colVal,0.f,1.f);
-
-  alphaVal = clamp(alphaVal,0.f,1.f);
-
-  // for depth test...
-  alphaVal = tnear;
-
-
-  // if ((x == Nx/2) && (y == Ny/2))
-  // 	printf("%.5f %.5f\n",tnear,tfar);
-  
-
-  
-  if ((x < Nx) && (y < Ny)){
-	if (currentPart==0){
-	  d_output[x+Nx*y] = colVal;
-	  d_alpha_output[x+Nx*y] = alphaVal;
-	}
-	else{
-	  d_output[x+Nx*y] = max(colVal,d_output[x+Nx*y]);
-	  d_alpha_output[x+Nx*y] = max(alphaVal,d_alpha_output[x+Nx*y]);
-	}
-	
-  }
-
-
-}
-
-

@@ -10,32 +10,41 @@ N_PREFETCH = 10
 checkBoxStyleStr = """
 QCheckBox::indicator:checked {
 background:black;
-color:black;
 border-image: url(%s);
 }
 QCheckBox::indicator:unchecked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
+
+QToolTip { color:white;}
+"""
+checkNormalBoxStyleStr = """
+QCheckBox::indicator:checked {
+}
+QCheckBox::indicator:unchecked {
+background:black;
+color:white;}
+QToolTip { color:white;}
 """
 
 checkBoxTristateStyleStr = """
 QCheckBox::indicator:unchecked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
 
 QCheckBox::indicator:indeterminate {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);}
 
 QCheckBox::indicator:checked {
 background:black;
-color:black;
+color:white;
 border-image: url(%s);
 }
-
+QToolTip { color:white;}
 """
 
 
@@ -56,7 +65,7 @@ def absPath(myPath):
 
 def createStandardButton(parent,fName = None,method = None, width = 24, tooltip = ""):
     but = QtGui.QPushButton("",parent)
-    but.setStyleSheet("background-color: black;color:black;")
+    but.setStyleSheet("background-color: black;color:black;color:lightgrey;")
     if fName:
         but.setIcon(QtGui.QIcon(fName))
     but.setIconSize(QtCore.QSize(width,width))
@@ -64,20 +73,31 @@ def createStandardButton(parent,fName = None,method = None, width = 24, tooltip 
         but.clicked.connect(method)
     but.setMaximumWidth(width)
     but.setMaximumHeight(width)
-    but.setToolTip(tooltip)
+    if tooltip:
+        but.setToolTip(tooltip)
     return but
 
 
-def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
+def createImageCheckbox(parent, img1=None, img2 = None, tooltip =""):
     check = QtGui.QCheckBox("",parent)
     checkStr = checkBoxStyleStr%(absPath(img1),absPath(img2))
     if os.name =="nt":
         checkStr = checkStr.replace("\\","/")
 
     check.setStyleSheet(checkStr)
-    check.setToolTip(tooltip)
+    if tooltip:
+        check.setToolTip(tooltip)
     return check
 
+def createStandardCheckbox(parent,  tooltip =""):
+    check = QtGui.QCheckBox("",parent)
+    checkStr = checkNormalBoxStyleStr
+    if os.name =="nt":
+        checkStr = checkStr.replace("\\","/")
+
+    check.setStyleSheet(checkStr)
+    check.setToolTip(tooltip)
+    return check
 
 def createTristateCheckbox(parent, img1=None , img2 = None,img3 = None, tooltip = ""):
     check = QtGui.QCheckBox("",parent)
@@ -116,6 +136,8 @@ def fillTexture2d(data,tex = None):
 
     GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
     GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+    # GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP)
+    # GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP)
 
     if data.ndim == 2:
         Ny,Nx = data.shape
@@ -126,6 +148,11 @@ def fillTexture2d(data,tex = None):
         Ny,Nx = data.shape[:2]
         GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGB, Nx, Ny,
                          0, GL.GL_RGB, GL.GL_FLOAT, data.astype(np.float32))
+
+    elif data.ndim == 3 and data.shape[2]==4:
+        Ny,Nx = data.shape[:2]
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, Nx, Ny,
+                         0, GL.GL_RGBA, GL.GL_FLOAT, data.astype(np.float32))
 
     else:
         raise Exception("data format not supported! \ndata.shape should be either (Ny,Nx) or (Ny,Nx,3)")
@@ -193,25 +220,36 @@ def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
 
 
 
-def create_sphere_coords(r,Nphi=10,Ntheta=10):
-    ts = np.arccos(np.linspace(-1.,1.,Ntheta+1))
+def create_sphere_coords(rx,ry,rz,Nphi=50, Ntheta=30, return_normals = False):
+    ts = np.arccos(np.linspace(-1.,1.,Ntheta))
     ps = np.linspace(0,2.*np.pi,Nphi+1)
 
-    T,P = np.meshgrid(ts,ps)
+    T,P = np.meshgrid(ts,ps, indexing = "ij")
 
-    xs = r*np.array([np.cos(P)*np.sin(T),np.sin(P)*np.sin(T),np.cos(T)])
+    xs = np.array([rx*np.cos(P)*np.sin(T),ry*np.sin(P)*np.sin(T),rz*np.cos(T)])
 
     coords = []
-    for i in range(Ntheta):
-        for j in range(Nphi):
+    normals = []
+    for i in range(len(ts)-1):
+        for j in range(len(ps)-1):
             coords.append(xs[:,i,j])
             coords.append(xs[:,i+1,j])
             coords.append(xs[:,i+1,j+1])
             coords.append(xs[:,i,j])
-            coords.append(xs[:,i,j+1])
             coords.append(xs[:,i+1,j+1])
+            coords.append(xs[:,i,j+1])
 
-    return np.array(coords)
+            #FIXME, wrong for rx != ry ....
+            normals.append(1.*xs[:,i,j]/rx)
+            normals.append(1.*xs[:,i+1,j]/rx)
+            normals.append(1.*xs[:,i+1,j+1]/rx)
+            normals.append(1.*xs[:,i,j]/rx)
+            normals.append(1.*xs[:,i,j+1]/rx)
+            normals.append(1.*xs[:,i+1,j+1]/rx)
+    if return_normals:
+        return np.array(coords), np.array(normals)
+    else:
+        return np.array(coords)
 
 
 

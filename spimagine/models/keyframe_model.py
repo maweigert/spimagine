@@ -17,6 +17,11 @@ from spimagine.utils.quaternion import *
 import spimagine
 
 def create_interp_func(a):
+    """ an elastic interpolation function,
+    the bigger a, the more elastic 
+    when a==0, its the usual hard linear interpolation 
+    """
+    
     def atan_func(x):
         return .5*(1+np.arctan(2*a*(x-.5))/np.arctan(a))
 
@@ -98,7 +103,10 @@ class TransformData(object):
         self.translate = np.array(translate)
 
     @classmethod
-    def interp(cls,x1, x2, lam ,f = create_interp_func(0)):
+    def interp(cls,x1, x2, lam ,f = create_interp_func(0.)):
+        """
+        f should be a function [0...1] - [0...1]
+        """
         t = f(lam)
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1.-t)*x1.zoom + t*x2.zoom
@@ -109,16 +117,17 @@ class TransformData(object):
         newGamma = (1.-t)*x1.gamma + t*x2.gamma
 
         newBounds = (1.-t)*x1.bounds + t*x2.bounds
-        newBox = ((1.-t)*x1.isBox + t*x2.isBox)>.5
-        newIso = ((1.-t)*x1.isIso + t*x2.isIso)>.5
 
         newAlphaPow = (1.-t)*x1.alphaPow + t*x2.alphaPow
         newTranslate = (1.-t)*x1.translate + t*x2.translate
 
+        # some things should not be interpolated...
+        newBox = x1.isBox
+        newIso = x1.isIso
+
         return TransformData(quatRot = newQuat,zoom = newZoom,
                              dataPos= newPos,
                              minVal = newMinVal,
-
                              maxVal = newMaxVal,
                              gamma= newGamma,
                              translate = newTranslate,
@@ -285,7 +294,7 @@ class KeyFrameEncoder(json.JSONEncoder):
                 KeyFrame,
                 KeyFrameList,
                 TransformData,
-                spimagine.transform_model.TransformData)):
+                spimagine.models.transform_model.TransformData)):
             return obj.__dict__
 
         elif isinstance(obj,np.generic):
