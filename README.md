@@ -1,10 +1,5 @@
 # Spimagine
-[Overview](#overview)  
-[Requirements](#requirements)  
-[Installation](#installation)  
-[Usage](#usage)
 
-## Overview
 
 *Spimagine* is a python package to interactively visualize and process  time lapsed volumetric data as generated with modern light sheet microscopes (hence the *Spim* part). The package provides a generic 3D+t data viewer and makes use of GPU acceleration via OpenCL. 
 If provides further an image processor interface for the GPU accelerated denoising and deconvolution methods of [gputools](https://github.com/maweigert/gputools). 
@@ -13,6 +8,12 @@ Watch the following screencast for a first impression:
 
 [![Alt text for your video](images/poster_vimeo.png)](https://vimeo.com/126597994)
 
+
+##Overview
+
+[Requirements](#requirements)  
+[Installation](#installation)  
+[Usage](#usage)
 
 
 ## Requirements
@@ -42,8 +43,9 @@ sudo clinfo
 ## Installation
 
 ### Mac
+If you only wanna use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.1/spimagine.dmg):
 
-install PyQt4, e.g. with homebrew:
+Otherwise install PyQt4, e.g. with homebrew:
 ```
 brew install pyqt
 ```
@@ -95,6 +97,8 @@ pip should install the standalone viewer in the local bin folder (e.g. "~/.local
 spimagine [input]
 ```
 
+ 
+
 Right now the following formats are supported as input 
 
 - tiff files
@@ -111,11 +115,21 @@ from spimagine import volshow
 
 data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
 	
-volshow(data)       #render the data
+w = volshow(data)       #render the data and returns the widget 
+
+#manipulate the render states and save the current view to a file  
+w.transform.setRotation(.1,1,0,1)
+w.saveFrame("scene.png")
 ````
 
 ### GUI
 
+To load a file (supported: Tiff/czi) just drop it onto the main canvas or use the load button on the middle bottom panel. 
+
+| | | | |
+|-------|-------|-------|-----|
+|![](images/small_1.png)|![](images/small_2.png)|![](images/small_3.png)|![](images/small_4.png)|
+| <ul><li>min/max/gamma slider</li></ul> | <ul><li>timepoint controls</li></ul> | <ul><li>center/animate view</li><li>keyframe editor</li><li>screenshot</li><li>open/save as tiff</li></ul> | <ul><li>iso surface</li><li>slice view</li><li>settings</li></ul> |
 
 
 ### configuration 
