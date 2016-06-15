@@ -131,6 +131,13 @@ To load a file (supported: Tiff/czi) just drop it onto the main canvas or use th
 |![](images/small_1.png)|![](images/small_2.png)|![](images/small_3.png)|![](images/small_4.png)|
 | <ul><li>min/max/gamma slider</li></ul> | <ul><li>timepoint controls</li></ul> | <ul><li>center/animate view</li><li>keyframe editor</li><li>screenshot</li><li>open/save as tiff</li></ul> | <ul><li>iso surface</li><li>slice view</li><li>settings</li></ul> |
 
+#### keyframe editor
+
+*Spimagine* allows the creation of animated sequences of rendering scenes via its keyframe editor. 
+After opening the panel, different keyframes can be inserted by right clickling on the timeline. every change in the transform parameters(zoom/gamma/etc) and data timepoints will then be interpolated between consecutive keyframes. Pressing the record button will then save the rendered images to a folder (set framerate/folder location in the settings panel) after which they can be composed into a movie (e.g. with ffmpeg)
+
+![](images/gui_5.png)
+
 
 ### configuration 
 
