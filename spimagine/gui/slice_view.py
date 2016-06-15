@@ -52,6 +52,8 @@ attribute vec2 position;
 attribute vec2 texcoord;
 varying vec2 mytexcoord;
 
+
+
 void main()
 {
     gl_Position = vec4(position, 0., 1.0);
@@ -63,6 +65,7 @@ fragShaderTex = """
 uniform sampler2D texture;
 uniform sampler2D texture_LUT;
 varying vec2 mytexcoord;
+
 
 void main()
 {
@@ -117,6 +120,13 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         self.dataPos = 0
         self.slicePos = 0
+
+        self.zoom_fac = 1.
+        self.zoom_x = 0.5
+        self.zoom_y = 0.5
+        # the center in tex coords
+        self.zoom_cx = 0.5
+        self.zoom_cy = 0.5
 
 
         # self.refresh()
@@ -261,16 +271,13 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         self.resetViewPort()
 
 
-    def resetViewPort(self):
+    def getDataWidthHeight(self):
         if not self.dataModel:
             return
 
         dim = array(self.dataModel.size()[1:])[::-1].astype(np.float32)
 
         dim *= array(self.transform.stackUnits)
-
-
-
 
         if self.transform.sliceDim==0:
             dim = dim[[2,1]]
@@ -282,8 +289,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         w,h = dim[0],dim[1]
 
         fac = 1.*min(self.width,self.height)/max(w,h)
-        w, h = int(fac*w),int(fac*h)
+        return int(fac*w),int(fac*h)
 
+
+    def resetViewPort(self):
+        w,h = self.getDataWidthHeight()
         glViewport((self.width-w)/2,(self.height-h)/2,w,h)
 
 
@@ -315,7 +325,8 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             self.programTex.enableAttributeArray("position")
             self.programTex.enableAttributeArray("texcoord")
             self.programTex.setAttributeArray("position", self.quadCoord)
-            self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
+            self.programTex.setAttributeArray("texcoord",
+                            self.tex_coords_from_xyzoom(self.zoom_x,self.zoom_y,self.zoom_fac))
 
 
             glActiveTexture(GL_TEXTURE0)
@@ -325,6 +336,8 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             glActiveTexture(GL_TEXTURE1)
             glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
             self.programTex.setUniformValue("texture_LUT",1)
+
+
 
 
             glDrawArrays(GL_TRIANGLES,0,len(self.quadCoord))
@@ -362,71 +375,72 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             self.renderUpdate = False
             self.updateGL()
 
+    def tex_coords_from_xyzoom(self,x0,y0,zoom):
+        """returns array of texccords corners when zoomed
+        in onto x0,y0 \in [0,1]"""
+
+        q0 = create_quad_coords([0,1,0,1])
+        q1 = create_quad_coords([x0,x0,y0,y0])
+
+        return zoom*q0+(1.-zoom)*q1
+
+    # def tex_coords_from_xyzoom(self,x0,y0,zoom):
+    #     """returns array of texccords corners given a zoom
+    #     and the tex center coords"""
+    #
+    #     q0 = create_quad_coords([0,1,0,1])
+    #     q1 = create_quad_coords([x0,x0,y0,y0])
+    #
+    #     return zoom*q0+(1.-zoom)*q1
+
+    def getRelativeCoords(self,x0,y0):
+        w, h = self.getDataWidthHeight()
+
+        x = 2.*(x0-.5*(self.width-w))/w-1
+        y = 2.*(y0-.5*(self.height-h))/h-1
+
+        x = (x0-.5*(self.width-w))/w
+        y = 1-(y0-.5*(self.height-h))/h
+
+        return x,y
+
+    def mousePressEvent(self, event):
+        super(GLSliceWidget, self).mousePressEvent(event)
+
+        if event.buttons() == QtCore.Qt.LeftButton:
+            self._x0, self._y0 = self.getRelativeCoords(event.x(),event.y())
 
 
-    # def wheelEvent(self, event):
-    #     """ self.transform.zoom should be within [1,2]"""
-    #     self.slicePos = (self.slicePos + 1)%20
-    #     print self.slicePos
-    #     # newZoom = clip(newZoom,.4,3)
-    #     self.transform.setSlicePos(self.slicePos)
+    def mouseMoveEvent(self, event):
 
-    #     # logger.debug("newZoom: %s",newZoom)
-    #     self.refresh()
-
-
-    # def posToVec3(self,x,y, r0 = .8, isRot = True ):
-    #     x, y = 2.*x/self.width-1.,1.-2.*y/self.width
-    #     r = sqrt(x*x+y*y)
-    #     if r>r0-1.e-7:
-    #         x,y = 1.*x*r0/r, 1.*y*r0/r
-    #     z = sqrt(max(0,r0**2-x*x-y*y))
-    #     if isRot:
-    #         M = linalg.inv(self.transform.quatRot.toRotation3())
-    #         x,y,z = dot(M,[x,y,z])
-
-    #     return x,y,z
-
-    # def posToVec2(self,x,y):
-    #     x, y = 2.*x/self.width-1.,1.-2.*y/self.width
-    #     return x,y
+        if event.buttons() == QtCore.Qt.LeftButton:
+            x, y = self.getRelativeCoords(event.x(),event.y())
+            #print self._x0, x
+            self.zoom_x += self.zoom_fac*(self._x0 - x)
+            self.zoom_y += self.zoom_fac*(self._y0 - y)
+            self._x0, self._y0 = x,y
 
 
-    # def mousePressEvent(self, event):
-    #     super(GLWidget, self).mousePressEvent(event)
 
-    #     if event.buttons() == QtCore.Qt.LeftButton:
-    #         self._x0, self._y0, self._z0 = self.posToVec3(event.x(),event.y())
-
-    #     if event.buttons() == QtCore.Qt.RightButton:
-    #         (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(),event.y()), linalg.inv(self.transform.quatRot.toRotation3())
+            self.zoom_x , self.zoom_y = clip(self.zoom_x ,0,1), clip(self.zoom_y,0,1)
+            print self.zoom_x,self.zoom_y
+        self.refresh()
 
 
-    # def mouseMoveEvent(self, event):
-    #     # Rotation
-    #     if event.buttons() == QtCore.Qt.LeftButton:
+    def wheelEvent(self, event):
+        # get the zoom factor
 
-    #         x1,y1,z1 = self.posToVec3(event.x(),event.y())
-    #         n = cross(array([self._x0,self._y0,self._z0]),array([x1,y1,z1]))
-    #         nnorm = linalg.norm(n)
-    #         if abs(nnorm)>=1.:
-    #             nnorm *= 1./abs(nnorm)
-    #         w = arcsin(nnorm)
-    #         n *= 1./(nnorm+1.e-10)
-    #         q = Quaternion(np.cos(.5*w),*(np.sin(.5*w)*n))
-    #         self.transform.setQuaternion(self.transform.quatRot*q)
+        # print self.zoom_x,self.zoom_y
+        # x, y = self.getRelativeCoords(event.x(),event.y())
+        # self.zoom_x , self.zoom_y = clip(x ,0,1), clip(y,0,1)
 
-    #     #Translation
-    #     if event.buttons() == QtCore.Qt.RightButton:
-    #         x, y = self.posToVec2(event.x(),event.y())
 
-    #         dx, dy, foo = dot(self._invRotM,[x-self._x0, y-self._y0,0])
-    #         self.transform.translate[0] += dx
-    #         self.transform.translate[1] += dy
 
-    #         self._x0,self._y0 = x,y
+        self.zoom_fac *=  1.4**(-event.delta()/1000.)
 
-    #     self.refresh()
+        self.zoom_fac = clip(self.zoom_fac,0,1.)
+
+        self.refresh()
 
 
 
@@ -531,7 +545,7 @@ class SliceWidget(QtGui.QWidget):
 
 
 if __name__ == '__main__':
-    from data_model import DataModel, DemoData, SpimData
+    from spimagine import DemoData
 
     app = QtGui.QApplication(sys.argv)
 
@@ -539,10 +553,7 @@ if __name__ == '__main__':
 
     win = SliceWidget(size=QtCore.QSize(500,500))
 
-    win.setModel(DataModel.fromPath("/Users/mweigert/Data/droso_test.tif",prefetchSize = 0))
-
-    win.glSliceWidget.transform.setStackUnits(1.,1.,5.)
-
+    win.setModel(DataModel(DemoData()))
 
     # win.transform.setBox()
     # win.transform.setPerspective(True)

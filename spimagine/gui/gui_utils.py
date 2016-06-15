@@ -200,6 +200,17 @@ def slice_coords(relPos,dim):
     return coords
 
 
+def create_quad_coords(bounds = [-1,1.,-1,1]):
+    x1,x2,y1,y2 = bounds
+    return  np.array([[x1,y1],
+                   [x2,y1],
+                       [x2,y2],
+                       [x2,y2],
+                       [x1,y2],
+                       [x1,y1]])
+
+
+
 def create_cube_coords(bounds = [-1,1.,-1,1,-1,1]):
     x1,x2,y1,y2,z1,z2 = bounds
     return np.array([[x2, y2, z2], [x1, y2, z2],
