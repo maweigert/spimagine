@@ -19,4 +19,7 @@ spimagine/test_data
 
 
 #test data sets
-spimagine/test_data
+tests/data
+
+
+
