@@ -43,7 +43,7 @@ sudo clinfo
 ## Installation
 
 ### Mac
-If you only wanna use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.1/spimagine.dmg):
+If you only wanna use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
 
 Otherwise install PyQt4, e.g. with homebrew:
 ```
