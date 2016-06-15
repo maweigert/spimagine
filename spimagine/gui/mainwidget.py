@@ -279,7 +279,7 @@ class MainWidget(QtGui.QWidget):
 
         hbox0.addWidget(self.glWidget,stretch = 3)
 
-        hbox0.addWidget(self.sliceWidget,stretch =1)
+        hbox0.addWidget(self.sliceWidget,stretch =2)
 
 
         hbox0.addWidget(self.impListView)
