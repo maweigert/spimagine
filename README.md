@@ -20,11 +20,11 @@ Watch the following screencast for a first impression:
 
 Python 2 + a working OpenCL environment 
 
-#### Mac
+##### Mac
 
 OpenCL should be provided by default :)
 
-#### Linux
+##### Linux
 e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
 ```bash
@@ -39,10 +39,14 @@ sudo apt-get install clinfo
 sudo clinfo
 ```
 
+##### Windows
+
+Install your the SDK of your GPU vendor.  
+
 
 ## Installation
 
-### Mac
+#### Mac
 If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
 
 Otherwise install PyQt4, e.g. with homebrew:
@@ -61,7 +65,7 @@ or the developmental branch (recommended)
 pip install git+https://github.com/maweigert/spimagine@develop
 ```
 	
-### Linux
+#### Linux
 
 ```
 apt-get install python-qt4 python-qt4-gl
@@ -70,7 +74,7 @@ pip install git+https://github.com/maweigert/gputools
 pip install git+https://github.com/maweigert/spimagine@develop
 ```
 
-### Windows
+#### Windows
 
 install pyopencl and PyQt4 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
