@@ -501,7 +501,7 @@ class KeyFramePanel(QWidget):
 
         self.saveButton = createStandardButton(self,
                         fName = absPath("images/icon_save.png"),
-                        method = self.onDistribute,
+                        method = self.onSave,
                         tooltip = "save keyframes as json")
 
 
@@ -644,6 +644,7 @@ class KeyFramePanel(QWidget):
         self.setKeyTime((self.t+0.01)%1.)
 
     def onSave(self):
+
         fName = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
         if fName:
             self.save_to_JSON(fName)

@@ -20,12 +20,12 @@ import sys
 import os
 
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 import argparse
 
 import logging
-
+logger = logging.getLogger(__name__)
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -37,9 +37,13 @@ def absPath(myPath):
         logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
 
         return os.path.join(base_path, os.path.basename(myPath))
-    except Exception:
+    except Exception as e:
+        logger.debug("did not find MEIPASS: %s "%e)
+
+
         base_path = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(base_path, myPath)
+
 
     
 def main():
@@ -67,9 +71,6 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-    from spimagine.gui.mainwidget import MainWidget
-    from spimagine.models.data_model import DemoData, DataModel
-        
         
     if args.D:
         logger = logging.getLogger("spimagine")
@@ -77,6 +78,26 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
 
+
+    #splash screen
+    # print 'FIIIIIIIIIIII'
+    # print absPath('../gui/images/splash.png')
+    # print os.listdir(absPath("."))
+    # print sys._MEIPASS
+
+    pixmap = QtGui.QPixmap(absPath('../gui/images/splash.png'))
+    splash = QtGui.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setMask(pixmap.mask())
+    splash.show()
+    app.processEvents()
+
+
+    from spimagine.gui.mainwidget import MainWidget
+    from spimagine.models.data_model import DemoData, DataModel
+        
+
+
+    
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
     if sys.platform.startswith("win"):
@@ -94,6 +115,8 @@ def main():
 
     win.show()
     win.raise_()
+
+    splash.finish(win)
 
     sys.exit(app.exec_())
 

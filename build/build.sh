@@ -9,7 +9,10 @@ rm -rf dist
 
 echo "building app..."
 
-pyinstaller -w -F -y spimagine.spec 
+#onefile
+pyinstaller -w -F -y spimagine.spec
+#ondedir
+# pyinstaller -w -D -y spimagine.spec 
 
 echo "prettify bundle..."
 

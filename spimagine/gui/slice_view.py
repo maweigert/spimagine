@@ -288,12 +288,20 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         w,h = dim[0],dim[1]
 
-        fac = 1.*min(self.width,self.height)/max(w,h)
+
+
+        # fac = 1.*min(self.width,self.height)/max(w,h)
+
+        fac = min(1.*self.width/w,1.*self.height/h)
+
+        print w, h , fac
         return int(fac*w),int(fac*h)
 
 
     def resetViewPort(self):
         w,h = self.getDataWidthHeight()
+
+        print w,h, self.width,self.height
         glViewport((self.width-w)/2,(self.height-h)/2,w,h)
 
 
@@ -545,7 +553,7 @@ class SliceWidget(QtGui.QWidget):
 
 
 if __name__ == '__main__':
-    from spimagine import DemoData
+    from spimagine import DemoData, NumpyData
 
     app = QtGui.QApplication(sys.argv)
 
@@ -553,7 +561,11 @@ if __name__ == '__main__':
 
     win = SliceWidget(size=QtCore.QSize(500,500))
 
-    win.setModel(DataModel(DemoData()))
+
+    d = random.uniform(0,1,10*20*30).reshape(10,20,30)
+
+    win.setModel(DataModel(NumpyData(d)))
+    # win.setModel(DataModel(DemoData()))
 
     # win.transform.setBox()
     # win.transform.setPerspective(True)
