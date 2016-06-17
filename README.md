@@ -6,7 +6,15 @@ If provides further an image processor interface for the GPU accelerated denoisi
 
 Watch the following screencast for a first impression: 
 
-[![Alt text for your video](images/poster_vimeo.png)](https://vimeo.com/126597994)
+<p align="left">
+<a href = https://vimeo.com/126597994 ><img src=images/poster_vimeo.png width=500/></a>
+</p>
+
+or alternatively the talk at EuroScipy 2015
+
+<p align="left">
+<a href = https://www.youtube.com/watch?v=MeFsmFTU2JQ><img src=images/poster_youtube.png width=500/></a>
+</p>
 
 
 ##Overview
