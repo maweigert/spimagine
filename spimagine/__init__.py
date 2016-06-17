@@ -1,3 +1,11 @@
+__version__ = None
+
+try:
+    from pkg_resources import get_distribution, DistributionNotFound
+    __version__ = get_distribution("spimagine").version
+except Exception as e:
+    print e
+
 
 import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
