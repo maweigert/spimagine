@@ -125,9 +125,11 @@ the package provides interactive visualisation to be used e.g. within IPython
 ```python 
 from spimagine import volshow
 
-data = linspace(0,1,100**3).reshape((100,)*3)          #3d or 4d numpy array
+# create a 3d or 4d numpy array
+data = linspace(0,1,100**3).reshape((100,)*3)          
 	
-w = volshow(data)       #render the data and returns the widget 
+# render the data and returns the widget 
+w = volshow(data)       
 
 # manipulate the render states, e.g. rotation and colormap
 w.transform.setRotation(.1,1,0,1)
