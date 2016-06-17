@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 setup(name='spimagine',
-    version='0.1.1',
+    version='0.1.2',
     description='renders spim data in 3D/4D',
     url='http://mweigert@bitbucket.org/mweigert/spimagine',
     author='Martin Weigert',
@@ -13,7 +13,7 @@ setup(name='spimagine',
     packages=find_packages(),
     install_requires=[
         'numpy', 'scipy','Pillow',"PyOpenGL","pyopencl"
-        ,"sortedcontainers", "scikit-tensor"
+        ,"sortedcontainers"
     ],
 
     package_data={"spimagine":['volumerender/kernels/*',
