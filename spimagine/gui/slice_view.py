@@ -273,7 +273,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def getDataWidthHeight(self):
         if not self.dataModel:
-            return
+            return 1,1
 
         dim = array(self.dataModel.size()[1:])[::-1].astype(np.float32)
 
@@ -294,14 +294,14 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         fac = min(1.*self.width/w,1.*self.height/h)
 
-        print w, h , fac
+
         return int(fac*w),int(fac*h)
 
 
     def resetViewPort(self):
         w,h = self.getDataWidthHeight()
 
-        print w,h, self.width,self.height
+
         glViewport((self.width-w)/2,(self.height-h)/2,w,h)
 
 
