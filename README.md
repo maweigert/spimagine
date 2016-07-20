@@ -95,7 +95,7 @@ python setup.py install
 
 ## Usage
 
-Spimagine was designed with the interactive display of volemtric data from ipython in mind, but it can likewise be used as a standalone application.  
+Spimagine was designed with the interactive display of volumetric data from ipython in mind, but it can likewise be used as a standalone application.  
 
 ### Standalone Application
 
