@@ -10,11 +10,7 @@ Watch the following screencast for a first impression:
 <a href = https://vimeo.com/126597994 ><img src=images/poster_vimeo.png width=500/></a>
 </p>
 
-or alternatively the talk at EuroScipy 2015
-
-<p align="left">
-<a href = https://www.youtube.com/watch?v=MeFsmFTU2JQ><img src=images/poster_youtube.png width=500/></a>
-</p>
+or alternatively the [talk at EuroScipy 2015](https://www.youtube.com/watch?v=MeFsmFTU2JQ)
 
 
 ##Overview
