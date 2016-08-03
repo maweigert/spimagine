@@ -152,7 +152,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
-        self.sliderAlphaPow.setRange(0,1.,100)
+        self.sliderAlphaPow.setRange(0,2.,100)
         self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
