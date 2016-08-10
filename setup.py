@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 setup(name='spimagine',
-    version='0.1.2',
+    version='0.1.3',
     description='renders spim data in 3D/4D',
     url='http://mweigert@bitbucket.org/mweigert/spimagine',
     author='Martin Weigert',
