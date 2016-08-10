@@ -431,7 +431,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
             self.zoom_x , self.zoom_y = clip(self.zoom_x ,0,1), clip(self.zoom_y,0,1)
-            print self.zoom_x,self.zoom_y
+
         self.refresh()
 
 

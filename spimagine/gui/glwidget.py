@@ -729,8 +729,11 @@ class GLWidget(QtOpenGL.QGLWidget):
                 elif self.transform.sliceDim==2:
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
-                self.sliceOutput = (1.*(out-np.amin(out))/(np.amax(out)-np.amin(out)))
-
+                min_out, max_out = np.amax(out),np.amin(out)
+                if max_out>min_out:
+                    self.sliceOutput = (1.*(out-min_out)/(max_out-min_out))
+                else:
+                    self.sliceOutput = np.zeros_like(out)
 
 
     def getFrame(self):

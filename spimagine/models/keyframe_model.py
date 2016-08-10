@@ -74,6 +74,7 @@ class TransformData(object):
     def __repr__(self):
         return """TransformData:
         quatRot\t %s
+        translate\t %s
         zoom\t%s
         datapos\t%s
         minVal\t%s
@@ -82,7 +83,7 @@ class TransformData(object):
         bounds\t%s
         isBox\t%s
         isIso\t%s
-        alphaPow\t%s"""%(str(self.quatRot),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
+        alphaPow\t%s"""%(str(self.quatRot),str(self.translate),self.zoom,self.dataPos,self.minVal,self.maxVal, self.gamma, self.bounds, self.isBox,self.isIso, self.alphaPow)
 
         
 

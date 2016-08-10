@@ -5,10 +5,10 @@
 
 .idea/
 # build folder
-build_mac/
-
-build/dist/
-build/build/
+build/
+dist/
+build_mac/dist/
+build_mac/build/
 
 spimagine/test_data
 # /bin
