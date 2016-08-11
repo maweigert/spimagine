@@ -147,7 +147,7 @@ To load a file (supported: Tiff/czi) just drop it onto the main canvas or use th
 #### keyframe editor
 
 *Spimagine* allows the creation of animated sequences of rendering scenes via its keyframe editor. 
-After opening the panel, different keyframes can be inserted by right clickling on the timeline. Every change in the transform parameters (zoom, gamma, etc) and data timepoints will then be interpolated between consecutive keyframes. Pressing the play button will animate the sequence, pressing the record button will save the rendered images to a folder (set the framerate and folder location in the settings panel) after which they can be composed into a movie (e.g. with ffmpeg). Further the current keyframes can be saved to json (via a button) and reloaded (drop the json into the timeline).
+After opening the panel, different keyframes can be inserted by right clickling on the timeline. A right click on existing keyframe will open a context menu to update the keyframe or change the interpolation elasticity (the acceleration if the interpolation). Every change in the transform parameters (zoom, gamma, etc) and data timepoints will then be interpolated between consecutive keyframes. Pressing the play button will animate the sequence, pressing the record button will save the rendered images to a folder (set the framerate and folder location in the settings panel) after which they can be composed into a movie (e.g. with ffmpeg). The current keyframes can be saved to json (via a button) and reloaded (drop the json into the timeline).
 
 ![](images/gui_5.png)
 
@@ -157,8 +157,17 @@ After opening the panel, different keyframes can be inserted by right clickling 
 the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
 
 ```
-opencldevice = 0
 max_steps  = 200
 width = 600
 colormap = hot
 ```
+
+As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL backend, it will use gputools' default OpenCL platform/device - this can be changed by putting
+
+```
+id_platform = 0
+id_device = 1
+```
+into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the whole gputools default)
+
+
