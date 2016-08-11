@@ -169,5 +169,5 @@ id_platform = 0
 id_device = 1
 ```
 into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the whole gputools default)
-
+(put id_platform =-1 to choose the device with biggest memory) 
 
