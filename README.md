@@ -168,6 +168,6 @@ As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL 
 id_platform = 0
 id_device = 1
 ```
-into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want this to affect other gputools functions too)
+into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the whole gputools default)
 
 
