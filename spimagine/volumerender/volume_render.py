@@ -48,7 +48,6 @@ from time import time
 import sys
 
 from gputools import init_device, get_device, OCLProgram, OCLArray, OCLImage
-from gputools.core.config import cl_datatype_dict
 
 from spimagine.utils.transform_matrices import *
 
