@@ -56,7 +56,7 @@ The next classes define simple 4d Data Structures that implement the interface
 given by GenericData
 """
 
-class GenericData():
+class GenericData(object):
     """abstract base class for 4d data
 
     if you wanna sublass it, just overwrite self.size() and self.__getitem__()

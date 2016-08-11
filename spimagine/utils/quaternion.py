@@ -1,6 +1,6 @@
 import numpy as np
 
-class Quaternion():
+class Quaternion(object):
     def __init__(self,w=1.,x=0.,y=0.,z=0.):
         
         self.data = np.array([w,x,y,z])

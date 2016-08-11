@@ -51,8 +51,6 @@ from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 
 from spimagine.utils.imgutils import write3dTiff
 
-# from spimagine.jack_plugin import JackPlugin
-
 import logging
 logger = logging.getLogger(__name__)
 

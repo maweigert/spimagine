@@ -42,7 +42,7 @@ def read3dTiff(fName, depth = -1, dtype = np.uint16):
 
 
 
-class GenericData():
+class GenericData(object):
     dataFileError = Exception("not a valid file")
     def __init__(self):
         self.stackSize = None
