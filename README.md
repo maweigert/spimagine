@@ -168,4 +168,6 @@ As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL 
 id_platform = 0
 id_device = 1
 ```
-into  "$HOME/.gputools" (if you want this to affect other gputools functions too) or in "$HOME/.spimagine" (if you only want to select the devices for *Spimagine*)
+into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want this to affect other gputools functions too)
+
+
