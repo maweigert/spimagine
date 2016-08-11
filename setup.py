@@ -1,10 +1,13 @@
 import os
 from setuptools import setup, find_packages
 
-here = os.path.abspath(os.path.dirname(__file__))
+
+
+exec(open('spimagine/version.py').read())
+
 
 setup(name='spimagine',
-    version='0.1.3',
+    version=__version__,
     description='renders spim data in 3D/4D',
     url='http://mweigert@bitbucket.org/mweigert/spimagine',
     author='Martin Weigert',

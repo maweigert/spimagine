@@ -233,10 +233,18 @@ class KeyNode(QGraphicsItem):
         self.keyList.removeItem(self.ID)
         # self.graph.resetScene()
 
+    def changeElasticity(self):
+        old_val  = self.keyList[self.ID].interp_elasticity
+        new_val ,success = QInputDialog.getDouble(None,"new elasticity",
+                                              "elasticity = 0: linear interpolation\nelasticity > 0 (e.g. 10): sigmoid interpolation ",
+                                              value = old_val,
+                                              min = 0, max = 30)
+        if success:
+            self.keyList[self.ID].interp_elasticity = new_val
+
 
     def showProperties(self):
         QMessageBox.about(None, "KeyFrame", str(self.keyList[self.ID]))
-
 
     def updateTransformData(self):
         if self.transformModel is None:
@@ -250,6 +258,7 @@ class KeyNode(QGraphicsItem):
     def contextMenuEvent(self, contextEvent):
         actionMethods = OrderedDict((("update",self.updateTransformData),
                                      ("delete",self.delete),
+                                     ("elasticity",self.changeElasticity),
                                      ("properties" ,self.showProperties)))
 
         actions = OrderedDict()

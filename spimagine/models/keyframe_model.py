@@ -17,7 +17,11 @@ from spimagine.utils.quaternion import *
 import spimagine
 
 def create_interp_func(a):
-    """ an elastic interpolation function,
+    """ an elastic interpolation function on the interval [0,1]
+
+    f(0) = 0.
+    f(1) = 1.
+
     the bigger a, the more elastic 
     when a==0, its the usual hard linear interpolation 
     """
@@ -140,13 +144,16 @@ class TransformData(object):
 
 
 class KeyFrame(object):
-    def __init__(self,pos = 0, transformData = TransformData()):
+    def __init__(self,pos = 0,
+                 transformData = TransformData(),
+                 interp_elasticity = 0.):
         self.pos = pos
         self.transformData = transformData
+        self.interp_elasticity = interp_elasticity
 
 
     def __repr__(self):
-        return "Keyframe at t = %.3f \n%s"%(self.pos,self.transformData)
+        return "Keyframe at t = %.3f (elasticity = %s) \n%s"%(self.pos,self.interp_elasticity,self.transformData)
 
 
 """ the keyframe model """
@@ -264,7 +271,10 @@ class KeyFrameList(QtCore.QObject):
         else:
             lam = (1.*pos-frameLeft.pos)/(frameRight.pos-frameLeft.pos)
 
-        newTrans = TransformData.interp(frameLeft.transformData,frameRight.transformData,lam)
+        newTrans = TransformData.interp(frameLeft.transformData,
+                                        frameRight.transformData,
+                                        lam,
+                                        create_interp_func(frameLeft.interp_elasticity))
 
         return newTrans
 
@@ -395,19 +405,21 @@ if __name__ == '__main__':
 
     k.addItem(KeyFrame(0,TransformData()))
 
-    k.addItem(KeyFrame(1.,TransformData()))
-
-    k.addItem(KeyFrame(.5,TransformData(zoom=.5,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
 
-    s = k._to_JSON()
+    k.addItem(KeyFrame(1,TransformData(zoom=.0,quatRot = Quaternion(.71,.71,0,0),bounds=[0]*6)))
 
-    print s
-
-    k2 = KeyFrameList._from_JSON(s)
-
-
-    print k2.getTransform(.1)
-    
-
-    k3 = KeyFrameList._from_JSON(open("test.json","r").read())
+    print k.getTransform(0.2)
+    #
+    #
+    # s = k._to_JSON()
+    #
+    # print s
+    #
+    # k2 = KeyFrameList._from_JSON(s)
+    #
+    #
+    # print k2.getTransform(.1)
+    #
+    #
+    # k3 = KeyFrameList._from_JSON(open("test.json","r").read())

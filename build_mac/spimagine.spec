@@ -15,6 +15,7 @@ a = Analysis(['../spimagine/bin/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine'],
              hiddenimports=[
                  'scipy.special._ufuncs_cxx',
+                 # 'scipy',
                  'scipy.linalg.cython_blas',
                  'scipy.linalg.cython_lapack',
                  "pyfft",
@@ -46,18 +47,12 @@ a.datas += addAll("../spimagine/data/")
 
 # a.datas += [("lucy_richardson.cl","/Users/mweigert/python/Deconvolution/lucy_richardson.cl","Data")]
 
-print a.datas
-
 # with open("_DATAS.txt","w") as f:
 #     f.write(str(a.datas))
 
 # with open("_BINARIES.txt","w") as f:
 #     f.write(str(a.binaries))
 
-# with open("_PURE.txt","w") as f:
-#     f.write(str(a.pure))
-
-print a.binaries
 
 
 # filter binaries.. exclude some dylibs that pyinstaller packaged but
@@ -69,8 +64,12 @@ reg = re.compile(".*(QtWebKit|wxPython|matplotlib).*")
 a.binaries = [s for s in a.binaries if reg.match(s[1]) is None] 
 
 
-# with open("_BINARIES_FILTER.txt","w") as f:
-#     f.write(str(a.binaries))
+with open("_BINARIES.log","w") as f:
+    f.write(str(a.binaries))
+with open("_PURE.log","w") as f:
+    f.write(str(a.pure))
+with open("_DATAS.log","w") as f:
+    f.write(str(a.pure))
 
 
 # a.datas += [("tiff_h_4_0_3.py","/Library/Python/2.7/site-packages/libtiff/tiff_h_4_0_3.py","Data")]
@@ -83,8 +82,6 @@ a.binaries = [s for s in a.binaries if reg.match(s[1]) is None]
 # a.binaries += [("libtiff.dylib","/usr/local/lib/libtiff.dylib","BINARY")]
 
 # a.binaries += [("libtiff.dylib","/usr/local/Cellar/libtiff/4.0.3/lib/libtiff.dylib","BINARY")]
-
-print a.binaries
 
 
 pyz = PYZ(a.pure)

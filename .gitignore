@@ -9,6 +9,7 @@ build/
 dist/
 build_mac/dist/
 build_mac/build/
+build_mac/*.log
 
 spimagine/test_data
 # /bin
