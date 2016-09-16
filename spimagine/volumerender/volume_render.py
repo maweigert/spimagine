@@ -457,8 +457,9 @@ class VolumeRenderer:
                              self.buf_normals.data,
                                  )
 
+
+
         self._convolve_scalar(self.buf_occlusion,5)
-        #self._convolve_vec(self.buf_normals,5)
 
         self.proc.run_kernel("shading",
                                  (self.width,self.height),

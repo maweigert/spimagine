@@ -586,9 +586,9 @@ __kernel void shading(
 	  + c_diffuse*diffuse
 	  + (diffuse>0)*c_specular*specular;
 
-  colVal *= (1.f+occ_strength)*(1.f+occ_strength)*(1.f-occ_strength+occ_strength*occ);
+  //colVal *= (1.f+occ_strength)*(1.f+occ_strength)*(1.f-occ_strength+occ_strength*occ);
 
-  //colVal = (1.f-occ_strength)*colVal+occ_strength*occ;
+  colVal = (1.f-occ_strength)*colVal+occ_strength*occ;
 
   colVal *= ((depth<INFINITY)?1.f:0.f);
 

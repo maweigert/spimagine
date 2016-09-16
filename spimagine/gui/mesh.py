@@ -17,7 +17,7 @@ class Mesh(object):
                  normals = None,
                  facecolor = (1.,1.,1.),
                  edgecolor = None,
-                 alpha = 1.,
+                 alpha = .6,
                  light = [1,1,-1]):
         """
         vertices are a list of 3d coordinates like [[0,0,0], [1,0,0],...]
