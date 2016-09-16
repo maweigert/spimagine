@@ -18,6 +18,7 @@ void main()
   //gl_FragColor = color*lamb;
 
 
+  gl_FragColor = color;
 
 }
 

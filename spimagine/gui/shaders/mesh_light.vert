@@ -11,10 +11,10 @@ varying vec4 var_pos;
 
 void main()
 {
-  //vec3 pos = position;
-  //var_pos = mvpMatrix *vec4(pos, 1.0);
-  gl_Position = var_pos;
 
+  vec3 pos = position;
+  gl_Position = mvpMatrix *vec4(pos, 1.0);
 
-  //var_normal = mvpNormalMatrix *vec4(normal, 0.0);;
+  var_pos = mvpMatrix *vec4(pos, 1.0);
+  var_normal = normalize(mvpNormalMatrix *vec4(normal, 0.0));
 }

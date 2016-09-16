@@ -37,7 +37,7 @@ class Mesh(object):
         self.edges = []
         self.alpha = np.clip(alpha,0,1.)
 
-        #FIXME: this includes every edge twice which is stupid
+        #FIXME: this includes every edge twice which is not efficient
         for i in range(len(vertices)/3):
             v1,v2, v3 = vertices[3*i], vertices[3*i+1], vertices[3*i+2]
             self.edges.append(v1)
