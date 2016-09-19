@@ -18,7 +18,7 @@ class Mesh(object):
                  facecolor = (1.,1.,1.),
                  edgecolor = None,
                  alpha = .6,
-                 light = [1,1,-1]):
+                 light = None):
         """
         vertices are a list of 3d coordinates like [[0,0,0], [1,0,0],...]
         where 3 consecutive coordinates define a triangle to be rendered.
@@ -65,7 +65,7 @@ class EllipsoidMesh(Mesh):
                  facecolor = (1.,1.,1.),
                  edgecolor = None,
                  alpha = 1.,
-                 light = [1,1,-1]):
+                 light = None):
         """creates an ellipsoidal mesh at pos with half axes rs = (rx,ry,rz)
         of equally distributing points n_phi x n_theta"""
 
@@ -88,6 +88,7 @@ class EllipsoidMesh(Mesh):
 
         verts = []
         normals = []
+        #FIXME: this is still very slow
         for i in range(len(ts)-1):
             for j in range(len(ps)-1):
                 verts.append(xs[:,i,j])
@@ -97,15 +98,44 @@ class EllipsoidMesh(Mesh):
                 verts.append(xs[:,i+1,j+1])
                 verts.append(xs[:,i,j+1])
 
-                #FIXME, wrong for rx != ry ....
+                # # #FIXME, wrong for rx != ry ....
                 normals.append(1.*xs[:,i,j]/rx)
                 normals.append(1.*xs[:,i+1,j]/rx)
                 normals.append(1.*xs[:,i+1,j+1]/rx)
                 normals.append(1.*xs[:,i,j]/rx)
-                normals.append(1.*xs[:,i,j+1]/rx)
                 normals.append(1.*xs[:,i+1,j+1]/rx)
+                normals.append(1.*xs[:,i,j+1]/rx)
 
         return  np.array(pos)+np.array(verts), np.array(normals)
+
+
+    @staticmethod
+    def create_verts2(rs, pos, n_phi, n_theta):
+        ts = np.linspace(0,np.pi,n_theta)
+        ps = np.linspace(0,2.*np.pi,n_phi+1)
+
+        T,P = np.meshgrid(ts,ps, indexing = "ij")
+        rx,ry,rz = rs
+        xs = np.array([rx*np.cos(P)*np.sin(T),ry*np.sin(P)*np.sin(T),rz*np.cos(T)])
+
+        verts = []
+        normals = []
+
+        inds_i = np.array([0,1,1,0,1,0])
+
+
+        #FIXME: this is still very slow
+
+        for i in range(len(ts)-1):
+            inds_j = np.array([0,0,1,0,1,1])
+            for j in range(len(ps)-1):
+                verts.append(xs[:,inds_i,inds_j].flatten())
+                inds_j +=1
+
+            inds_i +=1
+        #return  np.array(pos)+np.array(verts), np.array(normals)
+
+
 
 
 class SphericalMesh(EllipsoidMesh):
@@ -116,7 +146,7 @@ class SphericalMesh(EllipsoidMesh):
                  facecolor = (1.,1.,1.),
                  edgecolor = None,
                  alpha = 1.,
-                 light = [1,1,-1]):
+                 light = None):
         """creates a spherical mesh at pos with radius r
         of equally distributing points n_phi x n_theta"""
 
@@ -131,6 +161,11 @@ class SphericalMesh(EllipsoidMesh):
 
 
 if __name__ == '__main__':
-    print Mesh().vertices
-    print EllipsoidMesh().vertices
-    print SphericalMesh().facecolor
+    from time import time
+
+    t = time()
+    EllipsoidMesh.create_verts2((1,1,1),(0,0,0),100,100)
+    print time()-t
+    t = time()
+    EllipsoidMesh.create_verts((1,1,1),(0,0,0),100,100)
+    print time()-t

@@ -342,7 +342,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.meshes.append([mesh,
                             glvbo.VBO(mesh.vertices.astype(np.float32, copy=False)),
-                            glvbo.VBO(np.array(mesh.edges).astype(np.float32, copy=False))])
+                            glvbo.VBO(np.array(mesh.edges).astype(np.float32, copy=False)),
+                            glvbo.VBO(np.array(mesh.normals).astype(np.float32, copy=False))])
 
         # sort according to opacity as the opaque objects should be drawn first
         self.meshes.sort(key=lambda x: x[0].alpha, reverse=True)
@@ -381,7 +382,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def _paintGL_slice(self):
         # draw the slice
         self.programSlice.bind()
-        self.programSlice.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programSlice.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
         self.programSlice.enableAttributeArray("position")
 
         pos, dim = self.transform.slicePos, self.transform.sliceDim
@@ -410,7 +411,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # Draw the cube
         self.programCube.bind()
-        self.programCube.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self.finalMat.flatten()))
+        self.programCube.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
         self.programCube.enableAttributeArray("position")
 
         if self._background_mode_black:
@@ -432,150 +433,77 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDrawArrays(GL_LINES, 0, len(self.cubeCoords))
         glDisable(GL_DEPTH_TEST)
 
-    def _paintGL_mesh2(self, mesh):
+
+    def _paintGL_mesh(self, mesh, vbo_vertices, vbo_edges, vbo_normals):
         """
         paint a mesh (which has all the coordinates and colors in it
         """
-        # Draw the cube
-
-
-        # whether we use phong lightning or not
-        prog = self.programMesh
-
-        prog.setUniformValue("mvpMatrix",
-                             QtGui.QMatrix4x4(*self.finalMat.flatten()))
-
-        glDisable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        if mesh.facecolor:
-            r, g, b = mesh.facecolor
-            a = mesh.alpha
-
-            prog.enableAttributeArray("position")
-            prog.setAttributeArray("position", mesh.vertices)
-
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
-
-            glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
-
-            glDisable(GL_DEPTH_TEST)
-
-        if mesh.edgecolor:
-            r, g, b = mesh.edgecolor
-            a = mesh.alpha
-
-            prog.enableAttributeArray("position")
-            prog.setAttributeArray("position", mesh.edges)
-
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
-
-            glDrawArrays(GL_LINES, 0, len(mesh.edges))
-
-    def _paintGL_mesh(self, mesh, vbo_vertices, vbo_edges):
-        """
-        paint a mesh (which has all the coordinates and colors in it
-        """
-        # Draw the cube
-
-
-        # whether we use phong lightning or not
-        prog = self.programMesh
-        prog.bind()
-
-        prog.setUniformValue("mvpMatrix",
-                             QtGui.QMatrix4x4(*self.finalMat.flatten()))
-
-        glDisable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        if not mesh.facecolor is None:
-            r, g, b = mesh.facecolor
-            a = mesh.alpha
-
-            prog.enableAttributeArray("position")
-            vbo_vertices.bind()
-            glVertexAttribPointer(prog.attributeLocation("position"), 3, GL_FLOAT, GL_FALSE, 0, vbo_vertices)
-
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
-
-            glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
-
-            glDisable(GL_DEPTH_TEST)
-
-        if not mesh.edgecolor is None:
-            r, g, b = mesh.edgecolor
-            a = mesh.alpha
-
-            prog.enableAttributeArray("position")
-            vbo_vertices.bind()
-            glVertexAttribPointer(prog.attributeLocation("position"), 2, GL_FLOAT, GL_FALSE, 0, vbo_edges)
-
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
-
-            glDrawArrays(GL_LINES, 0, len(mesh.edges))
-
-    # FIXME this should be the new default....
-    def _paintGL_mesh_light(self, mesh, vbo_vertices, vbo_edges):
-        """
-        paint a mesh (which has all the coordinates and colors in it
-        """
-        # Draw the cube
-
-
-        # whether we use phong lightning or not
-        if mesh.light is None:
-            prog = self.programMesh
-        else:
-            prog = self.programMeshLight
-
-        prog.bind()
-        prog.setUniformValue("mvpMatrix",
-                             QtGui.QMatrix4x4(*self.finalMat.flatten()))
-
         glEnable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDisable(GL_BLEND)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        prog = self.programMeshLight
+        prog.bind()
+        prog.setUniformValue("mvpMatrix",
+                             QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
+
+        prog.setUniformValue("mvMatrix",
+                             QtGui.QMatrix4x4(*self._mat_modelview.flatten()))
+
+        prog.setUniformValue("normMatrix",
+                         QtGui.QMatrix4x4(*self._mat_normal.flatten()))
+
+
+        if mesh.light:
+            prog.setUniformValue("light",
+                         QtGui.QVector3D(*mesh.light))
+            prog.setUniformValue("light_components",
+                         QtGui.QVector3D(.4,.5,.5))
+        else:
+            prog.setUniformValue("light",
+                         QtGui.QVector3D(0,0,0))
+            prog.setUniformValue("light_components",
+                         QtGui.QVector3D(1.,0,0))
+
 
         if not mesh.facecolor is None:
             r, g, b = mesh.facecolor
             a = mesh.alpha
+            prog.setUniformValue("color",
+                                 QtGui.QVector4D(r, g, b, a))
 
             prog.enableAttributeArray("position")
             vbo_vertices.bind()
             glVertexAttribPointer(prog.attributeLocation("position"), 3, GL_FLOAT, GL_FALSE, 0, vbo_vertices)
 
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
 
-            # if mesh.light:
-            #     prog.enableAttributeArray("normal")
-            #     prog.setAttributeArray("normal", mesh.normals)
-            #     prog.setUniformValue("light",
-            #                          QtGui.QVector3D(*mesh.light))
+            prog.enableAttributeArray("normal")
+            vbo_normals.bind()
+            glVertexAttribPointer(prog.attributeLocation("normal"), 3, GL_FLOAT, GL_FALSE, 0, vbo_normals)
+
 
             glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
 
             glDisable(GL_DEPTH_TEST)
+            prog.disableAttributeArray("position")
+            prog.disableAttributeArray("normal")
 
-        if not mesh.edgecolor is None:
-            r, g, b = mesh.edgecolor
-            a = mesh.alpha
 
-            prog.enableAttributeArray("position")
-            vbo_vertices.bind()
-            glVertexAttribPointer(prog.attributeLocation("position"), 2, GL_FLOAT, GL_FALSE, 0, vbo_edges)
 
-            prog.setUniformValue("color",
-                                 QtGui.QVector4D(r, g, b, a))
+        #
+        # if not mesh.edgecolor is None:
+        #     r, g, b = mesh.edgecolor
+        #     a = mesh.alpha
+        #
+        #     prog.enableAttributeArray("position")
+        #     vbo_vertices.bind()
+        #     glVertexAttribPointer(prog.attributeLocation("position"), 2, GL_FLOAT, GL_FALSE, 0, vbo_edges)
+        #
+        #     prog.setUniformValue("color",
+        #                          QtGui.QVector4D(r, g, b, a))
+        #
+        #     glDrawArrays(GL_LINES, 0, len(mesh.edges))
 
-            glDrawArrays(GL_LINES, 0, len(mesh.edges))
 
     def paintGL(self):
 
@@ -597,11 +525,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
-        modelView = self.transform.getModelView()
+        self._mat_modelview = self.transform.getModelView()
+        self._mat_proj = self.transform.getProjection()
+        self._mat_normal = np.linalg.inv(self._mat_modelview).T
 
-        proj = self.transform.getProjection()
-
-        self.finalMat = np.dot(proj, modelView)
+        self._mat_modelviewproject = np.dot(self._mat_proj, self._mat_modelview)
 
         if self.dataModel:
 
@@ -615,8 +543,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self._paintGL_render()
 
-        for (m, vbo_verts, vbo_edges) in self.meshes:
-            self._paintGL_mesh_light(m, vbo_verts, vbo_edges)
+        for (m, vbo_verts, vbo_edges, vbo_normals) in self.meshes:
+            self._paintGL_mesh(m, vbo_verts, vbo_edges, vbo_normals)
 
     def render(self):
         logger.debug("render")

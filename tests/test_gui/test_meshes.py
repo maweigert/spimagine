@@ -4,22 +4,32 @@ import sys
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from spimagine.gui.glwidget import GLWidget
-from spimagine import EllipsoidMesh, SphericalMesh
+from spimagine import EllipsoidMesh, SphericalMesh, Mesh
 
 
 def test_widget():
     app = QtGui.QApplication(sys.argv)
 
+    np.random.seed(0)
     win = GLWidget()
     win.resize(800, 800)
 
-    N = 5
+    N = 200
     ps = np.random.uniform(-1, 1, (N, 3))
-    rs = np.random.uniform(.1, .3, N)
     cols = np.random.uniform(.0, 1., (N, 3))
 
-    for p, r, col in zip(ps, rs, cols):
-        win.add_mesh(SphericalMesh(r=r, pos=p, facecolor = col, light = None))
+    r = .2/(1.*N**(1./3))
+
+    verts = SphericalMesh(r=r, pos=(0,0,0)).vertices
+    norms = SphericalMesh(r=r, pos=(0,0,0)).normals
+
+    for p, col in zip(ps, cols):
+        m = Mesh(vertices = verts+p, normals=norms+0, facecolor = col, light = (-1,-1,-1))
+        #m = Mesh(vertices = verts+p, normals=norms+0, facecolor = col, light = None)
+
+        win.add_mesh(m)
+
+
 
     win.show()
     win.raise_()
