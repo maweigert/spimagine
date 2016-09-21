@@ -33,23 +33,27 @@ class Mesh(object):
         Phong shading is applied
         """
 
-        assert len(vertices)%3==0
+        assert len(indices)%3==0
 
         self.vertices = vertices
-        self.edges = []
+        self.normals = normals
+        self.indices = indices
+
+
+
         self.alpha = np.clip(alpha, 0, 1.)
 
-        # FIXME: this includes every edge twice which is not efficient
-        for i in range(len(vertices)/3):
-            v1, v2, v3 = vertices[3*i], vertices[3*i+1], vertices[3*i+2]
-            self.edges.append(v1)
-            self.edges.append(v2)
-            self.edges.append(v1)
-            self.edges.append(v3)
-            self.edges.append(v2)
-            self.edges.append(v3)
+        # self.edges = []
+        # # FIXME: this includes every edge twice which is not efficient
+        # for i in range(len(vertices)/3):
+        #     v1, v2, v3 = vertices[3*i], vertices[3*i+1], vertices[3*i+2]
+        #     self.edges.append(v1)
+        #     self.edges.append(v2)
+        #     self.edges.append(v1)
+        #     self.edges.append(v3)
+        #     self.edges.append(v2)
+        #     self.edges.append(v3)
 
-        self.normals = normals
 
         self.facecolor = facecolor
         self.edgecolor = edgecolor
@@ -59,6 +63,7 @@ class Mesh(object):
 
 
 class EllipsoidMesh(Mesh):
+    memoize_dict = {}
 
     def __init__(self, rs=(1., .5, .5),
                  pos=(0, 0, 0),
@@ -72,10 +77,11 @@ class EllipsoidMesh(Mesh):
         """creates an ellipsoidal mesh at pos with half axes rs = (rx,ry,rz)
         of equally distributing points n_phi x n_theta"""
 
-        vertices, normals = EllipsoidMesh.create_verts(rs, pos, n_phi, n_theta, transform_mat)
+        vertices, normals, indices = EllipsoidMesh.create_verts(rs, pos, n_phi, n_theta, transform_mat)
 
         super(EllipsoidMesh, self).__init__(vertices=vertices,
                                             normals=normals,
+                                            indices = indices,
                                             facecolor=facecolor,
                                             edgecolor=edgecolor,
                                             alpha=alpha,
@@ -85,6 +91,8 @@ class EllipsoidMesh(Mesh):
     def create_verts0(rs, pos, n_phi, n_theta, transform_mat = mat4_identity()):
         ts = np.linspace(0, np.pi, n_theta)
         ps = np.linspace(0, 2.*np.pi, n_phi+1)
+
+
 
         T, P = np.meshgrid(ts, ps, indexing="ij")
         rx, ry, rz = rs
@@ -116,35 +124,6 @@ class EllipsoidMesh(Mesh):
 
         return np.array(pos)+np.array(verts), np.array(normals)
 
-    @classmethod
-    def create_verts(cls, rs, pos, n_phi, n_theta, transform_mat = None):
-        ts = np.linspace(0, np.pi, n_theta)
-        ps = np.linspace(0, 2.*np.pi, n_phi+1)
-
-        T, P = np.meshgrid(ts, ps, indexing="ij")
-        rx, ry, rz = rs
-        xs = np.array([rx*np.cos(P)*np.sin(T), ry*np.sin(P)*np.sin(T), rz*np.cos(T)])
-
-        # normalized normals
-        ns = np.stack([xs[0]/rx**2, xs[1]/ry**2, xs[2]/rz**2])
-        ns *= 1./(np.linalg.norm(ns, axis=0)+1.e-10)
-
-        inds_i, inds_j = [], []
-
-        for i in range(len(ts)-1):
-            inds_i += [i, i+1, i+1, i, i+1, i]*(len(ps)-1)
-            for j in range(len(ps)-1):
-                inds_j += [j, j, j+1, j, j+1, j+1]
-
-        if not transform_mat is None:
-            verts = np.dot(transform_mat[:3,:3],xs[:, inds_i, inds_j]).T
-            norms = np.dot(transform_mat[:3,:3],ns[:, inds_i, inds_j]).T
-        else:
-            verts , norms = xs[:, inds_i, inds_j].T ,ns[:, inds_i, inds_j].T
-
-
-        return (np.array(pos)+verts), norms
-
 
     @classmethod
     def create_verts2(cls, rs, pos, n_phi, n_theta, transform_mat = None):
@@ -160,7 +139,8 @@ class EllipsoidMesh(Mesh):
         ns *= 1./(np.linalg.norm(ns, axis=0)+1.e-10)
 
 
-        inds = np.empty((n_theta-1)*n_phi*6)
+        inds = np.empty((n_theta-1)*(n_phi-1)*6)
+
         ind_base = []
         for i in range(len(ts)-1):
             ind_base += [n_phi*i, n_phi*(i+1),n_phi*(i+1)+1,n_phi*i, n_phi*(i+1)+1,n_phi*i+1]
@@ -170,8 +150,6 @@ class EllipsoidMesh(Mesh):
         xs, ns = xs.reshape((3,n_phi*n_theta)), ns.reshape((3,n_phi*n_theta))
         for j in range(len(ps)-1):
             inds[6*(n_theta-1)*j:6*(n_theta-1)*(j+1)] = j+ind_base
-
-
 
         if not transform_mat is None:
             xs = np.dot(transform_mat[:3,:3],xs)
@@ -183,8 +161,54 @@ class EllipsoidMesh(Mesh):
 
         return xs, ns, inds
 
-        # return (np.array(pos)+verts), norms
+    @classmethod
+    def create_verts(cls, rs, pos, n_phi, n_theta, transform_mat = None):
+        in_memoize_dict = (n_theta, n_phi) in cls.memoize_dict
 
+
+        if in_memoize_dict:
+            xs0, inds =  cls.memoize_dict[(n_theta, n_phi)]
+        else:
+            ts = np.linspace(0, np.pi, n_theta)
+            ps = np.linspace(0, 2.*np.pi, n_phi)
+            T, P = np.meshgrid(ts, ps, indexing="ij")
+            xs0 = np.array([np.cos(P)*np.sin(T), np.sin(P)*np.sin(T), np.cos(T)]).reshape((3,n_phi*n_theta))
+
+        xs = np.empty_like(xs0)
+        rx, ry, rz = rs
+        xs[0] = rx*xs0[0]
+        xs[1] = ry*xs0[1]
+        xs[2] = rz*xs0[2]
+
+        # normalized normals
+        ns = np.stack([xs[0]/rx**2, xs[1]/ry**2, xs[2]/rz**2])
+        ns *= 1./(np.linalg.norm(ns, axis=0)+1.e-10)
+
+        # generate triangle indices
+        if not in_memoize_dict:
+            inds = np.empty((n_theta-1)*(n_phi-1)*6)
+
+            ind_base = []
+            for i in range(len(ts)-1):
+                ind_base += [n_phi*i, n_phi*(i+1),n_phi*(i+1)+1,n_phi*i, n_phi*(i+1)+1,n_phi*i+1]
+
+            ind_base = np.array(ind_base)
+
+
+            for j in range(len(ps)-1):
+                inds[6*(n_theta-1)*j:6*(n_theta-1)*(j+1)] = j+ind_base
+
+            cls.memoize_dict[(n_theta, n_phi)] = (xs0, inds)
+
+        if not transform_mat is None:
+            xs = np.dot(transform_mat[:3,:3],xs)
+            ns = np.dot(transform_mat[:3,:3],ns)
+
+        xs, ns = xs.T, ns.T
+
+        xs += np.array(pos)
+
+        return xs, ns, inds
 
 class SphericalMesh(EllipsoidMesh):
     def __init__(self, r=1.,
@@ -212,19 +236,22 @@ if __name__=='__main__':
 
     t = time()
     for _ in xrange(5):
-        v1, n1 = EllipsoidMesh.create_verts0((1, 1, 1), (0, 0, 0), 30, 20)
+        EllipsoidMesh.create_verts0((1, 1, 1), (0, 0, 0), 30, 20)
     print time()-t
 
     t = time()
-    for _ in xrange(5):
-        v3, n3 = EllipsoidMesh.create_verts((1, 1, 1), (0, 0, 0), 30, 20)
+    for _ in xrange(50):
+        v1, n1, i1 = EllipsoidMesh.create_verts((1, 1, 1), (0, 0, 0), 30, 20)
     print time()-t
 
 
     t = time()
-    for _ in xrange(5):
+    for _ in xrange(50):
         v2, n2, i2 = EllipsoidMesh.create_verts2((1, 1, 1), (0, 0, 0), 30, 20)
     print time()-t
 
 
-    print np.allclose(v1,v3),np.allclose(n1,n3),
+    print np.allclose(v1,v2),np.allclose(n1,n2),np.allclose(i1,i2),
+
+
+    m1 = EllipsoidMesh((1, 2, 1), (0, 0, 0), 30, 20)

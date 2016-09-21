@@ -342,11 +342,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.meshes.append([mesh,
                             glvbo.VBO(mesh.vertices.astype(np.float32, copy=False)),
-                            glvbo.VBO(np.array(mesh.edges).astype(np.float32, copy=False)),
-                            glvbo.VBO(np.array(mesh.normals).astype(np.float32, copy=False))])
+                            glvbo.VBO(np.array(mesh.normals).astype(np.float32, copy=False)),
+                            glvbo.VBO(np.array(mesh.indices).astype(np.uint32, copy=False),
+                                      target=  GL_ELEMENT_ARRAY_BUFFER)])
 
         # sort according to opacity as the opaque objects should be drawn first
-        self.meshes.sort(key=lambda x: x[0].alpha, reverse=True)
+        # self.meshes.sort(key=lambda x: x[0].alpha, reverse=True)
 
     def _paintGL_render(self):
         # Draw the render texture
@@ -434,7 +435,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDisable(GL_DEPTH_TEST)
 
 
-    def _paintGL_mesh(self, mesh, vbo_vertices, vbo_edges, vbo_normals):
+    def _paintGL_mesh(self, mesh, vbo_vertices, vbo_normals, vbo_indices):
         """
         paint a mesh (which has all the coordinates and colors in it
         """
@@ -453,7 +454,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         prog.setUniformValue("normMatrix",
                          QtGui.QMatrix4x4(*self._mat_normal.flatten()))
 
-
         if mesh.light:
             prog.setUniformValue("light",
                          QtGui.QVector3D(*mesh.light))
@@ -467,7 +467,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
         if not mesh.facecolor is None:
-            r, g, b = mesh.facecolor
+            r, g, b = mesh.facecolor[:3]
             a = mesh.alpha
             prog.setUniformValue("color",
                                  QtGui.QVector4D(r, g, b, a))
@@ -482,7 +482,11 @@ class GLWidget(QtOpenGL.QGLWidget):
             glVertexAttribPointer(prog.attributeLocation("normal"), 3, GL_FLOAT, GL_FALSE, 0, vbo_normals)
 
 
-            glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
+            vbo_indices.bind()
+
+            #glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
+            glDrawElements(GL_TRIANGLES, len(vbo_indices.data), GL_UNSIGNED_INT, None)
+
 
             glDisable(GL_DEPTH_TEST)
             prog.disableAttributeArray("position")
@@ -543,8 +547,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self._paintGL_render()
 
-        for (m, vbo_verts, vbo_edges, vbo_normals) in self.meshes:
-            self._paintGL_mesh(m, vbo_verts, vbo_edges, vbo_normals)
+        for (m, vbo_verts, vbo_normals, vbo_indices) in self.meshes:
+            self._paintGL_mesh(m, vbo_verts, vbo_normals,vbo_indices)
 
     def render(self):
         logger.debug("render")

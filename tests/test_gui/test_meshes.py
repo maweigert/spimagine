@@ -16,7 +16,7 @@ def test_widget():
     win.resize(800, 800)
 
     # win.setModel(DataModel(DemoData()))
-    N = 1000
+    N = 200
     ps = np.random.uniform(-1, 1, (N, 3))
     cols = np.random.uniform(.0, 1., (N, 3))
     r0 = .5/(1.*N**(1./3))
@@ -26,11 +26,11 @@ def test_widget():
     t = np.arccos(np.random.uniform(-1, 1, N))
     ps = np.stack([np.cos(phi)*np.sin(t), np.sin(phi)*np.sin(t), np.cos(t)]).T
 
-    mesh0 = SphericalMesh(r=r0, pos=(0, 0, 0))
-    mesh0 = EllipsoidMesh(rs=(3*r0, r0, .2*r0), pos=(0, 0, 0))
+    # mesh0 = SphericalMesh(r=r0, pos=(0, 0, 0))
+    #
 
-    verts = mesh0.vertices
-    norms = mesh0.normals
+    # verts = mesh0.vertices
+    # norms = mesh0.normals
 
     # m = EllipsoidMesh(rs=(.3,.3,.8), pos=(0,0,0), facecolor = (.3,.6,.2), light = (-1,-1,1))
 
@@ -39,7 +39,9 @@ def test_widget():
     # theta = np.arccos(n[2]/np.sqrt(np.sum(n**2)))
     # print phi, theta
     # m.transform(mat4_rotation_euler(phi,theta))
-    # win.glWidget.add_mesh(m)
+
+
+    # win.glWidget.add_mesh(mesh0)
     #
 
     for p, r, col in zip(ps, rs, cols):
@@ -49,7 +51,7 @@ def test_widget():
         phi = np.arctan2(n[1],n[0])
         theta = np.arccos(n[2]/np.sqrt(np.sum(n**2)))
 
-        m = EllipsoidMesh(rs=(r0,r0,2*r0), pos=p, facecolor = col, light = (-1,-1,1), transform_mat=mat4_rotation_euler(phi,theta))
+        m = EllipsoidMesh(rs=r, pos=p, facecolor = col, light = (-1,-1,1), transform_mat=mat4_rotation_euler(phi,theta))
 
         # print phi, theta
         # m.transform(mat4_rotation_euler(phi,theta))
