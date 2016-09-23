@@ -167,8 +167,11 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
         if autoscale:
             ma,mi = np.amax(data), np.amin(data)
             if ma==mi:
-                ma +=1.
-            data = 1000.*(data-mi)/(ma-mi)
+                data = 1000.*np.ones(data.shape)
+            else:
+                data = 1000.*(data-mi)/(ma-mi)
+
+
 
         m = DataModel(NumpyData(data.astype(np.float32,copy=False)))
 

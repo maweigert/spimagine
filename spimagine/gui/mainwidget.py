@@ -191,11 +191,11 @@ class MainWidget(QtGui.QWidget):
         self.spinTime.valueChanged.connect(self.sliderTime.setValue)
 
 
-        self.scaleSlider = FloatSlider(QtCore.Qt.Vertical)
+        self.maxSlider = FloatSlider(QtCore.Qt.Vertical)
 
-        self.scaleSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
-        self.scaleSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.scaleSlider.setToolTip("value scale")
+        self.maxSlider.setRange(self.N_SCALE_MIN_EXP, self.N_SCALE_MAX_EXP, 500)
+        self.maxSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.maxSlider.setToolTip("value scale")
 
         self.minSlider = FloatSlider(QtCore.Qt.Vertical)
         self.minSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
@@ -235,8 +235,8 @@ class MainWidget(QtGui.QWidget):
         def func2(x):
             return np.log2(x)
 
-        self.scaleSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
-        self.transform._maxChanged.connect(lambda x:self.scaleSlider.setValue(func2(x)))
+        self.maxSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
+        self.transform._maxChanged.connect(lambda x:self.maxSlider.setValue(func2(x)))
 
 
         self.minSlider.floatValueChanged.connect(lambda x: self.transform.setMin(func1(x)))
@@ -272,7 +272,7 @@ class MainWidget(QtGui.QWidget):
         hbox0 = QtGui.QHBoxLayout()
         hbox0.addWidget(self.minSlider)
 
-        hbox0.addWidget(self.scaleSlider)
+        hbox0.addWidget(self.maxSlider)
         hbox0.addWidget(self.gammaSlider)
 
         hbox0.addWidget(self.glWidget,stretch = 3)

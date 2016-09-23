@@ -45,7 +45,7 @@ def absPath(myPath):
     except Exception:
 
         base_path = os.path.abspath(os.path.dirname(__file__))
-        logger.debug("didnt found MEIPASS!: %s "%os.path.join(base_path, myPath))
+        logger.debug("didnt found MEIPASS...: %s "%os.path.join(base_path, myPath))
 
         return os.path.join(base_path, myPath)
 
