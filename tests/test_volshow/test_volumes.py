@@ -17,9 +17,9 @@ from spimagine import volshow, volfig, logger
 import time
 
 def test_data(data):
-    w = volfig(1)
-    QtCore.QTimer.singleShot(1000,w.closeMe)
-    volshow(data,  blocking=True)
+    w = volshow(data)
+    QtCore.QTimer.singleShot(5000,w.closeMe)
+    qt_exec()
 
 
 

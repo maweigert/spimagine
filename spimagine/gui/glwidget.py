@@ -346,15 +346,19 @@ class GLWidget(QtOpenGL.QGLWidget):
                             glvbo.VBO(np.array(mesh.indices).astype(np.uint32, copy=False),
                                       target=  GL_ELEMENT_ARRAY_BUFFER)])
 
+        self.refresh()
         # sort according to opacity as the opaque objects should be drawn first
         # self.meshes.sort(key=lambda x: x[0].alpha, reverse=True)
 
     def _paintGL_render(self):
         # Draw the render texture
+
         self.programTex.bind()
 
         self.texture = fillTexture2d(self.output, self.texture)
 
+
+        glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
         glDisable(GL_DEPTH_TEST)
 
@@ -410,6 +414,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def _paintGL_box(self):
 
+        glEnable(GL_BLEND)
         # Draw the cube
         self.programCube.bind()
         self.programCube.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
@@ -441,7 +446,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         """
         glEnable(GL_DEPTH_TEST)
         glDisable(GL_BLEND)
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
 
         prog = self.programMeshLight
         prog.bind()
@@ -474,6 +479,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             prog.enableAttributeArray("position")
             vbo_vertices.bind()
+
+
             glVertexAttribPointer(prog.attributeLocation("position"), 3, GL_FLOAT, GL_FALSE, 0, vbo_vertices)
 
 
@@ -484,9 +491,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             vbo_indices.bind()
 
-            #glDrawArrays(GL_TRIANGLES, 0, len(mesh.vertices))
             glDrawElements(GL_TRIANGLES, len(vbo_indices.data), GL_UNSIGNED_INT, None)
 
+            vbo_indices.unbind()
+            vbo_vertices.unbind()
 
             glDisable(GL_DEPTH_TEST)
             prog.disableAttributeArray("position")
