@@ -35,7 +35,7 @@ varying vec3 var_pos;
 void main()
 {
 
-  var_normal = (normMatrix*vec4(normal,1.)).xyz;
+  var_normal = normalize((normMatrix*vec4(normal,1.)).xyz);
   var_pos = (mvMatrix *vec4(position, 1.0)).xyz;
 
   gl_Position  = mvpMatrix *vec4(position, 1.0);

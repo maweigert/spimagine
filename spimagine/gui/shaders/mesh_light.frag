@@ -55,11 +55,4 @@ void main()
    gl_FragColor = mag*color;
 
 
-
-
-
-
-
-
-
 }

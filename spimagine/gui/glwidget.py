@@ -174,7 +174,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.setCursor(QtCore.Qt.ArrowCursor)
 
     def set_colormap(self, name):
-        """name should be either jet, hot, gray coolwarm"""
+        """name should be either jet, hot, gray, coolwarm"""
 
         try:
             arr = spimagine.config.__COLORMAPDICT__[name]
