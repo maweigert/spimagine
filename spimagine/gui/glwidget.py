@@ -463,7 +463,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             prog.setUniformValue("light",
                          QtGui.QVector3D(*mesh.light))
             prog.setUniformValue("light_components",
-                         QtGui.QVector3D(.4,.5,.5))
+                         QtGui.QVector3D(.2,.5,.3))
         else:
             prog.setUniformValue("light",
                          QtGui.QVector3D(0,0,0))
@@ -594,7 +594,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                 elif self.transform.sliceDim==2:
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos, :, :]
 
-                min_out, max_out = np.amax(out), np.amin(out)
+                min_out, max_out = np.amin(out), np.amax(out)
                 if max_out>min_out:
                     self.sliceOutput = (1.*(out-min_out)/(max_out-min_out))
                 else:
@@ -604,7 +604,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.render()
         self.paintGL()
         glFlush()
-        im = self.grabFrameBuffer()
+        ilm = self.grabFrameBuffer()
         im = im.convertToFormat(QtGui.QImage.Format_RGB32)
 
         width = im.width()

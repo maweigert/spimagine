@@ -362,7 +362,8 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             elif self.transform.sliceDim==2:
                 out = self.dataModel[self.transform.dataPos][self.transform.slicePos,:,:]
 
-            min_out, max_out = self.transform.maxVal, self.transform.minVal
+            min_out, max_out = self.transform.minVal, self.transform.maxVal
+
             if max_out>min_out:
                 self.output = (1.*(out-min_out)/(max_out-min_out))**self.transform.gamma
             else:
