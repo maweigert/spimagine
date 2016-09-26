@@ -136,5 +136,133 @@ def alpha_shape(points, alpha = -1):
     return points,  normals, faces
 
 
+# new version - still way too slow
+
+def alpha_shape2(points, alpha = -1):
+    """
+    Computes the alpha shape (generalized convex hull) for a set of points
+    by removing all faces from tyhe delaunay triangulation that are smaller than alpha
+    and then finding its border.
+
+    See https://en.wikipedia.org/wiki/Alpha_shape
+
+    only 2d and 3d versions are implemented now.
+
+    Parameters
+    ----------
+    points: ndarray of shape(n_points, ndim)
+        the points in R^2/3 to build the shape from
+    alpha: float
+        If set to -1 the result corresponds to the convex hull,
+        the smaller alpha, the finer the shape is (but the more faces will be removed)
+
+    Returns
+    -------
+        indices, normals
+
+    """
+    #FIXME: still has issues with the normals in 3d + still is too slow...
+
+    ndim = points.shape[-1]
+
+    if not ndim in [2,3]:
+        raise NotImplementedError("only defined for 2 and 3 dimensions")
+
+    # simple convex hull
+    if alpha==-1:
+        hull = ConvexHull(points)
+        normals = np.zeros_like(points)
+        count = np.zeros_like(points[:,0, np.newaxis])+1.e-10
+        for i, ind in enumerate(hull.simplices):
+            n = hull.equations[i, :ndim]
+            normals[ind, :] += n/np.linalg.norm(n)
+            count[ind] += 1
+        normals = normals/count
+        faces = hull.simplices
+
+    else:
+
+        #enforce clockwise order
+        def cw_order(simp):
+            order = range(len(simp))
+            if np.linalg.det(np.vstack([points[simp].T,np.ones(len(simp))]))<0:
+                order[-1],order[-2] = order[-2],order[-1]
+            return order
+
+        def valid_face(face):
+            return np.all([np.sum((points[face[c1]]-points[face[c2]])**2)<4*alpha**2 for (c1, c2) in combinations(range(ndim), 2)])
+
+        tri = Delaunay(points)
+
+
+        orders = [cw_order(simp) for simp in tri.simplices]
+        simplices = [simp[order] for simp ,order in zip(tri.simplices, orders)]
+        neighbors = [neigh[order] for neigh ,order in zip(tri.neighbors, orders)]
+
+
+
+        faces_valid = [[valid_face(list(s)[:j]+list(s)[j+1:]) for j in xrange(ndim+1)] for s in simplices]
+
+        # the current border simplices
+        border = set([i for i, neigh in enumerate(neighbors) if -1 in neigh])
+
+        removed = set()
+        looping = True
+
+        while looping:
+            border_old = border.copy()
+            # check wether they are reducible
+            for i in border_old:
+                n = list(neighbors[i])
+                s = list(simplices[i])
+                fv = faces_valid[i]
+                # if one of the bordering faces is too big, remove the simplex and add the neighbors
+                #if not np.all([valid_face(s[:j]+s[j+1:]) for j in xrange(len(n)) if n[j] ==-1]):
+                if not np.all([fv[j] for j in xrange(ndim+1) if n[j] ==-1]):
+                    border.remove(i)
+                    removed.add(i)
+                    for _n in n:
+                        if _n>-1 and not _n in removed:
+                            border.add(_n)
+                    #we have to update the neighbors of the newly formed boundary
+                    for _n,_s in zip(n,s):
+                        if _n !=-1:
+                            for k, _ns in enumerate(simplices[_n]):
+                                if not _ns in s:
+                                    neighbors[_n][k] = -1
+            looping =  border != border_old
+
+
+        # get the faces
+
+        if ndim==2:
+            c_combi = {2:[0,1],0:[1,2],1:[2,0]}
+        elif ndim ==3:
+            c_combi = {3:[0,1,2],0:[1,3,2],1:[2,3,0],2:[3,1,0]}
+
+        faces = []
+        for b in border:
+            n = neighbors[b]
+            s = simplices[b]
+            for j in xrange(len(n)):
+                if n[j] ==-1:
+                    faces.append(s[c_combi[j]])
+
+        faces = np.array(faces)
+
+
+        normals = np.zeros_like(points)
+        count = np.zeros_like(points[:,0, np.newaxis])+1.e-10
+        for i, face in enumerate(faces):
+            n = _normal_from_simplex(points[face])
+            normals[face, :] += n/np.linalg.norm(n)
+            count[face] += 1
+
+        normals = normals/count
+
+
+    return points,  normals, faces
+
+
 if __name__ == '__main__':
     pass

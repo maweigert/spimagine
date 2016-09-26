@@ -79,9 +79,11 @@ class Mesh(object):
         Returns
         -------
         points, normals, indices
+        which can be directly used in Mesh()
         """
-        return alpha_shape(points, alpha)
+        points, normals, indices = alpha_shape(points, alpha)
 
+        return points.flatten(), normals.flatten(), indices.flatten()
 
 class EllipsoidMesh(Mesh):
     memoize_dict = {}
