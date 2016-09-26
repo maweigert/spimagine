@@ -23,10 +23,19 @@ def _normal_from_simplex(ps):
     else:
         raise NotImplementedError("wrong dimension")
 
+def _reduce_indices(indices):
+    """return indices, such that every indices is used
+    """
+    ind_sort = sorted(set(indices.flatten()))
+    ind_dict = dict((ind,i) for i,ind in enumerate(ind_sort))
+    indices_new = np.array([ind_dict[ind] for ind in indices.flatten()]).reshape(indices.shape)
+    return ind_sort, indices_new
+
+
 def alpha_shape(points, alpha = -1):
     """
     Computes the alpha shape (generalized convex hull) for a set of points
-    by removing all edges from tyhe delaunay triangulation that are smaller than alpha
+    by removing all faces from tyhe delaunay triangulation that are smaller than alpha
     and then finding its border.
 
     See https://en.wikipedia.org/wiki/Alpha_shape
@@ -39,7 +48,7 @@ def alpha_shape(points, alpha = -1):
         the points in R^2/3 to build the shape from
     alpha: float
         If set to -1 the result corresponds to the convex hull,
-        the smaller alpha, the finer the shape is (but the more edges will be removed)
+        the smaller alpha, the finer the shape is (but the more faces will be removed)
 
     Returns
     -------
@@ -62,55 +71,70 @@ def alpha_shape(points, alpha = -1):
             count[ind] += 1
         normals = normals/count
 
-        return hull.simplices, normals
+        faces = hull.simplices
 
-    # Alpha shape
+    else:
 
-    tri = Delaunay(points)
+        # Alpha shape
 
-    # filter simplices by edge length
-    def is_alpha_simp(simp, alpha):
-        return np.all([np.sum((points[simp[c1]]-points[simp[c2]])**2)<4*alpha**2 for (c1, c2) in combinations(range(ndim+1), 2)])
+        tri = Delaunay(points)
 
-    #enforce clockwise order
-    def make_simp_cw(simp):
-        if np.linalg.det(np.vstack([points[simp].T,np.ones(len(simp))]))>=0:
-            return simp
-        else:
-            simp[-1],simp[-2] = simp[-2],simp[-1]
-            return simp
+        # filter simplices by face length
+        def is_alpha_simp(simp):
+            return np.all([np.sum((points[simp[c1]]-points[simp[c2]])**2)<4*alpha**2 for (c1, c2) in combinations(range(ndim+1), 2)])
 
-    simplices = [make_simp_cw(simp) for simp in tri.simplices if is_alpha_simp(simp, alpha)]
+        #enforce clockwise order
+        def make_simp_cw(simp):
+            if np.linalg.det(np.vstack([points[simp].T,np.ones(len(simp))]))>=0:
+                return simp
+            else:
+                simp[-1],simp[-2] = simp[-2],simp[-1]
+                return simp
+
+        simplices = [make_simp_cw(simp) for simp in tri.simplices if is_alpha_simp(simp)]
+
+        # get faces
+        if ndim==2:
+            c_combi = [[0,1],[1,2],[2,0]]
+        elif ndim ==3:
+            c_combi = [[0,1,2],[1,3,2],[2,3,0],[3,1,0]]
+
+        all_faces = [tuple([simp[_c] for _c in c]) for simp in simplices for c in c_combi]
+
+        faces_dict = dict()
+        already_present = set()
+        for e in all_faces:
+            e_sort = tuple(sorted(e))
+            if e_sort in already_present:
+                faces_dict.pop(e_sort)
+            else:
+                faces_dict[e_sort] = e
+                already_present.add(e_sort)
+
+        faces = np.array(faces_dict.values())
+
+        # normals
+        normals = np.zeros_like(points)
+        count = np.zeros_like(points[:,0, np.newaxis])+1.e-10
+        for i, face in enumerate(faces):
+            n = _normal_from_simplex(points[face])
+            normals[face, :] += n/np.linalg.norm(n)
+            count[face] += 1
+
+        normals = normals/count
 
 
-    # get faces
-    if ndim==2:
-        c_combi = [[0,1],[1,2],[2,0]]
-    elif ndim ==3:
-        c_combi = [[0,1,2],[1,3,2],[2,3,0],[3,1,0]]
+    # reduce the points/normals/indices to only those that are actually used
+    #
+    # face_sort, faces = _reduce_indices(faces)
+    #
+    # points = points[face_sort]
+    # normals = normals[face_sort]
+    #
 
-    all_edges = [tuple([simp[_c] for _c in c]) for simp in simplices for c in c_combi]
 
-    edges_dict = dict()
-    already_present = set()
-    for e in all_edges:
-        e_sort = tuple(sorted(e))
-        if e_sort in already_present:
-            edges_dict.pop(e_sort)
-        else:
-            edges_dict[e_sort] = e
-            already_present.add(e_sort)
+    return points,  normals, faces
 
-    edges = np.array(edges_dict.values())
 
-    # normals
-    normals = np.zeros_like(points)
-    count = np.zeros_like(points[:,0, np.newaxis])+1.e-10
-    for i, edge in enumerate(edges):
-        n = _normal_from_simplex(points[edge])
-        normals[edge, :] += n/np.linalg.norm(n)
-        count[edge] += 1
-
-    normals = normals/count
-
-    return edges, normals
+if __name__ == '__main__':
+    pass

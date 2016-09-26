@@ -7,6 +7,7 @@ mweigert@mpi-cbg.de
 
 import numpy as np
 from spimagine.utils.transform_matrices import *
+from spimagine.utils import alpha_shape
 
 class Mesh(object):
     """
@@ -60,6 +61,26 @@ class Mesh(object):
 
         self.light = light
 
+
+    @classmethod
+    def mesh_from_points(points, alpha = -1):
+        """
+        creates the mesh from the convex or concave (alpha shape) hull of points
+
+        See definition of spimagine.utils.alpha_shape
+
+        Parameters
+        ----------
+        alpha: float,
+            the alpha shape parameter. Set to -1 get the convex hull.
+             The smaller, the more concave details will be visible, but the more
+             points might get lost.
+
+        Returns
+        -------
+        points, normals, indices
+        """
+        return alpha_shape(points, alpha)
 
 
 class EllipsoidMesh(Mesh):
