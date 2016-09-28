@@ -19,6 +19,8 @@ class FloatSlider(QtGui.QSlider):
         self.setRange(0,1.,100)
         self.valueChanged.connect(self.onChanged)
 
+        self.setStyleSheet("QToolTip { color:white;}")
+
     def setRange(self,minVal,maxVal,steps=100):
         assert(minVal < maxVal)
         super(FloatSlider,self).setRange(0,steps)

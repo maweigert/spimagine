@@ -195,18 +195,18 @@ class MainWidget(QtGui.QWidget):
 
         self.maxSlider.setRange(self.N_SCALE_MIN_EXP, self.N_SCALE_MAX_EXP, 500)
         self.maxSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.maxSlider.setToolTip("value scale")
+        self.maxSlider.setToolTip("max")
 
         self.minSlider = FloatSlider(QtCore.Qt.Vertical)
         self.minSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
         self.minSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.minSlider.setToolTip("min scale")
+        self.minSlider.setToolTip("min")
 
         
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(.01,2.,200)
 
-        self.gammaSlider.setToolTip("value gamma")
+        self.gammaSlider.setToolTip("gamma")
         self.gammaSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.gammaSlider.setValue(1.)
 
