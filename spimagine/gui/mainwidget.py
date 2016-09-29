@@ -455,7 +455,6 @@ class MainWidget(QtGui.QWidget):
 
 
     def onRgbColorChanged(self,r,g,b):
-        print r,g,b
         self.glWidget.set_colormap_rgb([r,g,b])
         
         self.glWidget.refresh()
@@ -714,7 +713,12 @@ class MainWidget(QtGui.QWidget):
             # self.glWidget.setParent(None)
             # free the gpu resources....
             logger.debug("deleting the renderer")
+
             del self.glWidget.renderer
+
+            self.glWidget.setParent(None)
+            del self.glWidget
+            logger.debug("....finished deleting the renderer")
             event.accept()
 
 

@@ -559,6 +559,7 @@ class DataModel(QtCore.QObject):
 
         self._rwLock.lockForWrite()
 
+
         if not self.data.has_key(pos):
             newdata = self.dataContainer[pos]
             self.data[pos] = newdata

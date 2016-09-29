@@ -24,6 +24,8 @@ from spimagine.utils.imgutils import read3dTiff, write3dTiff
 
 from spimagine.gui.volshow import volshow, volfig, qt_exec
 
+from spimagine.gui.mainwidget import MainWidget
+
 from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
 
 from spimagine.utils import *

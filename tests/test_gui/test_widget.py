@@ -4,24 +4,27 @@ import sys
 
 from PyQt4 import QtGui, QtCore
 
-from spimagine.gui.mainwidget import MainWidget
-from spimagine.models.data_model import DemoData, DataModel
+from spimagine import MainWidget, DemoData, DataModel, qt_exec
+from spimagine.gui.glwidget import GLWidget
+
+from spimagine import logger
+#logger.setLevel(logger.DEBUG)
 
 
-def f():
-    print "hallao"
 def test_widget():
     app = QtGui.QApplication(sys.argv)
 
-
     win = MainWidget()
+    #win = GLWidget()
 
     win.setModel(DataModel(DemoData()))
 
     win.show()
     win.raise_()
 
-    QtCore.QTimer.singleShot(1000,win.closeMe)
+    QtCore.QTimer.singleShot(100,win.closeMe)
+    #QtCore.QTimer.singleShot(100,win.close)
+
 
     app.exec_()
 

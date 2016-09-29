@@ -7,7 +7,7 @@ mweigert@mpi-cbg.de
 import numpy as np
 from spimagine import volfig, Mesh, qt_exec
 from spimagine.utils import alpha_shape
-from spimagine.utils.alpha_shape import alpha_shape2, alpha_shape3
+
 
 def test_2d():
     import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ def test_2d():
     #points += .1*np.random.uniform(-1, 1, (N, 2))
     #points = np.concatenate([points,.9*points])
 
-    points, normals, indices = alpha_shape3(points, .1)
+    points, normals, indices = alpha_shape(points, .1)
 
     plt.clf()
 
@@ -41,7 +41,7 @@ def test_2d():
 
 
 def test_3d():
-    N = 2000
+    N = 1000
 
     # generate a concave shape
     phi = np.random.uniform(0, 2*np.pi, N)
@@ -52,7 +52,7 @@ def test_3d():
     #points = np.concatenate([points,.9*points])
 
     #get the alpha shape indices and normals (set alpha = -1 for the convex hull)
-    points, normals, indices  = alpha_shape3(points, alpha = .2)
+    points, normals, indices  = alpha_shape(points, alpha = .2)
 
     m = Mesh(vertices = points.flatten(),
              normals = normals.flatten(),
@@ -62,9 +62,12 @@ def test_3d():
     w = volfig(1)
 
     w.glWidget.add_mesh(m)
+    w.transform.setRotation(0.4,0,1,0)
 
     # add this when run from command line
-    # qt_exec()
+    from PyQt4 import QtCore
+    QtCore.QTimer.singleShot(1000,w.closeMe)
+    qt_exec()
 
     return points, normals, indices
 

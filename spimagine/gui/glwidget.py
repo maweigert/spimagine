@@ -146,8 +146,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.emit()
 
-    def foo(self):
-        print "fooooooooooooooo"
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -188,7 +186,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def _set_colormap_array(self, arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
-
         self.makeCurrent()
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape), self.texture_LUT)
         self.refresh()
@@ -519,7 +516,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def paintGL(self):
 
+
         self.makeCurrent()
+
 
         if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
             return
@@ -672,6 +671,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def mousePressEvent(self, event):
         super(GLWidget, self).mousePressEvent(event)
 
+
         if event.buttons()==QtCore.Qt.LeftButton:
             self._x0, self._y0, self._z0 = self.posToVec3(event.x(), event.y())
 
@@ -695,7 +695,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         # print c[0], cUser[0]
         # Rotation
         if event.buttons()==QtCore.Qt.LeftButton:
-
             x1, y1, z1 = self.posToVec3(event.x(), event.y())
             n = np.cross(np.array([self._x0, self._y0, self._z0]), np.array([x1, y1, z1]))
             nnorm = linalg.norm(n)
