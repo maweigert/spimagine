@@ -28,5 +28,5 @@ cp $iconName.icns dist/spimagine.app/Contents/Resources/
 
 #create the dmg
 echo "creating the dmg..."
-hdiutil create dist/spimagine_${version}.dmg -srcfolder dist/spimagine.app/
+hdiutil create dist/spimagine.dmg -srcfolder dist/spimagine.app/
 # hdiutil create dist/spimagine.dmg -srcfolder dist/spimagine.app/
