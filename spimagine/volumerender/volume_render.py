@@ -89,7 +89,7 @@ class VolumeRenderer:
             # init_device(useGPU = True,
             #             useDevice = spimagine.config.__OPENCLDEVICE__)
             self.isGPU = True
-            self.dtypes = [np.float32,np.uint16]
+            self.dtypes = [np.float32,np.uint16,np.uint8]
 
         except Exception as e:
             print e
@@ -330,7 +330,7 @@ class VolumeRenderer:
 
 
     def _render_max_project(self,dtype=np.float32, numParts = 1,currentPart = 0):
-        if dtype == np.uint16:
+        if dtype in [np.uint16, np.uint8]:
             method = "max_project_short"
         elif dtype == np.float32:
             method = "max_project_float"
@@ -408,7 +408,7 @@ class VolumeRenderer:
                                  self.invPBuf.data,
                                  self.invMBuf.data,
                                  self.dataImg,
-                                 np.int32(self.dtype == np.uint16)
+                                 np.int32(self.dtype in [np.uint16, np.uint8])
                                  )
 
 
@@ -441,7 +441,7 @@ class VolumeRenderer:
                                  self.invPBuf.data,
                                  self.invMBuf.data,
                                  self.dataImg,
-                                 np.int32(self.dtype == np.uint16)
+                                 np.int32(self.dtype in [np.uint16, np.uint8])
                                  )
         self._convolve_vec(self.buf_normals,7)
 
