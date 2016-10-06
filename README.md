@@ -151,7 +151,6 @@ After opening the panel, different keyframes can be inserted by right clickling 
 
 ![](images/gui_5.png)
 
-
 ### configuration 
 
 the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
@@ -171,3 +170,15 @@ id_device = 1
 into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the whole gputools default)
 (put id_platform =-1 to choose the device with biggest memory) 
 
+
+### troubleshooting
+
+#### getting it to work from inside the jupyter notebook
+
+As the main widget relies on the qt event loop running, one has to include 
+
+```python
+%gui qt
+```
+
+at the beginning of the notebook
