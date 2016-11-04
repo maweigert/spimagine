@@ -180,9 +180,8 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 	}
 	
   }
-
-
 }
+
 
 
 

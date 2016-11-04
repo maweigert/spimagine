@@ -98,8 +98,8 @@ __kernel void iso_surface(
 
   float dt = 1.f*(tfar-tnear)/(maxSteps-1.f);
 
-  // uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
-  // orig += dt*random(entropy+x,entropy+y)*direc;
+  //uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  //orig += dt*random(entropy+x,entropy+y)*direc;
 
 
   float4 delta_pos = .5f*dt*direc;

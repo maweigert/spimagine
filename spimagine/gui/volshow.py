@@ -156,11 +156,14 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
     logger.debug("volfig: %s s "%(time()-t))
     t = time()
 
+
+
     # if isinstance(data,GenericData):
-    if hasattr(data,"stackUnits"):
-        m = DataModel(data)
-    elif isinstance(data,DataModel):
+    if isinstance(data, DataModel):
         m = data
+    elif hasattr(data,"stackUnits"):
+
+        m = DataModel(data)
     else:
         if not isinstance(data,np.ndarray):
             data = np.array(data)
