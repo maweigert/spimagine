@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 
 import spimagine
+from spimagine.volumerender.volume_render import VolumeRenderer
 
 from spimagine.gui.mainwidget import MainWidget
 
@@ -174,9 +175,10 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
             else:
                 data = 1000.*(data-mi)/(ma-mi)
 
+    if not data.dtype.type in VolumeRenderer.dtypes:
+        data = data.astype(np.float32,copy=False)
 
-
-        m = DataModel(NumpyData(data.astype(np.float32,copy=False)))
+    m = DataModel(NumpyData(data))
 
 
     logger.debug("create model: %s s "%( time()-t))
