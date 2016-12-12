@@ -5,40 +5,30 @@ import numpy as np
 from spimagine import DataModel, SpimData, TiffData, NumpyData
 
 
-
-def test_spimdata():
-    d = SpimData("/Users/mweigert/Data/HisBTub_short")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-    return m
-
-def test_tiffdata():
-    d = TiffData("/Users/mweigert/Data/droso_test.tif")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-    return m
-
-
-def test_numpydata():
-    d = NumpyData(np.ones((10, 100, 100, 100)))
-
-    m = DataModel(d)
-
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
+#
+# def test_spimdata():
+#     d = SpimData("/Users/mweigert/Data/HisBTub_short")
+#
+#     m = DataModel(d)
+#     print m
+#     for pos in range(m.sizeT()):
+#         print pos
+#         print np.mean(m[pos])
+#     return m
+#
+#
+#
+# def test_numpydata():
+#     d = NumpyData(np.ones((10, 100, 100, 100)))
+#
+#     m = DataModel(d)
+#
+#     print m
+#     for pos in range(m.sizeT()):
+#         print pos
+#         print np.mean(m[pos])
+#
+#
 
 
 def test_speed():
@@ -80,7 +70,9 @@ if __name__ == '__main__':
 
 
     # test_spimdata()
-    # test_tiffdata()
+    #test_tiffdata()
     # test_numpydata()
     #test_speed()
+
+
     test_frompaths()

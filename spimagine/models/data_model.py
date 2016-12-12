@@ -171,7 +171,7 @@ class Img2dData(GenericData):
 
 
 class TiffData(GenericData):
-    """3d tiff data"""
+    """2/3/4d tiff data"""
 
     def __init__(self, fName=""):
         GenericData.__init__(self, fName)
@@ -182,13 +182,19 @@ class TiffData(GenericData):
             try:
                 data = np.squeeze(imgutils.read3dTiff(fName))
 
-                if not data.ndim in [3, 4]:
-                    raise ValueError("in file %s: dada.ndim = %s (not 3 or 4)"%(fName, data.ndim))
+                if not data.ndim in [2, 3, 4]:
+                    raise ValueError("in file %s: dada.ndim = %s (not 2, 3 or 4)"%(fName, data.ndim))
 
-                if data.ndim==3:
+                if data.ndim==2:
+                    self.stackSize = (1,1 )+data.shape
+                    data = data.copy().reshape(self.stackSize)
+
+                elif data.ndim==3:
                     self.stackSize = (1,)+data.shape
+                    data = data.copy().reshape(self.stackSize)
                 else:
                     self.stackSize = data.shape
+
                 self.data = data
             except Exception as e:
                 print e
@@ -201,10 +207,7 @@ class TiffData(GenericData):
 
     def __getitem__(self, pos):
         if self.stackSize and self.fName:
-            if self.data.ndim==3:
-                return self.data
-            else:
-                return self.data[pos]
+            return self.data[pos]
 
 
         else:
@@ -277,7 +280,11 @@ class NumpyData(GenericData):
     def __init__(self, data, stackUnits=[1., 1., 1.]):
         GenericData.__init__(self, "NumpyData")
 
-        if len(data.shape)==3:
+        if len(data.shape)==2:
+            self.stackSize = (1,1)+data.shape
+            self.data = data.copy().reshape(self.stackSize)
+
+        elif len(data.shape)==3:
             self.stackSize = (1,)+data.shape
             self.data = data.copy().reshape(self.stackSize)
         elif len(data.shape)==4:
