@@ -233,7 +233,14 @@ class TiffFolderData(GenericData):
 
             try:
                 _tmp = imgutils.read3dTiff(self.fNames[0])
-                self.stackSize = (len(self.fNames),)+_tmp.shape
+                _single_size = _tmp.shape
+                if len(_single_size)==2:
+                    _single_size = (1,)+_single_size
+
+                if len(_single_size)!=3:
+                    raise Exception("tiff stacks seem to be neither 2d nor 3d")
+
+                self.stackSize = (len(self.fNames),)+_single_size
             except Exception as e:
                 print e
                 self.fName = ""
@@ -245,11 +252,17 @@ class TiffFolderData(GenericData):
 
     def __getitem__(self, pos):
         if len(self.fNames)>0 and pos<len(self.fNames):
-            return imgutils.read3dTiff(self.fNames[pos])
+            try:
+                data = np.squeeze(imgutils.read3dTiff(self.fNames[pos]))
+                data = data.reshape(self.stackSize[1:])
+
+            except Exception as e:
+                print e
+            return data
 
 
 class TiffMultipleFiles(GenericData):
-    """3d tiff data inside a folder"""
+    """2/3d tiff data inside a folder"""
 
     def __init__(self, fName=[]):
         GenericData.__init__(self, fName)
@@ -263,7 +276,14 @@ class TiffMultipleFiles(GenericData):
 
             try:
                 _tmp = imgutils.read3dTiff(self.fNames[0])
-                self.stackSize = (len(self.fNames),)+_tmp.shape
+                _single_size = _tmp.shape
+                if len(_single_size)==2:
+                    _single_size = (1,)+_single_size
+
+                if len(_single_size)!=3:
+                    raise Exception("tiff stacks seem to be neither 2d nor 3d")
+
+                self.stackSize = (len(self.fNames),)+_single_size
             except Exception as e:
                 print e
                 raise Exception("couldnt open %s as TiffData"%self.fNames[0])
@@ -273,7 +293,13 @@ class TiffMultipleFiles(GenericData):
 
     def __getitem__(self, pos):
         if len(self.fNames)>0 and pos<len(self.fNames):
-            return imgutils.read3dTiff(self.fNames[pos])
+            try:
+                data = np.squeeze(imgutils.read3dTiff(self.fNames[pos]))
+                data = data.reshape(self.stackSize[1:])
+
+            except Exception as e:
+                print e
+            return data
 
 
 class NumpyData(GenericData):
