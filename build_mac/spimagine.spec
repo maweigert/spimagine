@@ -40,7 +40,11 @@ a.datas += addAll("/Users/mweigert/python/gputools/gputools/convolve/kernels")
 a.datas += addAll("/Users/mweigert/python/gputools/gputools/noise/kernels")
 a.datas += addAll("/Users/mweigert/python/gputools/gputools/transforms/kernels")
 a.datas += addAll("/usr/local/lib/python2.7/site-packages/pyopencl/cl/")
-a.datas += addAll("/Library/Python/2.7/site-packages/pyfft", prefix="pyfft/")
+
+# a.datas += addAll("/Library/Python/2.7/site-packages/pyfft", prefix="pyfft/")
+
+a.datas += addAll("/usr/local/lib/python2.7/site-packages/pyfft/", prefix="pyfft/")
+
 
 
 a.datas += addAll("../spimagine/data/")

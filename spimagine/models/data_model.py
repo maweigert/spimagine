@@ -223,7 +223,9 @@ class TiffFolderData(GenericData):
 
     def load(self, fName, stackUnits=[1., 1., 1.]):
         if fName:
-            self.fNames = glob.glob(os.path.join(fName, "*.tif"))
+            fNames = glob.glob(os.path.join(fName, "*"))
+            self.fNames = [f for f in fNames if re.match(".*\.(tif|tiff)",f )]
+
             if len(self.fNames)==0:
                 raise Exception("folder %s seems to be empty"%fName)
             else:
@@ -272,6 +274,7 @@ class TiffMultipleFiles(GenericData):
 
     def load(self, fNames, stackUnits=[1., 1., 1.]):
         if fNames:
+
             if len(self.fNames)==0:
                 raise Exception("filelist %s seems to be empty"%fName)
 
@@ -618,7 +621,7 @@ class DataModel(QtCore.QObject):
         if isinstance(fName, (tuple, list)):
             self.setContainer(TiffMultipleFiles(fName), prefetchSize)
 
-        elif re.match(".*\.tif", fName):
+        elif re.match(".*\.(tif|tiff)", fName):
             self.setContainer(TiffData(fName), prefetchSize=0)
         elif re.match(".*\.(png|jpg|bmp)", fName):
             self.setContainer(Img2dData(fName), prefetchSize=0)

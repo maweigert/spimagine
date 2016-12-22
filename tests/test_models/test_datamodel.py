@@ -66,6 +66,11 @@ def test_frompaths():
             a =  d[i]
 
 
+def test_folder():
+    d = DataModel.fromPath("/Users/mweigert/Data/OpenSpimAngle3")
+    print d
+
+
 if __name__ == '__main__':
 
 
@@ -76,3 +81,5 @@ if __name__ == '__main__':
 
 
     test_frompaths()
+
+    #test_folder()
