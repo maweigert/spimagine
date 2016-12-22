@@ -8,8 +8,8 @@ exec(open('spimagine/version.py').read())
 
 setup(name='spimagine',
     version=__version__,
-    description='renders spim data in 3D/4D',
-    url='http://mweigert@bitbucket.org/mweigert/spimagine',
+    description='OpenCL volume rendering in 3D/4D',
+    url='https://github.com/maweigert/spimagine',
     author='Martin Weigert',
     author_email='mweigert@mpi-cbg.de',
     license='MIT',
@@ -19,8 +19,8 @@ setup(name='spimagine',
         'scipy',
         'Pillow>=3.3',
         "PyOpenGL",
-        "pyopencl"
-        ,"sortedcontainers"
+        "pyopencl",
+        "sortedcontainers"
     ],
 
     package_data={"spimagine":['volumerender/kernels/*',
