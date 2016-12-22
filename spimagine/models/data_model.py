@@ -208,8 +208,6 @@ class TiffData(GenericData):
     def __getitem__(self, pos):
         if self.stackSize and self.fName:
             return self.data[pos]
-
-
         else:
             return None
 
@@ -255,10 +253,13 @@ class TiffFolderData(GenericData):
             try:
                 data = np.squeeze(imgutils.read3dTiff(self.fNames[pos]))
                 data = data.reshape(self.stackSize[1:])
-
             except Exception as e:
                 print e
+
             return data
+
+
+
 
 
 class TiffMultipleFiles(GenericData):
@@ -299,6 +300,9 @@ class TiffMultipleFiles(GenericData):
 
             except Exception as e:
                 print e
+                raise(e)
+
+
             return data
 
 

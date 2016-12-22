@@ -15,7 +15,11 @@ setup(name='spimagine',
     license='MIT',
     packages=find_packages(),
     install_requires=[
-        'numpy', 'scipy','Pillow>=3.3',"PyOpenGL","pyopencl"
+        'numpy',
+        'scipy',
+        'Pillow>=3.3',
+        "PyOpenGL",
+        "pyopencl"
         ,"sortedcontainers"
     ],
 
