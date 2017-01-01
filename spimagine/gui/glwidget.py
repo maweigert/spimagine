@@ -85,7 +85,7 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-    _foo = QtCore.pyqtSignal()
+
 
     _BACKGROUND_BLACK = (0., 0., 0., 0.)
     _BACKGROUND_WHITE = (1., 1., 1., 0.)
