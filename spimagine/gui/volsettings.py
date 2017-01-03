@@ -5,9 +5,9 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
 
 
 
@@ -41,21 +41,21 @@ checkBoxStyleStr = """
     """
 
 def createImgCheckBox(fName_active,fName_inactive):
-    checkBox = QtGui.QCheckBox()
+    checkBox = QtWidgets.QCheckBox()
     checkBox.setStyleSheet(
             checkBoxStyleStr%(absPath(fName_active),absPath(fName_inactive)))
     return checkBox
 
 
 
-class VolumeSettingsPanel(QtGui.QWidget):
+class VolumeSettingsPanel(QtWidgets.QWidget):
     _stackUnitsChanged = QtCore.pyqtSignal(float,float,float)
     _boundsChanged =  QtCore.pyqtSignal(float,float,float,float,float,float)
     _alphaPowChanged = QtCore.pyqtSignal(float)
     _rgbColorChanged = QtCore.pyqtSignal(float, float,float)
     
     def __init__(self):
-        super(QtGui.QWidget,self).__init__()
+        super(QtWidgets.QWidget,self).__init__()
 
         self.resize(50, 300)
         self.initUI()
@@ -65,31 +65,31 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
 
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
 
-        vbox.addWidget(QtGui.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
+        vbox.addWidget(QtWidgets.QLabel("Stack units",alignment = QtCore.Qt.AlignCenter))
         # The stack units line edits
         stackLabels = ["x","y","z"]
 
 
         self.stackEdits = []
         for lab in stackLabels:
-            hbox = QtGui.QHBoxLayout()
-            edit = QtGui.QLineEdit("1.0")
+            hbox = QtWidgets.QHBoxLayout()
+            edit = QtWidgets.QLineEdit("1.0")
             edit.setValidator(QtGui.QDoubleValidator(bottom=1e-10))
             edit.returnPressed.connect(self.stackUnitsChanged)
-            hbox.addWidget(QtGui.QLabel(lab))
+            hbox.addWidget(QtWidgets.QLabel(lab))
             hbox.addWidget(edit)
             vbox.addLayout(hbox)
             self.stackEdits.append(edit)
 
 
-        vbox.addWidget(QtGui.QLabel("Borders",alignment = QtCore.Qt.AlignCenter))
+        vbox.addWidget(QtWidgets.QLabel("Borders",alignment = QtCore.Qt.AlignCenter))
 
-        gridBox = QtGui.QGridLayout()
-        self.sliderBounds = [QtGui.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
+        gridBox = QtWidgets.QGridLayout()
+        self.sliderBounds = [QtWidgets.QSlider(QtCore.Qt.Horizontal) for _ in range(6)]
         for i,s in enumerate(self.sliderBounds):
-            s.setTickPosition(QtGui.QSlider.TicksBothSides)
+            s.setTickPosition(QtWidgets.QSlider.TicksBothSides)
             s.setRange(-100,100)
             s.setTickInterval(1)
             s.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -103,11 +103,11 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
         vbox.addLayout(gridBox)
             
-        line =  QtGui.QFrame()
-        line.setFrameShape(QtGui.QFrame.HLine)
+        line =  QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
 
         vbox.addWidget(line)
-        vbox.addWidget(QtGui.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
+        vbox.addWidget(QtWidgets.QLabel("Display",alignment = QtCore.Qt.AlignCenter))
 
         # the perspective/box checkboxes
         self.checkProj = createImageCheckbox(self, absPath("images/rays_persp.png"),
@@ -124,20 +124,20 @@ class VolumeSettingsPanel(QtGui.QWidget):
                                              method = self.onButtonColor,
                                                     tooltip="color")
 
-        gridBox = QtGui.QGridLayout()
+        gridBox = QtWidgets.QGridLayout()
 
-        gridBox.addWidget(QtGui.QLabel("projection:\t"),1,0)
+        gridBox.addWidget(QtWidgets.QLabel("projection:\t"),1,0)
         gridBox.addWidget(self.checkProj,1,1)
 
-        gridBox.addWidget(QtGui.QLabel("bounding box:\t"),2,0)
+        gridBox.addWidget(QtWidgets.QLabel("bounding box:\t"),2,0)
         gridBox.addWidget(self.checkBox,2,1)
 
-        gridBox.addWidget(QtGui.QLabel("invert colors:\t"),3,0)
+        gridBox.addWidget(QtWidgets.QLabel("invert colors:\t"),3,0)
         gridBox.addWidget(self.checkInvert,3,1)
 
-        gridBox.addWidget(QtGui.QLabel("colormap:\t"),4,0)
+        gridBox.addWidget(QtWidgets.QLabel("colormap:\t"),4,0)
 
-        self.colorCombo = QtGui.QComboBox()
+        self.colorCombo = QtWidgets.QComboBox()
 
         self.colormaps = list(spimagine.config.__COLORMAPDICT__.keys())
 
@@ -157,7 +157,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
-        gridBox.addWidget(QtGui.QLabel("opacity transfer:\t"),6,0)
+        gridBox.addWidget(QtWidgets.QLabel("opacity transfer:\t"),6,0)
         gridBox.addWidget(self.sliderAlphaPow,6,1)
 
         self.sliderOcc = FloatSlider(QtCore.Qt.Horizontal)
@@ -166,7 +166,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderOcc.setTracking(True)
         self.sliderOcc.setValue(.1)
 
-        gridBox.addWidget(QtGui.QLabel("AO strength:\t"),7,0)
+        gridBox.addWidget(QtWidgets.QLabel("AO strength:\t"),7,0)
         gridBox.addWidget(self.sliderOcc,7,1)
 
         self.sliderOccRadius = FloatSlider(QtCore.Qt.Horizontal)
@@ -175,7 +175,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderOccRadius.setTracking(True)
         self.sliderOccRadius.setValue(21)
 
-        gridBox.addWidget(QtGui.QLabel("AO radius :\t"),8,0)
+        gridBox.addWidget(QtWidgets.QLabel("AO radius :\t"),8,0)
         gridBox.addWidget(self.sliderOccRadius,8,1)
 
         self.sliderOccNPoints = FloatSlider(QtCore.Qt.Horizontal)
@@ -184,27 +184,27 @@ class VolumeSettingsPanel(QtGui.QWidget):
         self.sliderOccNPoints.setTracking(True)
         self.sliderOccNPoints.setValue(31)
 
-        gridBox.addWidget(QtGui.QLabel("AO n points:\t"),9,0)
+        gridBox.addWidget(QtWidgets.QLabel("AO n points:\t"),9,0)
         gridBox.addWidget(self.sliderOccNPoints,9,1)
 
         vbox.addLayout(gridBox)
 
         # vbox.addStretch()
-        line =  QtGui.QFrame()
-        line.setFrameShape(QtGui.QFrame.HLine)
+        line =  QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
 
         vbox.addWidget(line)
 
         #################
 
-        line =  QtGui.QFrame()
-        line.setFrameShape(QtGui.QFrame.HLine)
+        line =  QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
         vbox.addWidget(line)
 
-        self.dimensionLabel = QtGui.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
+        self.dimensionLabel = QtWidgets.QLabel("Dimensions:",alignment = QtCore.Qt.AlignLeft)
         vbox.addWidget(self.dimensionLabel)
 
-        self.statsLabel = QtGui.QLabel("Max: Min: Mean:",alignment = QtCore.Qt.AlignLeft)
+        self.statsLabel = QtWidgets.QLabel("Max: Min: Mean:",alignment = QtCore.Qt.AlignLeft)
         vbox.addWidget(self.statsLabel)
 
         self.setStyleSheet("""
@@ -221,7 +221,7 @@ class VolumeSettingsPanel(QtGui.QWidget):
 
 
     def onButtonColor(self):
-        col = QtGui.QColorDialog.getColor()
+        col = QtWidgets.QColorDialog.getColor()
 
         if col.isValid():
             color = 1./255*np.array(col.getRgb()[:3])
@@ -255,10 +255,10 @@ class VolumeSettingsPanel(QtGui.QWidget):
             print "couldnt parse text"
             print e
         
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, ):
-        super(QtGui.QMainWindow,self).__init__()
+        super(QtWidgets.QMainWindow,self).__init__()
 
         self.resize(500, 300)
         self.setWindowTitle('Test')
@@ -268,12 +268,12 @@ class MainWindow(QtGui.QMainWindow):
         self.setStyleSheet("background-color:black;")
 
     def close(self):
-        QtGui.qApp.quit()
+        QtWidgets.qApp.quit()
 
 
 if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWindow()
     win.show()

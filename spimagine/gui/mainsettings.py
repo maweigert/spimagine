@@ -5,9 +5,9 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
 
 import numpy as np
 
@@ -39,20 +39,20 @@ checkBoxStyleStr = """
     """
 
 # def createImgCheckBox(parentfName_active,fName_inactive):
-#     checkBox = QtGui.QCheckBox()
+#     checkBox = QtWidgets.QCheckBox()
 #     checkBox.setStyleSheet(
 #             checkBoxStyleStr%(absPath(fName_active),absPath(fName_inactive)))
 #     return checkBox
 
 # def createImgPushButton(parent,fName, tooltip = ""):
-#     but = QtGui.QPushButton("",parent)
+#     but = QtWidgets.QPushButton("",parent)
 #     but.setStyleSheet("background-color: black;color:black")
 #     but.setIcon(QtGui.QIcon(absPath(fname)))
 #     but.setIconSize(QtCore.QSize(24,24))
 #     but.clicked.connect(self.folderSelect)
 
 
-class MainSettingsPanel(QtGui.QWidget):
+class MainSettingsPanel(QtWidgets.QWidget):
     _playIntervalChanged = QtCore.pyqtSignal(int)
     _substepsChanged = QtCore.pyqtSignal(int)
 
@@ -60,7 +60,7 @@ class MainSettingsPanel(QtGui.QWidget):
     _frameNumberChanged = QtCore.pyqtSignal(int)
     
     def __init__(self):
-        super(QtGui.QWidget,self).__init__()
+        super(QtWidgets.QWidget,self).__init__()
 
         self.resize(50, 300)
         self.initUI()
@@ -69,31 +69,31 @@ class MainSettingsPanel(QtGui.QWidget):
     def initUI(self):
 
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
 
 
-        vbox.addWidget(QtGui.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
+        vbox.addWidget(QtWidgets.QLabel("Render",alignment = QtCore.Qt.AlignCenter))
 
-        gridBox = QtGui.QGridLayout()
+        gridBox = QtWidgets.QGridLayout()
 
-        gridBox.addWidget(QtGui.QLabel("loop bounce:\t"),0,0)
-        self.checkLoopBounce = QtGui.QCheckBox()
+        gridBox.addWidget(QtWidgets.QLabel("loop bounce:\t"),0,0)
+        self.checkLoopBounce = QtWidgets.QCheckBox()
         gridBox.addWidget(self.checkLoopBounce,0,1)
 
 
-        gridBox.addWidget(QtGui.QLabel("play interval (ms):\t"))
-        self.playInterval = QtGui.QLineEdit("50")
+        gridBox.addWidget(QtWidgets.QLabel("play interval (ms):\t"))
+        self.playInterval = QtWidgets.QLineEdit("50")
         self.playInterval.setValidator(QtGui.QIntValidator(bottom=10))
         self.playInterval.returnPressed.connect(self.playIntervalChanged)
         gridBox.addWidget(self.playInterval)
 
-        gridBox.addWidget(QtGui.QLabel("subrender steps:\t"))
-        self.editSubsteps = QtGui.QLineEdit("1")
+        gridBox.addWidget(QtWidgets.QLabel("subrender steps:\t"))
+        self.editSubsteps = QtWidgets.QLineEdit("1")
         self.editSubsteps.setValidator(QtGui.QIntValidator(bottom=1))
         self.editSubsteps.returnPressed.connect(self.substepsChanged)
         gridBox.addWidget(self.editSubsteps)
 
-        gridBox.addWidget(QtGui.QLabel("Egg3D:\t"))
+        gridBox.addWidget(QtWidgets.QLabel("Egg3D:\t"))
         self.checkEgg = createImageCheckbox(self, absPath("images/egg.png"),
                                             absPath("images/egg_inactive.png"),
                                             tooltip="toggle egg control")
@@ -102,18 +102,18 @@ class MainSettingsPanel(QtGui.QWidget):
 
         vbox.addLayout(gridBox)
 
-        line =  QtGui.QFrame()
-        line.setFrameShape(QtGui.QFrame.HLine)
+        line =  QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
 
         vbox.addWidget(line)
 
-        vbox.addWidget(QtGui.QLabel("General",
+        vbox.addWidget(QtWidgets.QLabel("General",
                                     alignment = QtCore.Qt.AlignCenter))
 
-        renderFolder = QtGui.QLineEdit("./")
-        hbox = QtGui.QHBoxLayout()
+        renderFolder = QtWidgets.QLineEdit("./")
+        hbox = QtWidgets.QHBoxLayout()
 
-        hbox.addWidget(QtGui.QLabel("output folder: ",
+        hbox.addWidget(QtWidgets.QLabel("output folder: ",
                                     alignment = QtCore.Qt.AlignCenter))
 
         hbox.addWidget(renderFolder)
@@ -134,9 +134,9 @@ class MainSettingsPanel(QtGui.QWidget):
         vbox.addLayout(hbox)
 
         
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("number frames:\t"))
-        frameEdit = QtGui.QLineEdit("100")
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("number frames:\t"))
+        frameEdit = QtWidgets.QLineEdit("100")
         frameEdit.setValidator(QtGui.QIntValidator(bottom=1))
         frameEdit.returnPressed.connect(lambda: self._frameNumberChanged.emit(int(frameEdit.text())))
         hbox.addWidget(frameEdit)
@@ -161,13 +161,13 @@ class MainSettingsPanel(QtGui.QWidget):
 
 
     def folderSelect(self,event):
-        dirName= QtGui.QFileDialog.getExistingDirectory(self, 'select output folder',
+        dirName= QtWidgets.QFileDialog.getExistingDirectory(self, 'select output folder',
                 self.dirName)
         if dirName:
             self.setDirName(dirName)
 
     def onButtonColor(self):
-        col = QtGui.QColorDialog.getColor()
+        col = QtWidgets.QColorDialog.getColor()
 
         if col.isValid():
             color = 1./255*np.array(col.getRgb()[:3])
@@ -208,10 +208,10 @@ class MainSettingsPanel(QtGui.QWidget):
         print "changed substeps to ", int(self.editSubsteps.text())
         self._substepsChanged.emit(int(self.editSubsteps.text()))
         
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, ):
-        super(QtGui.QMainWindow,self).__init__()
+        super(QtWidgets.QMainWindow,self).__init__()
 
         self.resize(500, 300)
         self.setWindowTitle('Test')
@@ -221,12 +221,12 @@ class MainWindow(QtGui.QMainWindow):
         self.setStyleSheet("background-color:black;")
 
     def close(self):
-        QtGui.qApp.quit()
+        QtWidgets.qApp.quit()
 
 
 if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWindow()
     win.show()

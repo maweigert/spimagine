@@ -20,7 +20,7 @@ import sys
 import os
 
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import argparse
 
@@ -76,7 +76,7 @@ def main():
         logger = logging.getLogger("spimagine")
         logger.setLevel(logging.DEBUG)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
 
     #splash screen
@@ -86,7 +86,7 @@ def main():
     # print sys._MEIPASS
 
     pixmap = QtGui.QPixmap(absPath('../gui/images/splash.png'))
-    splash = QtGui.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
+    splash = QtWidgets.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.setMask(pixmap.mask())
     splash.show()
     app.processEvents()
@@ -101,7 +101,7 @@ def main():
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
     if sys.platform.startswith("win"):
-    	QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
+    	QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("CleanLooks"))
 
 
     win = MainWidget()

@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import bisect
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import json
 import sortedcontainers
 from spimagine.utils.quaternion import *

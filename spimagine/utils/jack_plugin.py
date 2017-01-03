@@ -1,5 +1,5 @@
 from jack_input import JackSource
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import numpy as np
 
 class JackPlugin(QtCore.QObject):

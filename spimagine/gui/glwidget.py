@@ -39,9 +39,10 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
+from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 from OpenGL.GL import *
 import OpenGL.arrays.vbo as glvbo
 import spimagine
@@ -191,9 +192,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.refresh()
 
     def _shader_from_file(self, fname_vert, fname_frag):
-        shader = QtOpenGL.QGLShaderProgram()
-        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex, fname_vert)
-        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment, fname_frag)
+        shader = QOpenGLShaderProgram()
+        shader.addShaderFromSourceFile(QOpenGLShader.Vertex, fname_vert)
+        shader.addShaderFromSourceFile(QOpenGLShader.Fragment, fname_frag)
         shader.link()
         shader.bind()
         logger.debug("GLSL program log:%s", shader.log())
@@ -311,16 +312,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderedSteps = 0
 
     def resizeGL(self, width, height):
-
         height = max(10, height)
-
         self.width, self.height = width, height
 
-        # make the viewport squarelike
-        w = max(width, height)
-        glViewport((width-w)/2, (height-w)/2, w, w)
-
-        self.resized = True
 
     def add_mesh(self, mesh=SphericalMesh()):
         """
@@ -523,11 +517,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
             return
 
-        # hack
-        if self.resized:
-            w = max(self.width, self.height)
-            glViewport((self.width-w)/2, (self.height-w)/2, w, w)
-            self.resized = False
+        w = max(self.width, self.height)
+        # force viewport to always be a square
+        glViewport((self.width-w)/2, (self.height-w)/2, w, w)
+
 
         if self._background_mode_black:
             glClearColor(*self._BACKGROUND_BLACK)
@@ -645,7 +638,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
-        newZoom = self.transform.zoom*1.2**(event.delta()/1400.)
+        newZoom = self.transform.zoom*1.2**(event.angleDelta().x()/400.)
         newZoom = np.clip(newZoom, .4, 3)
         self.transform.setZoom(newZoom)
 
@@ -694,6 +687,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         # print self.finalMat
         # print c[0], cUser[0]
         # Rotation
+
+        print event.x()
         if event.buttons()==QtCore.Qt.LeftButton:
             x1, y1, z1 = self.posToVec3(event.x(), event.y())
             n = np.cross(np.array([self._x0, self._y0, self._z0]), np.array([x1, y1, z1]))
@@ -720,7 +715,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 def test_sphere():
     from data_model import DataModel, NumpyData, SpimData, TiffData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(500, 500))
 
@@ -754,7 +749,7 @@ def test_sphere():
 def test_demo():
     from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800, 800))
 
@@ -770,7 +765,7 @@ def test_demo():
 def test_demo_simple():
     from spimagine import DataModel, DemoData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800, 800))
 
@@ -786,9 +781,9 @@ def test_demo_simple():
 def test_surface():
     from spimagine import DataModel, DemoData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(800, 800))
+    win = GLWidget(size=QtCore.QSize(800, 600))
 
     win.setModel(DataModel(DemoData()))
 

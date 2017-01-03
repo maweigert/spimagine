@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 import os
 import numpy as np
 import time
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import re
 import glob
 # import h5py

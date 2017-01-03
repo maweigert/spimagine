@@ -10,8 +10,10 @@ import os
 import functools
 import math
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+
 
 from time import sleep, time
 
@@ -402,7 +404,7 @@ class KeyListView(QGraphicsView):
 
 
     def wheelEvent(self, event):
-        factor = 1.41 ** (-event.delta() / 240.0)
+        factor = 1.41 ** (-event.angleDelta().x()/80.0)
         self.zoom = clip(self.zoom*factor,1.,1.e3)
 
         self.setTransform(QTransform.fromScale(self.relativeAspect*self.zoom, 1.))

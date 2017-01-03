@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import os
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from collections import OrderedDict
 
@@ -39,10 +39,10 @@ def absPath(myPath):
 
 
 def getCurrentApp():
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
 
     if not app:
-        app = QtGui.QApplication(sys.argv)
+        app = QtWidgets.QApplication(sys.argv)
 
     if not hasattr(app,"volfigs"):
         app.volfigs = OrderedDict()

@@ -4,7 +4,7 @@ receive input data of Loics Egg3d controller and emit qt signals
 
 """
 
-from PyQt4 import QtCore,QtGui
+from PyQt5 import QtCore,QtGui, QtWidgets
 
 import socket
 

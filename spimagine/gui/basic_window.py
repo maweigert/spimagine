@@ -1,7 +1,7 @@
 import sys
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
 from OpenGL import GLU
 from OpenGL import GLUT
 from OpenGL.GL import *
@@ -95,7 +95,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def onTimer(self):
         self.updateGL()
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(MainWindow,self).__init__()
@@ -117,7 +117,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def initActions(self):
-        self.exitAction = QtGui.QAction('Quit', self)
+        self.exitAction = QtWidgets.QAction('Quit', self)
         self.exitAction.setShortcut('Ctrl+Q')
         self.exitAction.setStatusTip('Exit application')
         self.connect(self.exitAction, QtCore.SIGNAL('triggered()'), self.close)
@@ -130,12 +130,12 @@ class MainWindow(QtGui.QMainWindow):
         fileMenu = menuBar.addMenu('&File')
 
     def close(self):
-        QtGui.qApp.quit()
+        QtWidgets.qApp.quit()
 
 
 if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWindow()
     win.show()

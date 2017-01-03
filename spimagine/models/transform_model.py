@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 from spimagine.utils.transform_matrices import *
 from spimagine.utils.quaternion import Quaternion

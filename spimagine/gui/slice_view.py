@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
+from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 
 from OpenGL.GL import *
 from OpenGL.GL import shaders
@@ -198,9 +199,9 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         logger.debug("initializeGL")
 
-        self.programTex = QtOpenGL.QGLShaderProgram()
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
+        self.programTex = QOpenGLShaderProgram()
+        self.programTex.addShaderFromSourceCode(QOpenGLShader.Vertex,vertShaderTex)
+        self.programTex.addShaderFromSourceCode(QOpenGLShader.Fragment, fragShaderTex)
         self.programTex.link()
         self.programTex.bind()
         logger.debug("GLSL programTex log:%s",self.programTex.log())
@@ -450,7 +451,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
 
-        self.zoom_fac *=  1.4**(-event.delta()/1000.)
+        self.zoom_fac *=  1.4**(-event.angleDelta().x()/300.)
 
         self.zoom_fac = clip(self.zoom_fac,0,1.)
 
@@ -458,7 +459,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
 
-class SliceWidget(QtGui.QWidget):
+class SliceWidget(QtWidgets.QWidget):
 
     def __init__(self, parent = None,**kwargs):
         super(SliceWidget,self).__init__(parent,**kwargs)
@@ -473,8 +474,8 @@ class SliceWidget(QtGui.QWidget):
                                                  absPath("images/icon_y.png"),
                                                  absPath("images/icon_z.png"))
 
-        self.sliderSlice = QtGui.QSlider(QtCore.Qt.Horizontal,self)
-        self.sliderSlice.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderSlice = QtWidgets.QSlider(QtCore.Qt.Horizontal,self)
+        self.sliderSlice.setTickPosition(QtWidgets.QSlider.TicksBothSides)
         self.sliderSlice.setTickInterval(1)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.WheelFocus)
@@ -484,9 +485,9 @@ class SliceWidget(QtGui.QWidget):
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
 
-        self.spinSlice = QtGui.QSpinBox(self)
+        self.spinSlice = QtWidgets.QSpinBox(self)
         self.spinSlice.setStyleSheet("color:white;")
-        self.spinSlice.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinSlice.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.spinSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.spinSlice.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
@@ -500,13 +501,13 @@ class SliceWidget(QtGui.QWidget):
         color:white;
         """)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.checkSlice)
 
         hbox.addWidget(self.sliderSlice)
         hbox.addWidget(self.spinSlice)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.glSliceWidget)
         vbox.addLayout(hbox)
 
@@ -561,7 +562,7 @@ class SliceWidget(QtGui.QWidget):
 if __name__ == '__main__':
     from spimagine import DemoData, NumpyData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # win = GLSliceWidget(size=QtCore.QSize(500,500))
 

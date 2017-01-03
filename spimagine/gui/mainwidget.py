@@ -15,8 +15,8 @@ import os
 import numpy as np
 import sys
 
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
 
 
 
@@ -75,13 +75,13 @@ def absPath(myPath):
 
 
 
-class MainWidget(QtGui.QWidget):
+class MainWidget(QtWidgets.QWidget):
     N_SCALE_MIN_EXP = -16
     N_SCALE_MAX_EXP = 17
     N_SCALE_SLIDER = 500
 
     def __init__(self, parent = None):
-        super(QtGui.QWidget,self).__init__(parent)
+        super(QtWidgets.QWidget,self).__init__(parent)
 
         self.myparent = parent
 
@@ -172,17 +172,17 @@ class MainWidget(QtGui.QWidget):
             absPath("images/icon_slice_inactive.png"), tooltip="slice view")
 
 
-        self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderTime = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.sliderTime.setTickPosition(QtWidgets.QSlider.TicksBothSides)
         self.sliderTime.setTickInterval(1)
         self.sliderTime.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.sliderTime.setTracking(False)
 
 
-        self.spinTime = QtGui.QSpinBox()
+        self.spinTime = QtWidgets.QSpinBox()
         self.spinTime.setStyleSheet("color:white;border:0px solid black;background-color:black;")
-        self.spinTime.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinTime.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.spinTime.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.spinTime.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
@@ -269,7 +269,7 @@ class MainWidget(QtGui.QWidget):
         color:black;
         """)
 
-        hbox0 = QtGui.QHBoxLayout()
+        hbox0 = QtWidgets.QHBoxLayout()
         hbox0.addWidget(self.minSlider)
 
         hbox0.addWidget(self.maxSlider)
@@ -286,7 +286,7 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.volSettingsView)
         hbox0.addWidget(self.settingsView)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.bwdButton)
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.fwdButton)
@@ -315,7 +315,7 @@ class MainWidget(QtGui.QWidget):
         hbox.addSpacing(5)
         hbox.addWidget(self.checkSettings)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
@@ -332,7 +332,7 @@ class MainWidget(QtGui.QWidget):
 
         self.egg3d = spimagine.utils.egg3d.Egg3dController()
 
-        # widget = QtGui.QWidget()
+        # widget = QtWidgets.QWidget()
         self.setLayout(vbox)
 
 
@@ -514,9 +514,9 @@ class MainWidget(QtGui.QWidget):
         # super(MainWidget,self).keyPressEvent(event)
 
     def initActions(self):
-        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.closeMe)
+        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.closeMe)
 
-        # self.exitAction = QtGui.QAction('Quit', self)
+        # self.exitAction = QtWidgets.QAction('Quit', self)
         # self.exitAction.setShortcut('Ctrl+Q')
         # self.exitAction.setStatusTip('Exit application')
         # self.exitAction.triggered.connect(self.foo)
@@ -589,7 +589,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def screenShot(self):
-        fileName = QtGui.QFileDialog.getSaveFileName(self, 'Save screenshot as',
+        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
                                                      '.', selectedFilter='*.png')
 
         if fileName:
@@ -624,13 +624,13 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.refresh()
 
     def openFile(self,e):
-        # path = QtGui.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
+        # path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
         #                                              '.', selectedFilter='*.tif')
 
 
-        f = QtGui.QFileDialog()
+        f = QtWidgets.QFileDialog()
         f.setWindowTitle('Open Path (File or Folder)')
-        f.setFileMode(QtGui.QFileDialog.ExistingFile & QtGui.QFileDialog.Directory)
+        f.setFileMode(QtWidgets.QFileDialog.ExistingFile & QtWidgets.QFileDialog.Directory)
         f.exec_()
         path = f.selectedFiles()
 
@@ -648,13 +648,13 @@ class MainWidget(QtGui.QWidget):
                     self.glWidget.setModel(DataModel.fromPath(path,
                         prefetchSize = self.glWidget.N_PREFETCH))
             except Exception as e:
-                mbox = QtGui.QMessageBox()
+                mbox = QtWidgets.QMessageBox()
                 mbox.setText(str(e))
-                mbox.setIcon(QtGui.QMessageBox.Warning)
+                mbox.setIcon(QtWidgets.QMessageBox.Warning)
                 mbox.exec_()
 
     def saveFile(self,e):
-        path = QtGui.QFileDialog.getSaveFileName(self, 'Save as Tif File',
+        path = QtWidgets.QFileDialog.getSaveFileName(self, 'Save as Tif File',
                                                      '.', selectedFilter='*.tif')
 
         path = str(path)
@@ -679,8 +679,8 @@ class MainWidget(QtGui.QWidget):
 
     def contextMenuEvent(self,event):
          # create context menu
-        popMenu = QtGui.QMenu(self)
-        action = QtGui.QAction('toggle controls', self)
+        popMenu = QtWidgets.QMenu(self)
+        action = QtWidgets.QAction('toggle controls', self)
         action.triggered.connect(self.toggleControls)
         popMenu.addAction(action)
         popMenu.setStyleSheet("background-color: white")
@@ -741,7 +741,9 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.updateGL()
 
     def mouseDoubleClickEvent(self,event):
+
         super(MainWidget,self).mouseDoubleClickEvent(event)
+
         if self.isFullScreen:
             self.showNormal()
         else:
@@ -775,7 +777,7 @@ def test_sphere():
         d += 200.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
 
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
 
@@ -796,7 +798,7 @@ def test_surface():
     from spimagine import DataModel, NumpyData, DemoData
     from spimagine.gui.mesh import SphericalMesh
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
 
