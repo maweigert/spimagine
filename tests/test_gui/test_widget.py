@@ -2,7 +2,7 @@ __author__ = 'mweigert'
 
 import sys
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 from spimagine import MainWidget, DemoData, DataModel, qt_exec
 from spimagine.gui.glwidget import GLWidget
@@ -12,7 +12,7 @@ from spimagine import logger
 
 
 def test_widget():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
     #win = GLWidget()

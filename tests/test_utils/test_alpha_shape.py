@@ -65,7 +65,7 @@ def test_3d():
     w.transform.setRotation(0.4,0,1,0)
 
     # add this when run from command line
-    from PyQt4 import QtCore
+    from PyQt5 import QtCore
     QtCore.QTimer.singleShot(1000,w.closeMe)
     qt_exec()
 

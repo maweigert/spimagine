@@ -4,7 +4,7 @@ import sys
 import shutil
 import numpy as np
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 from spimagine.gui.mainwidget import MainWidget
 from spimagine.models.data_model import DataModel, NumpyData
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     R2 = np.sqrt((X-.2)**2+(Y-.2)**2+(Z-.2)**2)
     d = np.exp(-10*R1**2)+np.exp(-10*R2**2)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MyWidget()
 

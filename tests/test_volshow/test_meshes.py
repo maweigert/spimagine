@@ -6,7 +6,7 @@ mweigert@mpi-cbg.de
 """
 
 import numpy as np
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import logging
 from spimagine import volshow, volfig, logger, qt_exec, SphericalMesh
 import time
