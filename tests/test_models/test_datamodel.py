@@ -1,25 +1,28 @@
 """
 mweigert@mpi-cbg.de
 """
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+import os
 import numpy as np
 from spimagine import DataModel, SpimData, TiffData, NumpyData
 from six.moves import range
 
 
-#
-# def test_spimdata():
-#     d = SpimData("/Users/mweigert/Data/HisBTub_short")
-#
-#     m = DataModel(d)
-#     print m
-#     for pos in range(m.sizeT()):
-#         print pos
-#         print np.mean(m[pos])
-#     return m
-#
-#
+def rel_path(name):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__),name))
+
+
+def test_spimdata():
+    d = SpimData(rel_path("../data/spimdata"))
+
+    m = DataModel(d)
+    print(m)
+    for pos in range(m.sizeT()):
+        print(pos)
+        print(np.mean(m[pos]))
+    return m
+
+
 
 def test_numpydata():
     d = NumpyData(np.ones((10, 100, 100, 100)))
@@ -37,7 +40,7 @@ def test_numpydata():
 def test_speed():
     import time
 
-    fName = "/Users/mweigert/Data/Drosophila_07"
+    fName = rel_path("../data/spimdata")
 
     t = []
     d = DataModel.fromPath(fName, 1)
@@ -46,7 +49,7 @@ def test_speed():
         print(i)
 
         if i%10==0:
-            a = d[i/10]
+            a = d[i//10]
 
         time.sleep(.01)
         t.append(time.time())
@@ -55,7 +58,7 @@ def test_speed():
 
 def test_frompaths():
     from glob import glob
-    fnames = glob("/Users/mweigert/python/spimagine/tests/data/*")
+    fnames = glob(rel_path("../data/*"))
     if len(fnames)==0:
         raise ValueError("could not find any test data!")
 
@@ -70,13 +73,13 @@ def test_frompaths():
 
 
 def test_folder():
-    d = DataModel.fromPath("/Users/mweigert/Data/OpenSpimAngle3")
+    d = DataModel.fromPath(rel_path("../data/tiffstacks"))
     print(d)
 
 
 
 def test_tiffdata():
-    d = TiffData("/Users/mweigert/Data/droso_test.tif")
+    d = TiffData(rel_path("../data/flybrain.tif"))
 
     m = DataModel(d)
     print(m)
@@ -90,12 +93,12 @@ def test_tiffdata():
 if __name__ == '__main__':
 
 
-    # test_spimdata()
-    #test_tiffdata()
+
+    # test_tiffdata()
     # test_numpydata()
-    #test_speed()
+    #
+    # test_spimdata()
+    test_speed()
 
-
-    test_frompaths()
-
-    #test_folder()
+    # test_frompaths()
+    # test_folder()

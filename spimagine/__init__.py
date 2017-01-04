@@ -1,10 +1,11 @@
+from __future__ import absolute_import, print_function
 from .version import __version__
 
 try:
     from pkg_resources import get_distribution, DistributionNotFound
     __version__ = get_distribution("spimagine").version
 except Exception as e:
-    print e
+    print(e)
 
 
 import logging

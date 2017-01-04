@@ -94,7 +94,7 @@ array([10, 10, 10], dtype=uint8)
 
 """
 
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 import sys
 import os
@@ -112,7 +112,7 @@ except ImportError:
 import numpy
 from scipy.ndimage.interpolation import zoom
 
-from tifffile import decodelzw, lazyattr, stripnull
+from .tifffile import decodelzw, lazyattr, stripnull
 
 try:
     import _czifile

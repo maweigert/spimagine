@@ -31,7 +31,7 @@ c = s*s.w + d*(1-s.w)
 
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals, division
 
 import logging
 

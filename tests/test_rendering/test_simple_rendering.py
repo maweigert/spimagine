@@ -6,6 +6,7 @@ mweigert@mpi-cbg.de
 from __future__ import absolute_import
 import numpy as np
 from spimagine.volumerender.volumerender import VolumeRenderer
+from spimagine.utils.transform_matrices import *
 import pylab
 import logging
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ def test_simple_rendering():
     return rend
 
 def test_surface():
-    from spimagine.utils.transform_matrices import *
+
     N = 128
     x = np.linspace(-1,1,N)
     Z,Y,X = np.meshgrid(x,x,x,indexing="ij")

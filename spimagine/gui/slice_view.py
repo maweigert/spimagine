@@ -305,7 +305,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         w,h = self.getDataWidthHeight()
 
 
-        glViewport((self.width-w)/2,(self.height-h)/2,w,h)
+        glViewport((self.width-w)//2,(self.height-h)//2,w,h)
 
 
 

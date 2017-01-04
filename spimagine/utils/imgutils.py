@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def parseMetaFile(fName):
             z2 = np.float(re.findall("StopZ.*",s)[0].split("\t")[2])
             zN = np.float(re.findall("NumberOfPlanes.*",s)[0].split("\t")[2])
 
-            return (.162,.162, (1.*z2-z1)/zN)
+            return (.162,.162, (1.*z2-z1)/(zN-1.))
         except Exception as e:
             print(e)
             print("coulndt parse ", fName)
@@ -124,6 +124,38 @@ def fromSpimFolder(fName,dataFileName="data/data.bin",indexFileName="data/index.
             print("%s\ntime: %.2f ms"%(func.__name__, 1000.*(time()-t)))
 
         assert np.allclose(*ds)
+
+
+
+def createSpimFolder(fName,data = None,
+                     stackSize= [10,10,32,32],
+                     stackUnits = (.162,.162,.162)):
+    if not os.path.exists(fName):
+        os.makedirs(fName)
+    if not os.path.exists(os.path.join(fName,"data")):
+        os.makedirs(os.path.join(fName,"data"))
+
+
+
+    if not data is None:
+        stackSize = data.shape
+        datafName = os.path.join(fName,"data/data.bin")
+        with open(datafName,"wa") as f:
+                data.astype(np.uint16).tofile(f)
+
+    Nt,Nz,Ny,Nx = stackSize
+
+    indexfName = os.path.join(fName,"data/index.txt")
+    with open(indexfName,"w") as f:
+        for i in range(Nt):
+            f.write("%i\t0.0000\t1,%i,%i,%i\t0\n"%(i,Nx,Ny,Nz))
+
+    metafName = os.path.join(fName,"metadata.txt")
+    with open(metafName,"w") as f:
+        f.write("timelapse.NumberOfPlanes\t=\t%i\t0\n"%Nz)
+        f.write("timelapse.StartZ\t=\t0\t0\n")
+        f.write("timelapse.StopZ\t=\t%.2f\t0\n"%(stackUnits[2]*(Nz-1.)))
+
 
         
 def test_czi():

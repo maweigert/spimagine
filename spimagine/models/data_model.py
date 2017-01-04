@@ -118,7 +118,7 @@ class SpimData(GenericData):
 
             try:
                 # try to figure out the dimension of the dark frame stack
-                darkSizeZ = os.path.getsize(os.path.join(self.fName, "data/darkstack.bin"))/2/self.stackSize[2]/ \
+                darkSizeZ = os.path.getsize(os.path.join(self.fName, "data/darkstack.bin"))//2//self.stackSize[2]/ \
                             self.stackSize[3]
                 with open(os.path.join(self.fName, "data/darkstack.bin"), "rb") as f:
                     self.darkStack = np.fromfile(f, dtype="<u2").reshape(
