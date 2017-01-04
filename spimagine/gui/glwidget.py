@@ -160,6 +160,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         for url in event.mimeData().urls():
 
             #path = url.toLocalFile().toLocal8Bit().data()
+
             path = url.toLocalFile()
 
             if spimagine.config.__SYSTEM_DARWIN__:

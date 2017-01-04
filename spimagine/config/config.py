@@ -41,8 +41,9 @@ if platform.system() =="Darwin":
     def _parseFileNameFix(fpath):
         from subprocess import check_output
         path  = check_output(["osascript","-e","get posix path of posix file \"file://%s\" -- kthxbai"%fpath])
-        print(path[:-1])
-        return path[:-1]
+        path = path[:-1].decode("unicode_escape")
+        print(path)
+        return path
 
 
 if __name__ == '__main__':
