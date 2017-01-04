@@ -4,7 +4,7 @@
 
 The rendering widget
 
-It renderes a projection via the OpenCL (defined in volume_render.py)
+It renderes a projection via the OpenCL (defined in volumerender.py)
 into a texture which is drawn by simple OpenGL calls onto the canvas.
 
 It should handle all user interaction via a transformation model.
@@ -47,7 +47,7 @@ from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 from OpenGL.GL import *
 import OpenGL.arrays.vbo as glvbo
 import spimagine
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
 from spimagine.models.transform_model import TransformModel
 from spimagine.models.data_model import DataModel

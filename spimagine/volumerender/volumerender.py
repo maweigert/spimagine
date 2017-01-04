@@ -25,7 +25,11 @@ author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
+from __future__ import absolute_import, print_function
+
 import logging
+from six.moves import range
+from six.moves import zip
 
 logger = logging.getLogger(__name__)
 
@@ -83,16 +87,16 @@ class VolumeRenderer:
 
 
         except Exception as e:
-            print e
-            print "could not find GPU OpenCL device -  trying CPU..."
+            print(e)
+            print("could not find GPU OpenCL device -  trying CPU...")
 
             try:
                 init_device(useGPU=False)
                 self.isGPU = False
                 self.dtypes = [np.float32]
             except Exception as e:
-                print e
-                print "could not find any OpenCL device ... sorry"
+                print(e)
+                print("could not find any OpenCL device ... sorry")
 
         self.memMax = .7*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
@@ -224,7 +228,7 @@ class VolumeRenderer:
             self.set_dtype(data.dtype.type)
             _data = data
         else:
-            print "converting type from %s to %s"%(data.dtype.type, self.dtype)
+            print("converting type from %s to %s"%(data.dtype.type, self.dtype))
             _data = data.astype(self.dtype, copy=False)
 
         self.dataSlices = self._get_downsampled_data_slices(_data)
@@ -483,11 +487,11 @@ class VolumeRenderer:
             self.set_projection(projection)
 
         if not hasattr(self, 'dataImg'):
-            print "no data provided, set_data(data) before"
+            print("no data provided, set_data(data) before")
             return
 
         if modelView is None and not hasattr(self, 'modelView'):
-            print "no modelView provided and set_modelView() not called before!"
+            print("no modelView provided and set_modelView() not called before!")
             return
 
         if method=="max_project":
@@ -496,233 +500,3 @@ class VolumeRenderer:
         if method=="iso_surface":
             self._render_isosurface()
 
-
-def renderSpimFolder(fName, outName, width, height, start=0, count=-1,
-                     rot=0, isStackScale=True):
-    """legacy"""
-
-    rend = VolumeRenderer((500, 500))
-    for t in range(start, start+count):
-        print "%i/%i"%(t+1, count)
-        modelView = scaleMat()
-        modelView = dot(rotMatX(t*rot), modelView)
-        modelView = dot(transMat(0, 0, 4), modelView)
-
-        rend.set_dataFromFolder(fName, pos=start+t)
-
-        rend.set_modelView(modelView)
-        out = rend.render(scale=1200, density=.01, gamma=2,
-                          isStackScale=isStackScale)
-
-        imsave("%s_%s.png"%(outName, str(t+1).zfill(int(ceil(log10(count+1))))), out)
-
-
-# two test functions to get the ray coordinates in the kernel...
-def _getOrig(P, M, u=1, v=0):
-    orig0 = dot(inv(P), [u, v, -1, 1])
-    orig0 = dot(inv(M), orig0)
-    orig0 = orig0/orig0[-1]
-    return orig0
-
-
-def _getDirec(P, M, u=1, v=0):
-    direc0 = dot(inv(P), [u, v, 1, 1])
-    direc0 = direc0/direc0[-1];
-    orig0 = dot(inv(P), [u, v, -1, 1]);
-    direc0 = direc0-orig0;
-    direc0 = direc0/norm(direc0)
-    return dot(inv(M), direc0)
-
-
-def test_simple():
-    import pylab
-
-    N = 64
-    d = np.linspace(0, 1, N**3).reshape((N,)*3).astype(np.float32)
-
-    rend = VolumeRenderer((400, 400))
-
-    rend.set_data(d)
-    rend.render()
-    out = rend.output
-    pylab.imshow(out)
-    pylab.show()
-
-
-def test_simple2():
-    import time
-
-    N = 64
-
-    x = np.linspace(-1, 1, N)
-    Z, Y, X = np.meshgrid(x, x, x, indexing="ij")
-    R = np.sqrt(X**2+Y**2+Z**2)
-
-    d = 10000*np.exp(-10*R**2)
-
-    rend = VolumeRenderer((600, 600))
-
-    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
-    rend.set_modelView(mat4_translate(0, 0, -10.))
-
-    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
-    t1 = time.time()
-
-    rend.dev.queue.finish()
-    rend.set_data(d, autoConvert=True)
-    rend.dev.queue.finish()
-
-    t2 = time.time()
-
-    rend.dev.queue.finish()
-    rend.render(maxVal=10000.)
-    out = rend.output
-    rend.dev.queue.finish()
-
-    print "time to set data %s^3:\t %.2f ms"%(N, 1000*(t2-t1))
-
-    print "time to render %s^3:\t %.2f ms"%(N, 1000*(time.time()-t2))
-
-    return d, rend, out
-
-
-def test_new_iso():
-    import time
-
-    N = 128
-
-    x = np.linspace(-1, 1, N)
-    Z, Y, X = np.meshgrid(x, x, x, indexing="ij")
-    R = np.sqrt(X**2+Y**2+Z**2)
-
-    d = 10000*np.exp(-10*R**2)
-    d += 00*np.random.uniform(-1, 1, d.shape)
-
-    rend = VolumeRenderer((600, 600))
-
-    # rend.set_modelView(mat4_rotation(.5,0,1.,0))
-    rend.set_modelView(mat4_translate(0, 0, -1.))
-
-    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
-    t1 = time.time()
-
-    rend.dev.queue.finish()
-    rend.set_data(d, autoConvert=True)
-    rend.dev.queue.finish()
-
-    t2 = time.time()
-
-    rend.dev.queue.finish()
-    rend.render(maxVal=1000., method="iso_surface_new")
-    out = rend.output
-    rend.dev.queue.finish()
-
-    print "time to set data %s^3:\t %.2f ms"%(N, 1000*(t2-t1))
-
-    print "time to render %s^3:\t %.2f ms"%(N, 1000*(time.time()-t2))
-
-    return d, rend, out
-
-
-def test_real():
-    import imgtools
-    import time
-
-    d = imgtools.read3dTiff("/Users/mweigert/Data/sqeazy_corpus/Norden_GFP-LAP_4-1.tif")
-
-    rend = VolumeRenderer((600, 600))
-
-    rend.set_modelView(mat4_rotation(.5, 0, 1., 0))
-
-    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
-    t1 = time.time()
-
-    rend.set_data(d, autoConvert=True)
-    rend.set_units([1., 1., 6.])
-    t2 = time.time()
-
-    rend.render(maxVal=200.)
-
-    print "time to set data :\t %.2f ms"%(1000*(t2-t1))
-
-    print "time to render:\t %.2f ms"%(1000*(time.time()-t2))
-
-    return d, rend, rend.output
-
-
-def test_speed(N=128, renderWidth=400, numParts=1):
-    import time
-
-    d = np.ones((N,)*3, dtype=np.float32)
-    rend = VolumeRenderer((renderWidth,)*2)
-
-    # rend.set_box_boundaries(.3*np.array([-1,1,-1,1,-1,1]))
-    t1 = time.time()
-
-    rend.dev.queue.finish()
-    rend.set_data(d, autoConvert=True)
-    rend.dev.queue.finish()
-
-    rend.set_modelView(mat4_rotation(.5, 0, 1., 0))
-
-    t2 = time.time()
-    rend.dev.queue.finish()
-    for i in range(10):
-        rend.render(method="max_project_part", maxVal=200.,
-                    currentPart=0, numParts=numParts)
-    rend.dev.queue.finish()
-
-    t3 = time.time()
-
-    print "time to set data %s^3:\t %.2f ms"%(N, 1000.*(t2-t1))
-
-    print "time to render %s^3:\t %.2f ms"%(N, 1000./10.*(t3-t2))
-
-    return 1000./10.*(t3-t2)
-
-
-if __name__=="__main__":
-    from time import time
-    # test_simple()
-    # test_speed(256)
-    from gputools.utils.utils import remove_cache_dir, get_cache_dir
-
-    remove_cache_dir()
-
-    N = 128
-
-    x = np.linspace(-1, 1, N)
-    # R1 = np.sqrt(np.sum([(_X-.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
-    # R2 = np.sqrt(np.sum([(_X+.2)**2 for _X in np.meshgrid(x,x,x,indexing="ij")],axis=0))
-
-    Z, Y, X = np.meshgrid(x, x, x, indexing="ij")
-    R1 = np.sqrt((X-.2)**2+Y**2+Z**2)
-    R2 = np.sqrt((X+.2)**2+Y**2+Z**2)
-
-    d = np.exp(-30*R1**2)+np.exp(-30*R2**2)
-    # d += .03*np.random.uniform(0.,1.,d.shape)
-
-    rend = VolumeRenderer((400, 400))
-
-    rend.set_modelView(np.dot(mat4_translate(0, 0, -2.), mat4_rotation(0., 0., 1., 0.)))
-
-    rend.set_data(d.astype(np.float32))
-
-    t = time()
-    # rend.render(maxVal = .5, method = "iso_surface")
-    rend.render(maxVal=.5)
-    print time()-t
-    out = rend.output_normals[..., 0]
-    out = rend.output_occlusion
-    # out[rend.output_depth>10] = 0.6
-    # out = rend.output_depth
-
-    import pylab
-
-    pylab.figure(1)
-    pylab.clf()
-    ss = (slice(100, 300), slice(120, 280))
-    # pylab.imshow(out[140:260,140:260])
-    pylab.imshow(out[ss])
-
-    pylab.show()

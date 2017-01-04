@@ -5,7 +5,7 @@ mweigert@mpi-cbg.de
 
 from __future__ import absolute_import
 import numpy as np
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 import pylab
 import logging
 logger = logging.getLogger(__name__)

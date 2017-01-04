@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 
 import spimagine
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 
 from spimagine.gui.mainwidget import MainWidget
 

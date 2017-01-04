@@ -32,7 +32,7 @@ from OpenGL.GL import shaders
 import spimagine
 
 
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
 from spimagine.models.data_model import DataModel
 from spimagine.models.transform_model import TransformModel
