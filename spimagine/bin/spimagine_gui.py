@@ -16,6 +16,7 @@ email: mweigert@mpi-cbg.de
 """
 
 
+from __future__ import absolute_import, print_function
 import sys
 import os
 
@@ -80,11 +81,6 @@ def main():
 
 
     #splash screen
-    # print 'FIIIIIIIIIIII'
-    # print absPath('../gui/images/splash.png')
-    # print os.listdir(absPath("."))
-    # print sys._MEIPASS
-
     pixmap = QtGui.QPixmap(absPath('../gui/images/splash.png'))
     splash = QtWidgets.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.setMask(pixmap.mask())

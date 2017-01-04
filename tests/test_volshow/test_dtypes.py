@@ -4,17 +4,12 @@
 mweigert@mpi-cbg.de
 
 """
+from __future__ import absolute_import, print_function
 
 import numpy as np
 from PyQt5 import QtCore
-
-
 import logging
 from spimagine import volshow, volfig, logger, qt_exec, NumpyData, DataModel
-
-# logger.setLevel(logging.DEBUG)
-
-import time
 
 def single_data(data):
     w = volshow(data)
@@ -23,11 +18,13 @@ def single_data(data):
 
 
 
-#
-# def test_volumes():
-#     single_data(10*np.ones((100,)*3))
-#     single_data(np.random.uniform(-1,1,(100,)*3))
-#     single_data(np.linspace(0,100,60*70*80).reshape((60,70,80)).astype(np.float32))
+
+def test_volumes():
+    d = np.random.uniform(0,100,(100,)*3)
+
+    for dtype in (np.float32, np.int8, np.uint16, np.int32):
+        print("testing: %s" %dtype)
+        single_data(d.astype(dtype))
 
 
 
