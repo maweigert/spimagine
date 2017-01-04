@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import, print_function
+
 import numpy as np
 
 import os
@@ -88,10 +90,10 @@ class MainWindow(QtWidgets.QWidget):
 
 
     def onSlide(self,val):
-        print "int:\t",val
+        print("int:\t",val)
 
     def onSlideFloat(self,val):
-        print "float:\t",val
+        print("float:\t",val)
 
 
 if __name__ == '__main__':

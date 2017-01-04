@@ -10,6 +10,8 @@ email: mweigert@mpi-cbg.de
 """
 
 
+from __future__ import absolute_import, print_function
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -176,7 +178,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             self.makeCurrent()
             self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         except:
-            print "could not load colormap %s"%name
+            print("could not load colormap %s"%name)
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
@@ -451,7 +453,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
 
-        self.zoom_fac *=  1.4**(-event.angleDelta().x()/300.)
+        self.zoom_fac *=  1.4**(-event.angleDelta().y()/1000.)
 
         self.zoom_fac = clip(self.zoom_fac,0,1.)
 

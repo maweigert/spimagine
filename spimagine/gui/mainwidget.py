@@ -11,6 +11,8 @@ email: mweigert@mpi-cbg.de
 
 
 
+from __future__ import absolute_import, print_function
+
 import os
 import numpy as np
 import sys
@@ -52,6 +54,8 @@ from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 from spimagine.utils.imgutils import write3dTiff
 
 import logging
+from six.moves import range
+from six.moves import zip
 logger = logging.getLogger(__name__)
 
 
@@ -87,7 +91,6 @@ class MainWidget(QtWidgets.QWidget):
 
         self.isCloseFlag = False
 
-        self.isFullScreen = False
         self.setWindowTitle('SpImagine')
 
         self.resize(900, 700)
@@ -440,7 +443,7 @@ class MainWidget(QtWidgets.QWidget):
 
         for imp in self.impListView.impViews:
             if imp.is_active():
-                print "active: ", imp.proc.name, imp.proc.kwargs
+                print("active: ", imp.proc.name, imp.proc.kwargs)
                 data = imp.proc.apply(data)
 
         self.glWidget.renderer.update_data(data)
@@ -479,7 +482,7 @@ class MainWidget(QtWidgets.QWidget):
             self._quatWeights *= 1./sum(self._quatWeights)
             self.egg3d.start()
         except Exception as e:
-            print e
+            print(e)
             self.settingsView.checkEgg.setCheckState(QtCore.Qt.Unchecked)
 
 
@@ -638,7 +641,6 @@ class MainWidget(QtWidgets.QWidget):
             return
 
         path = str(path[0])
-        print path
         if path:
             try:
                 if self.glWidget.dataModel:
@@ -740,21 +742,31 @@ class MainWidget(QtWidgets.QWidget):
         self.glWidget.render()
         self.glWidget.updateGL()
 
+    def _show_fullscreen(self):
+        self.show()
+        self.showFullScreen()
+
+    def _show_normal(self):
+        self.show()
+        self.showNormal()
+
+    def toggle_fullscreen(self):
+        if self.isFullScreen():
+            QtCore.QTimer.singleShot(200, self._show_normal)
+        else:
+            QtCore.QTimer.singleShot(200, self._show_fullscreen)
+
     def mouseDoubleClickEvent(self,event):
 
         super(MainWidget,self).mouseDoubleClickEvent(event)
 
-        if self.isFullScreen:
-            self.showNormal()
-        else:
-            self.showFullScreen()
+        self.toggle_fullscreen()
 
         self.glWidget.resized = True
 
         # there's a bug in Qt that disables drop after fullscreen, so reset it...
         self.setAcceptDrops(True)
 
-        self.isFullScreen = not self.isFullScreen
 
 
 def test_sphere():

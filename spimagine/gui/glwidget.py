@@ -12,9 +12,7 @@ It should handle all user interaction via a transformation model.
 
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
-"""
 
-"""
 understanding glBlendFunc:
 
 first color:     d
@@ -33,9 +31,12 @@ c = s*s.w + d*(1-s.w)
 
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 import sys
 import os
@@ -158,7 +159,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         for url in event.mimeData().urls():
 
-            path = url.toLocalFile().toLocal8Bit().data()
+            #path = url.toLocalFile().toLocal8Bit().data()
+            path = url.toLocalFile()
 
             if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
@@ -179,8 +181,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
         except KeyError:
-            print "could not load colormap '%s'"%name
-            print "valid names: %s"%spimagine.config.__COLORMAPDICT__.keys()
+            print("could not load colormap '%s'"%name)
+            print("valid names: %s"%list(spimagine.config.__COLORMAPDICT__.keys()))
 
     def set_colormap_rgb(self, color=[1., 1., 1.]):
         self._set_colormap_array(np.outer(np.linspace(0, 1., 255), np.array(color)))
@@ -313,7 +315,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def resizeGL(self, width, height):
         height = max(10, height)
-        self.width, self.height = width, height
+        #somehow in qt5 the OpenGLWidget width/height is doubled
+        self.width, self.height = width//2, height//2
 
 
     def add_mesh(self, mesh=SphericalMesh()):
@@ -519,7 +522,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         w = max(self.width, self.height)
         # force viewport to always be a square
-        glViewport((self.width-w)/2, (self.height-w)/2, w, w)
+        # glViewport((self.width - w) / 2, (self.height - w) / 2, w, w)
+
+        glViewport((self.width - w) , (self.height - w) , 2*w, 2*w)
 
 
         if self._background_mode_black:
@@ -638,7 +643,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
-        newZoom = self.transform.zoom*1.2**(event.angleDelta().x()/400.)
+        newZoom = self.transform.zoom*1.2**(event.angleDelta().y()/1000.)
         newZoom = np.clip(newZoom, .4, 3)
         self.transform.setZoom(newZoom)
 
@@ -647,10 +652,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def posToVec3(self, x, y, r0=.8, isRot=True):
         x, y = 2.*x/self.width-1., 1.-2.*y/self.width
+
         r = np.sqrt(x*x+y*y)
         if r>r0-1.e-7:
             x, y = 1.*x*r0/r, 1.*y*r0/r
         z = np.sqrt(max(0, r0**2-x*x-y*y))
+
         if isRot:
             M = np.linalg.inv(self.transform.quatRot.toRotation3())
             x, y, z = np.dot(M, [x, y, z])
@@ -688,9 +695,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         # print c[0], cUser[0]
         # Rotation
 
-        print event.x()
+
         if event.buttons()==QtCore.Qt.LeftButton:
             x1, y1, z1 = self.posToVec3(event.x(), event.y())
+            logger.debug("mouse position: %s %s %s "%(x1,y1,z1))
             n = np.cross(np.array([self._x0, self._y0, self._z0]), np.array([x1, y1, z1]))
             nnorm = linalg.norm(n)
             if np.abs(nnorm)>=1.:

@@ -1,9 +1,12 @@
+from __future__ import absolute_import, print_function
+
 import os
 import numpy as np
 
 from PyQt5 import QtCore
 from PyQt5 import QtGui, QtWidgets
 import OpenGL.GL as GL
+from six.moves import range
 
 N_PREFETCH = 10
 
@@ -172,8 +175,8 @@ def arrayFromImage(fName):
         arr = arr.astype(np.float32)/np.amax(arr)
         return arr[:,:,:-1][:,:,::-1]
     except Exception as e:
-        print e
-        print "could not load image %s"%fName
+        print(e)
+        print("could not load image %s"%fName)
         return np.zeros((10,100,3),np.float32)
 
 

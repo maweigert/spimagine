@@ -1,3 +1,4 @@
+from __future__ import absolute_import, print_function
 import sys
 import numpy as np
 import os
@@ -14,6 +15,7 @@ from spimagine.gui.mainwidget import MainWidget
 
 
 from spimagine.models.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
+import six
 
 _MAIN_APP = None
 
@@ -63,16 +65,16 @@ def volfig(num=None, raise_window = True):
     app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
     
     #filter the dict
-    app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
+    app.volfigs =  OrderedDict((n,w) for n,w in six.iteritems(app.volfigs) if w.isVisible())
 
 
     if not num:
-        if len(app.volfigs.keys())==0:
+        if len(app.volfigs)==0:
             num = 1
         else:
-            num = max(app.volfigs.iterkeys())+1
+            num = max(app.volfigs.keys())+1
 
-    if app.volfigs.has_key(num):
+    if num in app.volfigs:
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
@@ -148,7 +150,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     # check whether there are already open windows, if not create one
     try:
-        num,window = [(n,w) for n,w in app.volfigs.iteritems()][-1]
+        num,window = [(n,w) for n,w in six.iteritems(app.volfigs)][-1]
     except:
         num = 1
 
@@ -185,7 +187,7 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window.setModel(m)
 
-    if cmap is None or not spimagine.config.__COLORMAPDICT__.has_key(cmap):
+    if cmap is None or cmap not in spimagine.config.__COLORMAPDICT__:
         cmap = spimagine.config.__DEFAULTCOLORMAP__
 
 

@@ -5,9 +5,12 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import, print_function
+
 import numpy as np
 from spimagine.utils.transform_matrices import *
 from spimagine.utils import alpha_shape
+from six.moves import range
 
 class Mesh(object):
     """
@@ -258,23 +261,23 @@ if __name__=='__main__':
     from time import time
 
     t = time()
-    for _ in xrange(5):
+    for _ in range(5):
         EllipsoidMesh.create_verts0((1, 1, 1), (0, 0, 0), 30, 20)
-    print time()-t
+    print(time()-t)
 
     t = time()
-    for _ in xrange(50):
+    for _ in range(50):
         v1, n1, i1 = EllipsoidMesh.create_verts((1, 1, 1), (0, 0, 0), 30, 20)
-    print time()-t
+    print(time()-t)
 
 
     t = time()
-    for _ in xrange(50):
+    for _ in range(50):
         v2, n2, i2 = EllipsoidMesh.create_verts2((1, 1, 1), (0, 0, 0), 30, 20)
-    print time()-t
+    print(time()-t)
 
 
-    print np.allclose(v1,v2),np.allclose(n1,n2),np.allclose(i1,i2),
+    print(np.allclose(v1,v2),np.allclose(n1,n2),np.allclose(i1,i2), end=' ')
 
 
     m1 = EllipsoidMesh((1, 2, 1), (0, 0, 0), 30, 20)

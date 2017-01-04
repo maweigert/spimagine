@@ -1,5 +1,8 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
+import six
 logger = logging.getLogger(__name__)
 
 
@@ -266,7 +269,7 @@ class KeyNode(QGraphicsItem):
         actions = OrderedDict()
 
         object_cntext_Menu = QMenu()
-        for k, meth in actionMethods.iteritems():
+        for k, meth in six.iteritems(actionMethods):
             actions[k] = object_cntext_Menu.addAction(k,meth)
 
         if self.fixed:
@@ -377,7 +380,7 @@ class KeyListView(QGraphicsView):
     def resetScene(self):
         logger.debug("resetScene: %s",self.keyList)
         self.scene.clear()
-        for i, (pos,ID) in enumerate(self.keyList.posdict.iteritems()):
+        for i, (pos,ID) in enumerate(six.iteritems(self.keyList.posdict)):
             fixed = ( i == 0 or i == len(self.keyList.posdict)-1)
             self.scene.addItem(KeyNode(self,self.transformModel,self.keyList,ID,fixed))
 
@@ -402,9 +405,8 @@ class KeyListView(QGraphicsView):
         self.relativeAspect = 1.*event.size().width()/KeyFrameScene.WIDTH
         self.setTransform(QTransform.fromScale(self.relativeAspect*self.zoom, 1.))
 
-
     def wheelEvent(self, event):
-        factor = 1.41 ** (-event.angleDelta().x()/80.0)
+        factor = 1.41 ** (-event.angleDelta().y()/200.0)
         self.zoom = clip(self.zoom*factor,1.,1.e3)
 
         self.setTransform(QTransform.fromScale(self.relativeAspect*self.zoom, 1.))
@@ -417,9 +419,9 @@ class KeyListView(QGraphicsView):
 
 
     def contextMenuEvent(self, event):
-        # super(KeyListView,self).contextMenuEvent(event)
 
-        item = self.scene.itemAt(self.mapToScene(event.pos()))
+        item = self.scene.itemAt(self.mapToScene(event.pos()), self.transform())
+
         if type(item) == KeyNode:
             super(KeyListView,self).contextMenuEvent(event)
             return
@@ -431,7 +433,7 @@ class KeyListView(QGraphicsView):
             actions = {}
 
             object_cntext_Menu = QMenu()
-            for k, meth in actionMethods.iteritems():
+            for k, meth in six.iteritems(actionMethods):
                 actions[k] = object_cntext_Menu.addAction(k,meth)
 
                 object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
@@ -444,8 +446,8 @@ class KeyListView(QGraphicsView):
                 self.setModel(k)
                 
             except Exception as e:
-                print e
-                print "not a valid keyframe json file: %s"%fName
+                print(e)
+                print("not a valid keyframe json file: %s"%fName)
                 
 
     def dropEvent(self, event):

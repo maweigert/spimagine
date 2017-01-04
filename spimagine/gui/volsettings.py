@@ -1,20 +1,21 @@
 
+from __future__ import absolute_import, print_function
+
 import logging
+from six.moves import range, zip
 logger = logging.getLogger(__name__)
 
 
 import sys
 import os
-from PyQt5 import QtCore
-from PyQt5 import QtGui, QtWidgets
-from PyQt5 import QtOpenGL
 
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 import numpy as np
 
 
-from gui_utils import createImageCheckbox,createStandardCheckbox, createStandardButton
+from spimagine.gui.gui_utils import createImageCheckbox,createStandardCheckbox, createStandardButton
 from spimagine.gui.floatslider import FloatSlider
 
 import spimagine
@@ -252,8 +253,8 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
             stackUnits = [float(e.text()) for e in self.stackEdits]
             self._stackUnitsChanged.emit(*stackUnits)
         except Exception as e:
-            print "couldnt parse text"
-            print e
+            print("couldnt parse text")
+            print(e)
         
 class MainWindow(QtWidgets.QMainWindow):
 

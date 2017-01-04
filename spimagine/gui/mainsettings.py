@@ -1,5 +1,8 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
+from six.moves import zip
 logger = logging.getLogger(__name__)
 
 
@@ -198,14 +201,14 @@ class MainSettingsPanel(QtWidgets.QWidget):
             stackUnits = [float(e.text()) for e in self.stackEdits]
             self._stackUnitsChanged.emit(*stackUnits)
         except Exception as e:
-            print "couldnt parse text"
-            print e
+            print("couldnt parse text")
+            print(e)
 
     def playIntervalChanged(self):
         self._playIntervalChanged.emit(int(self.playInterval.text()))
 
     def substepsChanged(self):
-        print "changed substeps to ", int(self.editSubsteps.text())
+        print("changed substeps to ", int(self.editSubsteps.text()))
         self._substepsChanged.emit(int(self.editSubsteps.text()))
         
 class MainWindow(QtWidgets.QMainWindow):

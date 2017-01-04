@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import sys
 
 import numpy as np
@@ -8,6 +10,7 @@ from sortedcontainers import SortedDict
 from spimagine.models.imageprocessor import ImageProcessor
 
 from spimagine.gui import gui_utils
+import six
 
 class ImageFlow(QtCore.QObject):
     # _dataPosChanged = QtCore.pyqtSignal(int)
@@ -98,7 +101,7 @@ class ImageProcessorView(QtWidgets.QWidget):
 
         gridBox.addWidget(label,0,1)
 
-        for i, (key, val)  in enumerate(self.proc.kwargs.iteritems()):
+        for i, (key, val)  in enumerate(six.iteritems(self.proc.kwargs)):
             dtype = type(val)
             if dtype == bool:
                 check = QtWidgets.QCheckBox("",self)
@@ -177,11 +180,7 @@ class ImageProcessorListView(QtWidgets.QWidget):
 
     def _include_imp_view(self,impView):
         impView._stateChanged.connect(self.stateChanged)
-        # print self.gridBox.rowCount()
         self.gridBox.addWidget(impView,self.gridBox.rowCount(),0)
-        # line =  QtWidgets.QFrame()
-        # line.setFrameShape(QtWidgets.QFrame.HLine)
-        # self.mainBox.addWidget(line)
 
 
     def add_image_processor(self, imp):
@@ -214,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         def myfunc(data,para=1.):
-            print "myfunc with para", para
+            print("myfunc with para", para)
             return data*para
 
         imp = imageprocessor.FuncProcessor(myfunc,"myfunc",para=.1)
