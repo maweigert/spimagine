@@ -17,18 +17,18 @@ from spimagine import DataModel, SpimData, TiffData, NumpyData
 #     return m
 #
 #
-#
-# def test_numpydata():
-#     d = NumpyData(np.ones((10, 100, 100, 100)))
-#
-#     m = DataModel(d)
-#
-#     print m
-#     for pos in range(m.sizeT()):
-#         print pos
-#         print np.mean(m[pos])
-#
-#
+
+def test_numpydata():
+    d = NumpyData(np.ones((10, 100, 100, 100)))
+
+    m = DataModel(d)
+
+    print m
+    for pos in range(m.sizeT()):
+        print pos
+        print np.mean(m[pos])
+
+
 
 
 def test_speed():
@@ -69,6 +69,19 @@ def test_frompaths():
 def test_folder():
     d = DataModel.fromPath("/Users/mweigert/Data/OpenSpimAngle3")
     print d
+
+
+
+def test_tiffdata():
+    d = TiffData("/Users/mweigert/Data/droso_test.tif")
+
+    m = DataModel(d)
+    print(m)
+    for pos in range(m.sizeT()):
+        print(pos)
+        print(np.mean(m[pos]))
+
+
 
 
 if __name__ == '__main__':

@@ -29,3 +29,5 @@ from spimagine.gui.mainwidget import MainWidget
 from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
 
 from spimagine.utils import *
+
+from spimagine.models import *

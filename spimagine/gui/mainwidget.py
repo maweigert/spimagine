@@ -41,7 +41,7 @@ from spimagine.gui.slice_view import SliceWidget
 
 from spimagine.gui.imageprocessor_view import ImageProcessorListView
 
-import spimagine.utils.egg3d 
+import spimagine.utils.egg3d
 from spimagine.models.imageprocessor import *
 
 

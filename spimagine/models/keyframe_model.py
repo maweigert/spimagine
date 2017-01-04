@@ -1,4 +1,8 @@
+from __future__ import absolute_import, print_function
+
 import logging
+import six
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 
@@ -170,11 +174,11 @@ class KeyFrameList(QtCore.QObject):
 
     def __repr__(self):
         s = "\n".join([str(self.items[ID]) for ID in self.posdict.values()])
-        s += "\n%s\n%s\n"%(str(self.posdict), str(self.items.keys()))
+        s += "\n%s\n%s\n"%(str(self.posdict), str(list(self.items.keys())))
         return s
 
     def dump_to_file(self, fName):
-        print json.dumps(self._to_dict)
+        print(json.dumps(self._to_dict))
 
     def addItem(self, frame=KeyFrame()):
         logger.debug("KeyFrameList.addItem: %s"%frame)
@@ -183,7 +187,7 @@ class KeyFrameList(QtCore.QObject):
         if newID in self.items:
             raise KeyError()
 
-        if newID in self.posdict.values():
+        if newID in list(self.posdict.values()):
             raise KeyError()
 
         self.items[newID] = frame
@@ -199,7 +203,7 @@ class KeyFrameList(QtCore.QObject):
         # print "REMOVE\nBEFORE"
         # print self
 
-        self.posdict.pop(self.posdict.keys()[self.posdict.values().index(ID)])
+        self.posdict.pop(list(self.posdict.keys())[list(self.posdict.values()).index(ID)])
         self.items.pop(ID)
 
         # print "AFTER"
@@ -221,17 +225,17 @@ class KeyFrameList(QtCore.QObject):
 
     def item_id_at(self, index):
         """"returns keyframe id in order 0...len(items)"""
-        return self.posdict.values()[index]
+        return list(self.posdict.values())[index]
 
     def pos_at(self, index):
-        return self.posdict.keys()[index]
+        return list(self.posdict.keys())[index]
 
     def pos_at_id(self, ID):
-        return self.posdict.keys()[self.posdict.values().index(ID)]
+        return list(self.posdict.keys())[list(self.posdict.values()).index(ID)]
 
     def update_pos(self, ID, pos):
-        if pos in self.posdict.keys():
-            print "pos already there:", pos
+        if pos in self.posdict:
+            print("pos already there:", pos)
             return
         frame = self.items[ID]
 
@@ -242,7 +246,7 @@ class KeyFrameList(QtCore.QObject):
     def distribute(self, pos_start, pos_end):
         """distributes the internal data positions linearly according to their nodes position"""
         for it in self.items.values():
-            print it.pos, it.transformData.dataPos
+            print(it.pos, it.transformData.dataPos)
             it.transformData.dataPos = int(pos_start+(pos_end-pos_start)*it.pos)
             # it.transformData.dataPos = pos_start+(pos_end-pos_start)*it.pos
 
@@ -254,7 +258,7 @@ class KeyFrameList(QtCore.QObject):
         if pos>self.pos_at(-1):
             return self.item_at(-1).transformData
 
-        if self.posdict.has_key(pos):
+        if pos in self.posdict:
             return self.items[self.posdict[pos]].transformData
 
         ind = self.posdict.bisect(pos)
@@ -333,11 +337,11 @@ class KeyFrameDecoder(json.JSONDecoder):
             return ret
 
         elif classname=="posdict":
-            return sortedcontainers.SortedDict((float(k), int(v)) for k, v in s.iteritems())
+            return sortedcontainers.SortedDict((float(k), int(v)) for k, v in six.iteritems(s))
 
         elif classname=="items":
             return dict((int(k), KeyFrame(v["pos"], self.decode(v["transformData"], "transformData"))) for k, v in
-                        s.iteritems())
+                        six.iteritems(s))
 
         elif classname=="transformData":
             t = TransformData()
@@ -355,7 +359,7 @@ def test_interpolation():
     k.addItem(KeyFrame(.5, TransformData(quatRot=Quaternion(.71, .71, 0, 0))))
 
     for t in np.linspace(0, 1, 10):
-        print t, k.getTransform(t)
+        print(t, k.getTransform(t))
 
 
 def test_shuffle():
@@ -377,18 +381,18 @@ def test_shuffle():
     for i in range(4):
         k.addItem(KeyFrame(np.random.uniform(0, 1)))
 
-    print k
+    print(k)
     # shuffle them
     for i in range(100):
-        print "+++++++++++++++++"
+        print("+++++++++++++++++")
         k.addItem(KeyFrame(np.random.uniform(0, 1)))
 
         ID = rand_ID(k)
-        print "moving %s"%ID
+        print("moving %s"%ID)
         k.update_pos(ID, np.random.uniform(0, 1.))
 
         ID = rand_ID(k)
-        print "removing %s"%ID
+        print("removing %s"%ID)
         k.removeItem(ID)
 
 
@@ -399,7 +403,7 @@ if __name__=='__main__':
 
     k.addItem(KeyFrame(1, TransformData(zoom=.0, quatRot=Quaternion(.71, .71, 0, 0), bounds=[0]*6)))
 
-    print k.getTransform(0.2)
+    print(k.getTransform(0.2))
     #
     #
     # s = k._to_JSON()

@@ -63,7 +63,7 @@ def volfig(num=None, raise_window = True):
 
     app = getCurrentApp()
     app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
-    
+
     #filter the dict
     app.volfigs =  OrderedDict((n,w) for n,w in six.iteritems(app.volfigs) if w.isVisible())
 
@@ -104,7 +104,7 @@ def volshow(data, autoscale = True,
       e.g.
 
 
-volshow( randint(0,10,(10, 20,30,40) )
+    volshow( randint(0,10,(10, 20,30,40) )
 
 
     - an instance of a class derived from the abstract bass class GenericData
