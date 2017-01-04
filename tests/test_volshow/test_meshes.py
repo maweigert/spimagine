@@ -5,11 +5,13 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
 import numpy as np
 from PyQt5 import QtCore
 import logging
 from spimagine import volshow, volfig, logger, qt_exec, SphericalMesh
 import time
+from six.moves import zip
 
 
 def test_mesh():

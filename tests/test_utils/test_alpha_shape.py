@@ -4,6 +4,7 @@
 mweigert@mpi-cbg.de
 
 """
+from __future__ import absolute_import
 import numpy as np
 from spimagine import volfig, Mesh, qt_exec
 from spimagine.utils import alpha_shape

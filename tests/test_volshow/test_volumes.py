@@ -5,6 +5,8 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as np
 from PyQt5 import QtCore
 
@@ -19,7 +21,7 @@ import time
 def single_data(data, t_close_ms= 1000, **kwargs):
     w = volshow(data,**kwargs)
     QtCore.QTimer.singleShot(t_close_ms,w.closeMe)
-    print w.glWidget.renderer.dataImg.dtype
+    print(w.glWidget.renderer.dataImg.dtype)
     qt_exec()
 
 

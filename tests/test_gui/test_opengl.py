@@ -5,6 +5,8 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
@@ -65,11 +67,11 @@ class TestWidget(QtOpenGL.QGLWidget):
 
 
 
-        print self.context().format().majorVersion()
-        print self.context().format().minorVersion()
+        print(self.context().format().majorVersion())
+        print(self.context().format().minorVersion())
 
 
-        print gl.glGetString(gl.GL_VERSION);
+        print(gl.glGetString(gl.GL_VERSION));
 
 
 

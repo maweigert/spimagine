@@ -5,6 +5,8 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class TestWidget(QtOpenGL.QGLWidget):
 
         self.index = np.array([0,1,2,0,3,2],dtype=np.uint32)
 
-        print self.cols
+        print(self.cols)
         self.vbo = glvbo.VBO(self.data)
         self.vbo_cols = glvbo.VBO(self.cols)
         self.vbo_index = glvbo.VBO(self.index, target=gl.GL_ELEMENT_ARRAY_BUFFER)
@@ -69,11 +71,11 @@ class TestWidget(QtOpenGL.QGLWidget):
 
         gl.glDrawElements(gl.GL_TRIANGLES, len(self.index), gl.GL_UNSIGNED_INT, None)
 
-        print self.context().format().majorVersion()
-        print self.context().format().minorVersion()
+        print(self.context().format().majorVersion())
+        print(self.context().format().minorVersion())
 
 
-        print gl.glGetString(gl.GL_VERSION);
+        print(gl.glGetString(gl.GL_VERSION));
 
 
 

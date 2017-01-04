@@ -1,8 +1,11 @@
 """
 mweigert@mpi-cbg.de
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as np
 from spimagine import DataModel, SpimData, TiffData, NumpyData
+from six.moves import range
 
 
 #
@@ -23,10 +26,10 @@ def test_numpydata():
 
     m = DataModel(d)
 
-    print m
+    print(m)
     for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
+        print(pos)
+        print(np.mean(m[pos]))
 
 
 
@@ -40,7 +43,7 @@ def test_speed():
     d = DataModel.fromPath(fName, 1)
 
     for i in range(100):
-        print i
+        print(i)
 
         if i%10==0:
             a = d[i/10]
@@ -56,19 +59,19 @@ def test_frompaths():
     if len(fnames)==0:
         raise ValueError("could not find any test data!")
 
-    print fnames
+    print(fnames)
     for f in fnames:
-        print f
+        print(f)
         d = DataModel.fromPath(f)
-        print d
+        print(d)
         for i in np.random.randint(0,d.sizeT(),10):
-            print i
+            print(i)
             a =  d[i]
 
 
 def test_folder():
     d = DataModel.fromPath("/Users/mweigert/Data/OpenSpimAngle3")
-    print d
+    print(d)
 
 
 
@@ -79,7 +82,7 @@ def test_tiffdata():
     print(m)
     for pos in range(m.sizeT()):
         print(pos)
-        print(np.mean(m[pos]))
+        print((np.mean(m[pos])))
 
 
 

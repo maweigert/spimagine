@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
@@ -65,15 +67,15 @@ def parseIndexFile(fname):
     try:
         lines = open(fname).readlines()
     except IOError:
-        print "could not open and read ",fname
+        print("could not open and read ",fname)
         return None
 
     items = lines[0].replace("\t",",").split(",")
     try:
         stackSize = [int(i) for i in items[-4:-1]] +[len(lines)]
     except Exception as e:
-        print e
-        print "couldnt parse ", fname
+        print(e)
+        print("couldnt parse ", fname)
         return None
     stackSize.reverse()
     return stackSize
@@ -93,8 +95,8 @@ def parseMetaFile(fName):
 
             return (.162,.162, (1.*z2-z1)/zN)
         except Exception as e:
-            print e
-            print "coulndt parse ", fName
+            print(e)
+            print("coulndt parse ", fName)
             return (1.,1.,1.)
 
 
@@ -119,7 +121,7 @@ def fromSpimFolder(fName,dataFileName="data/data.bin",indexFileName="data/index.
 
             t = time()
             ds.append(func(fName))
-            print "%s\ntime: %.2f ms"%(func.__name__, 1000.*(time()-t))
+            print("%s\ntime: %.2f ms"%(func.__name__, 1000.*(time()-t)))
 
         assert np.allclose(*ds)
 

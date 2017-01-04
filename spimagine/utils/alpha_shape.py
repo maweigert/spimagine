@@ -5,10 +5,13 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
 import numpy as np
 from scipy.spatial import Delaunay, ConvexHull
 from scipy.spatial.distance import cdist
 from itertools import combinations
+from six.moves import range
+from six.moves import zip
 
 
 
@@ -81,7 +84,7 @@ def alpha_shape2(points, alpha = -1):
 
         # filter simplices by face length
         def is_alpha_simp(simp):
-            return np.all([np.sum((points[simp[c1]]-points[simp[c2]])**2)<4*alpha**2 for (c1, c2) in combinations(range(ndim+1), 2)])
+            return np.all([np.sum((points[simp[c1]]-points[simp[c2]])**2)<4*alpha**2 for (c1, c2) in combinations(list(range(ndim+1)), 2)])
 
         #enforce clockwise order
         def make_simp_cw(simp):
@@ -111,7 +114,7 @@ def alpha_shape2(points, alpha = -1):
                 faces_dict[e_sort] = e
                 already_present.add(e_sort)
 
-        faces = np.array(faces_dict.values())
+        faces = np.array(list(faces_dict.values()))
 
         # normals
         normals = np.zeros_like(points)
@@ -188,14 +191,14 @@ def alpha_shape(points, alpha = -1):
 
         # enforce clockwise order
         def cw_order(simp):
-            order = range(len(simp))
+            order = list(range(len(simp)))
             if np.linalg.det(np.vstack([points[simp].T, np.ones(len(simp))]))<0:
                 order[-1], order[-2] = order[-2], order[-1]
             return order
 
         def valid_face(face):
             return np.all([np.sum((points[face[c1]]-points[face[c2]])**2)<4*alpha**2 for (c1, c2) in
-                           combinations(range(ndim), 2)])
+                           combinations(list(range(ndim)), 2)])
 
         tri = Delaunay(points)
 
@@ -208,10 +211,10 @@ def alpha_shape(points, alpha = -1):
 
 
         # get the valid faces (i.e. those that are smaller than 2*alpha)
-        faces_all = [[list(s)[:j]+list(s)[j+1:] for j in xrange(ndim+1)] for s in simplices]
+        faces_all = [[list(s)[:j]+list(s)[j+1:] for j in range(ndim+1)] for s in simplices]
         faces_points = points[faces_all]
         faces_valid = np.ones((len(simplices), ndim+1), np.bool)
-        for (c1, c2) in combinations(range(ndim), 2):
+        for (c1, c2) in combinations(list(range(ndim)), 2):
             faces_valid *= np.linalg.norm(faces_points[:, :, c1, :]-faces_points[:, :, c2, :], axis=-1)<2.*alpha
 
         # faces_valid = [[valid_face(list(s)[:j]+list(s)[j+1:]) for j in xrange(ndim+1)] for s in simplices]
@@ -266,7 +269,7 @@ def alpha_shape(points, alpha = -1):
         for b in border:
             n = neighbors[b]
             s = simplices[b]
-            for j in xrange(len(n)):
+            for j in range(len(n)):
                 if n[j]==-1:
                     faces.append(s[c_combi[j]])
 

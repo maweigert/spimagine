@@ -1,4 +1,11 @@
-__author__ = 'mweigert'
+"""
+
+
+mweigert@mpi-cbg.de
+
+"""
+
+from __future__ import absolute_import
 
 import sys
 

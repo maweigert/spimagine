@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -41,10 +43,10 @@ class MyWidget(MainWidget):
     def on_compile_timer(self):
         for c in CACHEDIRS:
             if os.path.exists(c):
-                print "removing cache: ", c
+                print("removing cache: ", c)
                 shutil.rmtree(c)
 
-        print "compiling..."
+        print("compiling...")
 
 
         try:
@@ -60,12 +62,12 @@ class MyWidget(MainWidget):
 
             self.glWidget.renderer.proc = proc
             self.glWidget.refresh()
-            print np.amin(self.glWidget.output),np.amax(self.glWidget.output)
+            print(np.amin(self.glWidget.output),np.amax(self.glWidget.output))
 
 
 
         except Exception as e:
-            print e
+            print(e)
 
 
 

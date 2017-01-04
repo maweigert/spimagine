@@ -3,6 +3,7 @@
 mweigert@mpi-cbg.de
 """
 
+from __future__ import absolute_import
 import numpy as np
 from spimagine.volumerender.volume_render import VolumeRenderer
 import pylab
