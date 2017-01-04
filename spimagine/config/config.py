@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
 import os
 
-from myconfigparser import MyConfigParser        
-from loadcolormaps import loadcolormaps
+from .myconfigparser import MyConfigParser        
+from .loadcolormaps import loadcolormaps
 
 from gputools import init_device
 
@@ -39,7 +41,7 @@ if platform.system() =="Darwin":
     def _parseFileNameFix(fpath):
         from subprocess import check_output
         path  = check_output(["osascript","-e","get posix path of posix file \"file://%s\" -- kthxbai"%fpath])
-        print path[:-1]
+        print(path[:-1])
         return path[:-1]
 
 
