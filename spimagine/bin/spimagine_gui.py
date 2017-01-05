@@ -64,7 +64,11 @@ def main():
 
     parser.add_argument('-D',
                         action='store_true',
-                        help = "output DEBUG messages")
+                        help="output DEBUG messages")
+
+    parser.add_argument('-v',"--verbose",
+                        action='store_true',
+                        help="output DEBUG messages")
 
     try:
         args = parser.parse_args()
@@ -73,7 +77,7 @@ def main():
         sys.exit(0)
 
         
-    if args.D:
+    if args.D or args.verbose:
         logger = logging.getLogger("spimagine")
         logger.setLevel(logging.DEBUG)
 

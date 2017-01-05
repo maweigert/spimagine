@@ -12,7 +12,7 @@ setup(name='spimagine',
     url='https://github.com/maweigert/spimagine',
     author='Martin Weigert',
     author_email='mweigert@mpi-cbg.de',
-    license='MIT',
+    license='BSD 3-Clause License',
     packages=find_packages(),
     install_requires=[
         'numpy',
@@ -20,8 +20,13 @@ setup(name='spimagine',
         'Pillow>=3.3',
         "PyOpenGL",
         "pyopencl",
+
         "sortedcontainers"
     ],
+    extras_require={
+    ':python_version>="3.2"': ["pyqt5",
+                               ],
+    },
 
     package_data={"spimagine":['volumerender/kernels/*',
                                'gui/shaders/*',
