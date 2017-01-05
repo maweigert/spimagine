@@ -24,7 +24,7 @@ class FloatSlider(QtWidgets.QSlider):
         self.setStyleSheet("QToolTip { color:white;}")
 
     def setRange(self,minVal,maxVal,steps=100):
-        assert(minVal < maxVal)
+        assert(minVal <= maxVal)
         super(FloatSlider,self).setRange(0,steps)
         self.minVal = minVal
         self.maxVal = maxVal
@@ -37,7 +37,9 @@ class FloatSlider(QtWidgets.QSlider):
         return ind
 
     def _from_int(self,n):
+
         return self.minVal+1.*(self.maxVal-self.minVal)*n/self.steps
+
 
     def setValue(self,val):
         logger.debug("floatslider: setValue to : %s"%val)

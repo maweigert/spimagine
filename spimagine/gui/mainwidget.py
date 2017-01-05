@@ -236,7 +236,7 @@ class MainWidget(QtWidgets.QWidget):
             return 2**x
 
         def func2(x):
-            return np.log2(x)
+            return np.log2(x) if x>0 else -1.e20
 
         self.maxSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
         self.transform._maxChanged.connect(lambda x:self.maxSlider.setValue(func2(x)))

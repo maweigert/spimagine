@@ -205,6 +205,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def initializeGL(self):
 
+
         self.resized = True
 
         logger.debug("initializeGL")
@@ -260,7 +261,20 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.set_background_color(0,0,0,.0)
         self.set_background_mode_black(True)
+        self.clear_canvas()
+
         # self.set_background_color(1,1,1,.6)
+
+
+    def clear_canvas(self):
+        if self._background_mode_black:
+            glClearColor(*self._BACKGROUND_BLACK)
+        else:
+            glClearColor(*self._BACKGROUND_WHITE)
+
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+
+
 
     def setTransform(self, transform):
         self.transform = transform
@@ -514,6 +528,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def paintGL(self):
 
 
+
         self.makeCurrent()
 
 
@@ -525,12 +540,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         glViewport((self._width - w)//2 , (self._height - w)//2 , w, w)
 
 
-        if self._background_mode_black:
-            glClearColor(*self._BACKGROUND_BLACK)
-        else:
-            glClearColor(*self._BACKGROUND_WHITE)
-
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        self.clear_canvas()
 
         self._mat_modelview = self.transform.getModelView()
         self._mat_proj = self.transform.getProjection()
@@ -752,6 +762,27 @@ def test_sphere():
     sys.exit(app.exec_())
 
 
+def test_empty():
+    from spimagine import DataModel, NumpyData, SpimData, TiffData
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(500, 500))
+
+    d = np.zeros((800,)*3,np.float32)
+
+    d[0,0,0] = 1.
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.show()
+
+    win.raise_()
+
+
+
+    sys.exit(app.exec_())
+
 def test_demo():
     from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 
@@ -776,10 +807,12 @@ def test_demo_simple():
     win = GLWidget(size=QtCore.QSize(800, 800))
 
     win.setModel(DataModel(DemoData()))
-
     win.show()
 
+
+
     win.raise_()
+
 
     sys.exit(app.exec_())
 
@@ -819,7 +852,10 @@ def test_surface():
 
 
 if __name__=='__main__':
+    test_empty()
+
+
     # test_sphere()
 
     # test_demo_simple()
-    test_surface()
+    #test_surface()

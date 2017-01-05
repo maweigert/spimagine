@@ -36,9 +36,11 @@ def test_volumes():
 
 
 
+
 if __name__ == '__main__':
-    single_data(np.random.randint(0,100,(100,)*2).astype(np.uint8),
-                autoscale = False,
-                t_close_ms = 10000)
+
+    single_data(np.zeros((500,) * 3, np.float32),
+            autoscale=False,
+            t_close_ms=1000)
 
 
