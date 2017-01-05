@@ -330,7 +330,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def resizeGL(self, width, height):
         #somehow in qt5 the OpenGLWidget width/height paraemters above are double the value of self.width/height
-        self._width, self._height = self.width(), self.height()
+        self._viewport_width, self._viewport_height = width, height
 
 
     def add_mesh(self, mesh=SphericalMesh()):
@@ -535,9 +535,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
             return
 
-        w = max(self._width, self._height)
+        w = max(self._viewport_width, self._viewport_height)
         # force viewport to always be a square
-        glViewport((self._width - w)//2 , (self._height - w)//2 , w, w)
+        glViewport((self._viewport_width - w) // 2, (self._viewport_height - w) // 2, w, w)
 
 
         self.clear_canvas()
@@ -659,7 +659,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # self.refresh()
 
     def posToVec3(self, x, y, r0=.8, isRot=True):
-        x, y = 2.*x/self._width-1., 1.-2.*y/self._width
+        x, y = 2.*x/self.width()-1., 1.-2.*y/self.width()
 
         r = np.sqrt(x*x+y*y)
         if r>r0-1.e-7:
@@ -673,7 +673,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         return x, y, z
 
     def posToVec2(self, x, y):
-        x, y = 2.*x/self._width-1., 1.-2.*y/self._width
+        x, y = 2.*x/self.width()-1., 1.-2.*y/self.width()
         return x, y
 
     def mousePressEvent(self, event):
