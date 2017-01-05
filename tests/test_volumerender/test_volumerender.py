@@ -26,7 +26,7 @@ def _getDirec(P, M, u=1, v=0):
 
 
 def test_simple():
-    import pylab
+    import matplotlib.pyplot as plt
 
     N = 64
     d = np.linspace(0, 1, N**3).reshape((N,)*3).astype(np.float32)
@@ -36,8 +36,8 @@ def test_simple():
     rend.set_data(d)
     rend.render()
     out = rend.output
-    pylab.imshow(out)
-    pylab.show()
+    plt.imshow(out)
+    plt.show()
 
 def test_time_to_render():
     import time

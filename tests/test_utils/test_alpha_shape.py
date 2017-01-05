@@ -12,6 +12,8 @@ from spimagine.utils import alpha_shape
 
 def test_2d():
     import matplotlib.pyplot as plt
+
+    plt.ion()
     np.random.seed(0)
 
     N = 500
@@ -78,5 +80,5 @@ if __name__ == '__main__':
 
 
 
-    #points, normals, indices = test_2d()
+    points, normals, indices = test_2d()
     points, normals, indices = test_3d()
