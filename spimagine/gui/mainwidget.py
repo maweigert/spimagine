@@ -91,7 +91,7 @@ class MainWidget(QtWidgets.QWidget):
 
         self.isCloseFlag = False
 
-        self.setWindowTitle('SpImagine')
+        self.setWindowTitle('spimagine')
 
         self.resize(900, 700)
 

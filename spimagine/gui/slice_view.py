@@ -264,13 +264,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         self.renderUpdate = True
 
     def resizeGL(self, width, height):
+        # height = max(10,height)
 
-        height = max(10,height)
-
-        self.width , self.height = width, height
+        self._width , self._height = self.width(), self.height()
 
         self.resized = True
-
         self.resetViewPort()
 
 
@@ -292,10 +290,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         w,h = dim[0],dim[1]
 
 
-
-        # fac = 1.*min(self.width,self.height)/max(w,h)
-
-        fac = min(1.*self.width/w,1.*self.height/h)
+        fac = min(1.*self._width/w,1.*self._height/h)
 
 
         return int(fac*w),int(fac*h)
@@ -303,9 +298,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def resetViewPort(self):
         w,h = self.getDataWidthHeight()
-
-
-        glViewport((self.width-w)//2,(self.height-h)//2,w,h)
+        glViewport((self._width-w)//2,(self._height-h)//2,w,h)
 
 
 
@@ -413,11 +406,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
     def getRelativeCoords(self,x0,y0):
         w, h = self.getDataWidthHeight()
 
-        x = 2.*(x0-.5*(self.width-w))/w-1
-        y = 2.*(y0-.5*(self.height-h))/h-1
+        x = 2.*(x0-.5*(self._width-w))/w-1
+        y = 2.*(y0-.5*(self._height-h))/h-1
 
-        x = (x0-.5*(self.width-w))/w
-        y = 1-(y0-.5*(self.height-h))/h
+        x = (x0-.5*(self._width-w))/w
+        y = 1-(y0-.5*(self._height-h))/h
 
         return x,y
 

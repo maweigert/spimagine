@@ -76,12 +76,25 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-        
+    logger = logging.getLogger("spimagine")
+
+
     if args.D or args.verbose:
-        logger = logging.getLogger("spimagine")
         logger.setLevel(logging.DEBUG)
 
+    # if sys.platform.startswith("win"):
+    # 	QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("CleanLooks"))
+    # print(QtWidgets.QStyleFactory.create("Fusion"))
+    # QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+
+    # QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create(QtWidgets.QStyleFactory.keys()[1]))
+
+
     app = QtWidgets.QApplication(sys.argv)
+
+    logger.debug("available qt styles: %s " % str(QtWidgets.QStyleFactory.keys()))
+    logger.debug("used qt styles: %s " % app.style().metaObject().className())
+    
 
 
     #splash screen
@@ -100,8 +113,8 @@ def main():
     
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
-    if sys.platform.startswith("win"):
-    	QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("CleanLooks"))
+
+
 
 
     win = MainWidget()
