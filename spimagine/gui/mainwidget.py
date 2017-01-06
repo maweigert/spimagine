@@ -768,6 +768,10 @@ class MainWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
 
+    def moveEvent(self, evt):
+        self.glWidget.moveEvent(evt)
+
+
 
 def test_sphere():
     from spimagine import DataModel, NumpyData
