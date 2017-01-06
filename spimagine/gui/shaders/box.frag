@@ -13,4 +13,5 @@ void main()
   float att = exp(-.5*(zPos-tnear));
 
   gl_FragColor = color*att;
+
 }

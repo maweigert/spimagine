@@ -40,19 +40,23 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
+import numpy as np
+
 from PyQt5 import QtCore
 from PyQt5 import QtGui, QtWidgets
 from PyQt5 import QtOpenGL
 from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 from OpenGL.GL import *
 import OpenGL.arrays.vbo as glvbo
+
 import spimagine
 from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
 from spimagine.models.transform_model import TransformModel
 from spimagine.models.data_model import DataModel
 from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
-import numpy as np
+from spimagine.gui.base_glwidget import BaseGLWidget
+
 from spimagine.gui.gui_utils import *
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
@@ -85,19 +89,14 @@ def absPath(myPath):
         return os.path.join(base_path, myPath)
 
 
-class GLWidget(QtOpenGL.QGLWidget):
+class GLWidget(BaseGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
 
-
-    _BACKGROUND_BLACK = (0., 0., 0., 0.)
-    _BACKGROUND_WHITE = (1., 1., 1., 0.)
-
     def __init__(self, parent=None, N_PREFETCH=0, **kwargs):
+        super(GLWidget,self).__init__(parent = parent, render_interval = 10, **kwargs)
+
         logger.debug("init")
 
-        super(GLWidget, self).__init__(parent, **kwargs)
-
-        self.parent = parent
         self.texture_LUT = None
 
         self.setAcceptDrops(True)
@@ -115,10 +114,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setTransform(TransformModel())
 
-        self.renderTimer = QtCore.QTimer(self)
-        self.renderTimer.setInterval(10)
-        self.renderTimer.timeout.connect(self.onRenderTimer)
-        self.renderTimer.start()
         self.renderedSteps = 0
 
         self.N_PREFETCH = N_PREFETCH
@@ -133,10 +128,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self._dataModelChanged.connect(self.dataModelChanged)
 
-        self.refresh()
-
-    def set_background_mode_black(self, mode_back=True):
-        self._background_mode_black = mode_back
         self.refresh()
 
     def setModel(self, dataModel):
@@ -194,17 +185,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape), self.texture_LUT)
         self.refresh()
 
-    def _shader_from_file(self, fname_vert, fname_frag):
-        shader = QOpenGLShaderProgram()
-        shader.addShaderFromSourceFile(QOpenGLShader.Vertex, fname_vert)
-        shader.addShaderFromSourceFile(QOpenGLShader.Fragment, fname_frag)
-        shader.link()
-        shader.bind()
-        logger.debug("GLSL program log:%s", shader.log())
-        return shader
 
     def initializeGL(self):
-
+        super(GLWidget, self).initializeGL()
 
         self.resized = True
 
@@ -251,29 +234,15 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable(GL_BLEND)
 
         # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-
-        # glLineWidth(1.0);
+        #
+        #
         glBlendFunc(GL_ONE, GL_ONE)
 
         glEnable(GL_LINE_SMOOTH);
         glDisable(GL_DEPTH_TEST)
 
-        # self.set_background_color(0,0,0,.0)
+
         self.set_background_mode_black(True)
-        self.clear_canvas()
-
-        # self.set_background_color(1,1,1,.6)
-
-
-    def clear_canvas(self):
-        if self._background_mode_black:
-            glClearColor(*self._BACKGROUND_BLACK)
-        else:
-            glClearColor(*self._BACKGROUND_WHITE)
-
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-
 
 
     def setTransform(self, transform):
@@ -294,9 +263,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.meshes = []
             self.refresh()
 
-    def set_background_color(self, r, g, b, a=1.):
-        self._background_color = (r, g, b, a)
-        glClearColor(r, g, b, a)
 
     def dataSourceChanged(self):
         # print "SETDATA: ", self.dataModel[0].shape
@@ -321,17 +287,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.update_data(self.dataModel[pos])
         self.refresh()
 
-    def refresh(self):
-        # if self.parentWidget() and self.dataModel:
-        #     self.parentWidget().setWindowTitle("SpImagine %s"%self.dataModel.name())
-
-        self.renderUpdate = True
-        self.renderedSteps = 0
-
-    def resizeGL(self, width, height):
-        #somehow in qt5 the OpenGLWidget width/height paraemters above are double the value of self.width/height
-        self._viewport_width, self._viewport_height = width, height
-
 
     def add_mesh(self, mesh=SphericalMesh()):
         """
@@ -347,7 +302,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         there are some predefined meshes like
         SphericalMesh, EllipsoidMesh ...
         """
-
+        self.makeCurrent()
         self.meshes.append([mesh,
                             glvbo.VBO(mesh.vertices.astype(np.float32, copy=False)),
                             glvbo.VBO(np.array(mesh.normals).astype(np.float32, copy=False)),
@@ -355,16 +310,19 @@ class GLWidget(QtOpenGL.QGLWidget):
                                       target=  GL_ELEMENT_ARRAY_BUFFER)])
 
         self.refresh()
+
+        self.doneCurrent()
         # sort according to opacity as the opaque objects should be drawn first
         # self.meshes.sort(key=lambda x: x[0].alpha, reverse=True)
 
     def _paintGL_render(self):
+        self.makeCurrent()
         # Draw the render texture
 
         self.programTex.bind()
 
         self.texture = fillTexture2d(self.output, self.texture)
-
+        #self.texture = self._fill_texture_2d(self.output, self.texture)
 
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
@@ -388,11 +346,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBindTexture(GL_TEXTURE_2D, self.texture_LUT)
         self.programTex.setUniformValue("texture_LUT", 2)
 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glDrawArrays(GL_TRIANGLES, 0, len(self.quadCoord))
+        self.doneCurrent()
+
 
     def _paintGL_slice(self):
+        self.makeCurrent()
         # draw the slice
         self.programSlice.bind()
         self.programSlice.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
@@ -419,8 +380,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programSlice.setUniformValue("texture_LUT", 1)
 
         glDrawArrays(GL_TRIANGLES, 0, len(coords))
+        self.doneCurrent()
 
     def _paintGL_box(self):
+        self.makeCurrent()
 
         glEnable(GL_BLEND)
         # Draw the cube
@@ -446,12 +409,13 @@ class GLWidget(QtOpenGL.QGLWidget):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDrawArrays(GL_LINES, 0, len(self.cubeCoords))
         glDisable(GL_DEPTH_TEST)
-
+        self.doneCurrent()
 
     def _paintGL_mesh(self, mesh, vbo_vertices, vbo_normals, vbo_indices):
         """
         paint a mesh (which has all the coordinates and colors in it
         """
+        self.makeCurrent()
         glEnable(GL_DEPTH_TEST)
         glDisable(GL_BLEND)
 
@@ -508,7 +472,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             prog.disableAttributeArray("position")
             prog.disableAttributeArray("normal")
 
-
+        self.doneCurrent()
 
         #
         # if not mesh.edgecolor is None:
@@ -528,17 +492,8 @@ class GLWidget(QtOpenGL.QGLWidget):
     def paintGL(self):
 
 
-
-        self.makeCurrent()
-
-
-        if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
-            return
-
-        w = max(self._viewport_width, self._viewport_height)
-        # force viewport to always be a square
-        glViewport((self._viewport_width - w) // 2, (self._viewport_height - w) // 2, w, w)
-
+        # if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
+        #     return
 
         self.clear_canvas()
 
@@ -562,6 +517,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         for (m, vbo_verts, vbo_normals, vbo_indices) in self.meshes:
             self._paintGL_mesh(m, vbo_verts, vbo_normals,vbo_indices)
+
+
+    def refresh(self):
+        self.renderUpdate = True
+        self.renderedSteps = 0
+
 
     def render(self):
         logger.debug("render")
@@ -637,6 +598,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         im.save(fName)
 
     def onRenderTimer(self):
+
         # if self.renderUpdate:
         #     self.render()
         #     self.renderUpdate = False
@@ -647,7 +609,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.render()
             logger.debug("time to render:  %.2f"%(1000.*(time.time()-s)))
             self.renderedSteps += 1
-            self.updateGL()
+            self.update()
 
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
@@ -804,7 +766,7 @@ def test_demo_simple():
 
     app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(800, 800))
+    win = GLWidget(size=QtCore.QSize(400, 400))
 
     win.setModel(DataModel(DemoData()))
     win.show()
@@ -852,7 +814,8 @@ def test_surface():
 
 
 if __name__=='__main__':
-    test_empty()
+    test_demo_simple()
+    #test_empty()
 
 
     # test_sphere()
