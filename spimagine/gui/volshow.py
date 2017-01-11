@@ -103,38 +103,61 @@ def volshow(data, autoscale = True,
 
       e.g.
 
-
-    volshow( randint(0,10,(10, 20,30,40) )
+        volshow( randint(0,10,(10, 20,30,40) )
 
 
     - an instance of a class derived from the abstract bass class GenericData
 
       e.g.
 
-from spimagine.data_model import GenericData
+    from spimagine.data_model import GenericData
 
-class myData(GenericData):
-    def __getitem__(self,i):
-        return (100*i+3)*ones((100,100,100)
-    def size(self):
-        return (4,100,100,100)
+    class myData(GenericData):
+        def __getitem__(self,i):
+            return (100*i+3)*ones((100,100,100)
+        def size(self):
+            return (4,100,100,100)
 
-volshow(myData())
+    volshow(myData())
 
         or
-from spimagine.data_model import DataModel
 
-volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
+    from spimagine.data_model import DataModel
 
-
-
-    returns window.glWidget if not in blocking mode
+    volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
 
-    available colormaps: cmap = ["coolwarm","jet","hot","grays"]
-    if cmap = None, then the default one is used
+
+
+    Parameters
+    ----------
+    data: ndarray
+        the volumetric data to render, 3d or 4d
+
+    autoscale: boolean
+        autoscales the data
+
+    stackUnits: tuple
+        the voxel dimensions (dx, dy, dz)
+
+    blocking: boolean
+        if true, starts the qt event loop and waits till finished
+        (use this e.g. when running from outside ipython)
+
+    cmap: str
+        the colormap to use
+        available colormaps: cmap = ["viridis", "coolwarm","jet","hot","grays"]
+        if None, then the default one is used
+
+    raise_window: boolean
+        if true, raises the window
+
+    Returns
+    -------
+        the widget w
 
     """
+
 
     logger.debug("volshow")
 
