@@ -149,6 +149,9 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.emit()
 
+
+
+
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.accept()
@@ -281,13 +284,18 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         logger.debug("+++++++++ data model changed")
-        logger.debug("dataModelchanged: min %s max %s" % (np.amin(self.dataModel[0]),
-                                                          np.amax(self.dataModel[0])))
+
         if self.dataModel:
+            logger.debug("dataModelchanged: min %s max %s" % (np.amin(self.dataModel[0]),
+                                                              np.amax(self.dataModel[0])))
+
             self.renderer.set_data(self.dataModel[0], autoConvert=True)
+
             self.transform.reset(minVal=np.amin(self.dataModel[0]),
                                  maxVal=np.amax(self.dataModel[0]),
                                  stackUnits=self.dataModel.stackUnits())
+
+
             self.meshes = []
             self.refresh()
 
@@ -296,10 +304,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClearColor(r, g, b, a)
 
     def dataSourceChanged(self):
-        # print "SETDATA: ", self.dataModel[0].shape
+
         logger.debug("dataSourcechanged: min %s max %s" % (np.amin(self.dataModel[0]),
                                                            np.amax(self.dataModel[0])))
         self.renderer.set_data(self.dataModel[0], autoConvert=True)
+
         self.transform.reset(minVal=np.amin(self.dataModel[0]),
                              maxVal=np.amax(self.dataModel[0]),
                              stackUnits=self.dataModel.stackUnits())
@@ -513,7 +522,10 @@ class GLWidget(QtOpenGL.QGLWidget):
             #
             #     glDrawArrays(GL_LINES, 0, len(mesh.edges))
 
+
+
     def paintGL(self):
+
 
         self.makeCurrent()
 

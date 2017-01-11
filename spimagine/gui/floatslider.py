@@ -33,7 +33,7 @@ class FloatSlider(QtWidgets.QSlider):
     def _from_float(self,x):
         ind = int(self.steps*(x-self.minVal)/(self.maxVal-self.minVal))
         ind = max(0,min(self.steps,ind))
-        logger.debug("floatslider:  index from float %s = %s"%(x,ind))
+        logger.debug("floatslider (id = %s):  index from float %s = %s"%(id(self), x,ind))
         return ind
 
     def _from_int(self,n):
@@ -42,7 +42,7 @@ class FloatSlider(QtWidgets.QSlider):
 
 
     def setValue(self,val):
-        logger.debug("floatslider: setValue to : %s"%val)
+        logger.debug("floatslider (id = %s): setValue to : %s"%(id(self),val))
         self.floatValue = val
         super(FloatSlider,self).setValue(self._from_float(val))
 
