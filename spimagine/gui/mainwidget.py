@@ -525,7 +525,6 @@ class MainWidget(QtWidgets.QWidget):
         # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
-
         self.glWidget.setModel(dataModel)
         self.sliceWidget.setModel(dataModel)
 
@@ -769,7 +768,8 @@ class MainWidget(QtWidgets.QWidget):
 
 
     def moveEvent(self, evt):
-        self.glWidget.moveEvent(evt)
+        if hasattr(self, "glWidget"):
+            self.glWidget.moveEvent(evt)
 
 
 
@@ -810,6 +810,26 @@ def test_sphere():
     sys.exit(app.exec_())
 
 
+
+def test_empty():
+    from spimagine import DataModel, NumpyData, SpimData, TiffData
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    win = MainWidget()
+
+    d = np.zeros((600,) * 3, np.float32)
+
+    d[0, 0, 0] = 1.
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.show()
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
 def test_surface():
     from spimagine import DataModel, NumpyData, DemoData
     from spimagine.gui.mesh import SphericalMesh
@@ -825,7 +845,6 @@ def test_surface():
 
 
 
-    #win.setModel(DataModel(NumpyData(d)))
     win.setModel(DataModel(DemoData()))
 
     # win.glWidget.add_surface_ellipsoid((1.,0,0),
@@ -850,4 +869,6 @@ def test_surface():
 if __name__ == '__main__':
     #test_sphere()
 
-    test_surface()
+    # test_surface()
+
+    test_empty()

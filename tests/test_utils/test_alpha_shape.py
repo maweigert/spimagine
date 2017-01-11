@@ -25,6 +25,7 @@ def test_2d():
 
     points, normals, indices = alpha_shape(points, .1)
 
+
     plt.clf()
 
 
@@ -32,12 +33,14 @@ def test_2d():
     _x = points[indices].reshape(len(indices)*2,2)
     _n = normals[indices].reshape(len(indices)*2,2)
 
+
     plt.quiver(_x[:,0],_x[:,1],_n[:,0],_n[:,1], color = (.5,)*3)
     plt.plot(points[:,0],points[:,1],".")
     for edge in indices:
         plt.plot(points[edge, 0], points[edge, 1], "k", lw=2)
 
     plt.axis("equal")
+
 
     return points, normals, indices
 
@@ -66,7 +69,7 @@ def test_3d():
 
     w.glWidget.add_mesh(m)
     w.transform.setRotation(0.4,0,1,0)
-
+    w.show()
     # add this when run from command line
     from PyQt5 import QtCore
     QtCore.QTimer.singleShot(1000,w.closeMe)
@@ -80,5 +83,5 @@ if __name__ == '__main__':
 
 
 
-    points, normals, indices = test_2d()
+    #points, normals, indices = test_2d()
     points, normals, indices = test_3d()

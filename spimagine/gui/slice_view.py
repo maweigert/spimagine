@@ -242,6 +242,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
                                  amax(self.dataModel[0]),
                                  self.dataModel.stackUnits())
 
+
             self.refresh()
 
 
