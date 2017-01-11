@@ -21,9 +21,13 @@ import time
 def single_data(data, t_close_ms= 1000, **kwargs):
     w = volshow(data,**kwargs)
     QtCore.QTimer.singleShot(t_close_ms,w.closeMe)
-    print(w.glWidget.renderer.dataImg.dtype)
+
     qt_exec()
 
+def _volfig(t_close_ms= 1000, **kwargs):
+    w = volfig()
+    QtCore.QTimer.singleShot(t_close_ms,w.closeMe)
+    qt_exec()
 
 
 def test_volumes():
@@ -39,8 +43,9 @@ def test_volumes():
 
 if __name__ == '__main__':
 
-    single_data(np.zeros((100,) * 3, np.float32),
+    single_data(np.zeros((500,) * 3, np.float32),
             autoscale=False,
-            t_close_ms=10000)
+            t_close_ms=1000)
+
 
 

@@ -262,6 +262,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.set_background_mode_black(True)
         self.clear_canvas()
 
+
         # self.set_background_color(1,1,1,.6)
 
     def clear_canvas(self):
@@ -327,7 +328,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def resizeGL(self, width, height):
         # somehow in qt5 the OpenGLWidget width/height parameters above are double the value of self.width/height
         self._viewport_width, self._viewport_height = width, height
-
 
     def add_mesh(self, mesh=SphericalMesh()):
         """
@@ -710,12 +710,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.refresh()
 
-
-
     def _enforce_resize(self):
         """ this is to enforce the resizeGL event """
-        self.resize(self.width() +1,self.height())
-        self.resize(self.width() -1, self.height())
+        self.resize(self.width() + 1, self.height())
+        self.resize(self.width() - 1, self.height())
 
     def onScreenNumberChange(self, evt):
         self._enforce_resize()
@@ -726,10 +724,9 @@ class GLWidget(QtOpenGL.QGLWidget):
     def moveEvent(self, evt):
         current_screen = self._get_screen_number()
         if hasattr(self, "_current_screen") and self._current_screen != current_screen:
-                self.onScreenNumberChange(evt)
+            self.onScreenNumberChange(evt)
 
         self._current_screen = current_screen
-
 
 
 def test_sphere():
@@ -771,17 +768,20 @@ def test_empty():
 
     app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(500, 500))
+    win = GLWidget(size=QtCore.QSize(1000, 1000))
 
-    d = np.zeros((100,) * 3, np.float32)
+    d = np.zeros((800,) * 3, np.float32)
 
     d[0, 0, 0] = 1.
 
-    win.setModel(DataModel(NumpyData(d)))
 
     win.show()
 
     win.raise_()
+
+    QtCore.QThread.msleep(1000)
+
+    win.setModel(DataModel(NumpyData(d)))
 
     sys.exit(app.exec_())
 

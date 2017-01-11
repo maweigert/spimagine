@@ -23,6 +23,7 @@ _MAIN_APP = None
 
 import logging
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -43,7 +44,7 @@ def absPath(myPath):
 def getCurrentApp():
     app = QtWidgets.QApplication.instance()
 
-    if not app:
+    if app is None:
         app = QtWidgets.QApplication(sys.argv)
 
     if not hasattr(app,"volfigs"):
@@ -79,12 +80,10 @@ def volfig(num=None, raise_window = True):
         app.volfigs.pop(num)
     else:
         window = MainWidget()
-        window.show()
+
     #make num the last window
     app.volfigs[num] = window
 
-    if raise_window:
-        window.raise_()
 
     return window
 
@@ -148,17 +147,6 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     t = time()
 
-    # check whether there are already open windows, if not create one
-    try:
-        num,window = [(n,w) for n,w in six.iteritems(app.volfigs)][-1]
-    except:
-        num = 1
-
-    window = volfig(num, raise_window = raise_window)
-
-    logger.debug("volfig: %s s "%(time()-t))
-    t = time()
-
 
 
     # if isinstance(data,GenericData):
@@ -182,10 +170,24 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
         m = DataModel(NumpyData(data))
 
 
+
     logger.debug("create model: %s s "%( time()-t))
     t = time()
 
+    # check whether there are already open windows, if not create one
+    try:
+        num, window = [(n, w) for n, w in six.iteritems(app.volfigs)][-1]
+    except:
+        num = 1
+
+    window = volfig(num)
+    logger.debug("volfig: %s s " % (time() - t))
+    t = time()
+
+
     window.setModel(m)
+
+    logger.debug("set model: %s s" % (time() - t));
 
     if cmap is None or cmap not in spimagine.config.__COLORMAPDICT__:
         cmap = spimagine.config.__DEFAULTCOLORMAP__
@@ -193,12 +195,12 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     window.glWidget.set_colormap(cmap)
 
-
-
-    logger.debug("set model: %s s"%( time()-t));
-    t = time()
-
     window.glWidget.transform.setStackUnits(*stackUnits)
+
+    window.show()
+
+    if raise_window:
+        window.raise_()
 
     if blocking:
         getCurrentApp().exec_()
