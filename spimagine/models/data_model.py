@@ -271,12 +271,13 @@ class TiffMultipleFiles(GenericData):
     """2/3d tiff data inside a folder"""
 
     def __init__(self, fName=[]):
-        GenericData.__init__(self, fName)
+        GenericData.__init__(self, "["+", ".join(fName)+"]")
         self.fNames = fName
         self.load(fName)
 
     def load(self, fNames, stackUnits=[1., 1., 1.]):
         if fNames:
+
 
             if len(self.fNames)==0:
                 raise Exception("filelist %s seems to be empty"%fName)

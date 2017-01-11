@@ -5,12 +5,12 @@ mweigert@mpi-cbg.de
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-
+from time import time
 from spimagine import MainWidget, DemoData, DataModel, qt_exec
 from spimagine.gui.glwidget import GLWidget
 
@@ -24,8 +24,9 @@ def test_widget():
     win = MainWidget()
     #win = GLWidget()
 
+    t = time()
     win.setModel(DataModel(DemoData()))
-
+    print("time to set model: ", time()-t)
     win.show()
     win.raise_()
 
