@@ -708,18 +708,18 @@ class MainWidget(QtWidgets.QWidget):
 
             if self.rotateTimer.isActive():
                 self.rotateTimer.stop()
-                
-            self.glWidget.renderTimer.stop()
-            
-            # self.glWidget.setParent(None)
-            # free the gpu resources....
-            logger.debug("deleting the renderer")
 
-            del self.glWidget.renderer
+            if hasattr(self, "glWidget"):
+                logger.debug("deleting the renderer")
+                try:
+                    self.glWidget.renderTimer.stop()
+                    del self.glWidget.renderer
+                    self.glWidget.setParent(None)
+                    del self.glWidget
+                except:
+                    pass
+                logger.debug("....finished deleting the renderer")
 
-            self.glWidget.setParent(None)
-            del self.glWidget
-            logger.debug("....finished deleting the renderer")
             event.accept()
 
 

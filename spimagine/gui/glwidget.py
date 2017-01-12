@@ -101,8 +101,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setAcceptDrops(True)
 
-        self.renderer = VolumeRenderer((spimagine.config.__DEFAULTWIDTH__,
-                                        spimagine.config.__DEFAULTWIDTH__))
+        self.renderer = VolumeRenderer((spimagine.config.__DEFAULT_TEXTURE_WIDTH__,
+                                        spimagine.config.__DEFAULT_TEXTURE_WIDTH__))
 
         self.renderer.set_projection(mat4_perspective(60, 1., .1, 100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))

@@ -80,6 +80,7 @@ def volfig(num=None, raise_window = True):
         app.volfigs.pop(num)
     else:
         window = MainWidget()
+        window.resize(spimagine.config.__DEFAULT_WIDTH__,spimagine.config.__DEFAULT_HEIGHT__)
 
     #make num the last window
     app.volfigs[num] = window

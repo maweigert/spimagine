@@ -104,13 +104,12 @@ def main():
     splash.show()
     app.processEvents()
 
-
+    import spimagine
     from spimagine.gui.mainwidget import MainWidget
     from spimagine.models.data_model import DemoData, DataModel
+
         
 
-
-    
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
 
@@ -118,6 +117,7 @@ def main():
 
 
     win = MainWidget()
+    win.resize(spimagine.config.__DEFAULT_WIDTH__, spimagine.config.__DEFAULT_HEIGHT__)
     if args.fname:
         if len(args.fname)==1:
             win.setModel(DataModel.fromPath(args.fname[0]))
