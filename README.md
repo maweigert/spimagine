@@ -79,11 +79,14 @@ On https://wiki.tiker.net/OpenCLHowTo you can find some further information
 ####  Install the package
 
 * Python 2
+
 ```
+sudo apt-get install python-pyqt5 python-pyqt5.qtopengl python-pyqt5.qtsvg
 pip install spimagine
 ```
 
 * Python 3
+
 ```
 pip3 install spimagine
 ```
