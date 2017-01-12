@@ -45,7 +45,7 @@ To install it as a proper package, do
 * Python 2
 ```
 brew install pyqt5 --with-python --without-python3
-pip2 install spimagine
+pip install spimagine
 ```
 
 * Python 3
@@ -80,7 +80,7 @@ On https://wiki.tiker.net/OpenCLHowTo you can find some further information
 
 * Python 2
 ```
-pip2 install spimagine
+pip install spimagine
 ```
 
 * Python 3
@@ -89,7 +89,7 @@ pip3 install spimagine
 ```
 
 
-#### Windows
+### Windows
 
 Install the OpenCL SDK of your graphcis card vendor.
 Install pyopencl and PyQt5 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
