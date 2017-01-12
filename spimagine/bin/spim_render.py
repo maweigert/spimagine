@@ -14,6 +14,8 @@ email: mweigert@mpi-cbg.de
 
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import argparse
 
@@ -22,6 +24,7 @@ from scipy.misc import toimage
 from imgutils import read3dTiff, fromSpimFolder
 
 from PIL import Image
+import six
 
 def getTiffSize(fName):
     img = Image.open(fName, 'r')
@@ -121,8 +124,8 @@ def main():
     args = parser.parse_args()
 
 
-    for k,v in vars(args).iteritems():
-        print k,v
+    for k,v in six.iteritems(vars(args)):
+        print(k,v)
 
     rend = VolumeRenderer((args.width,args.width))
 
@@ -131,8 +134,7 @@ def main():
     elif args.format=="bscope":
         data = fromSpimFolder(args.input,pos=args.pos,count=1)[0,...]
     else:
-        print "ERROR: format", args.format, "not supported (should be tif/bscope)"
-        return
+        raise ValueError("format %s not supported (should be tif/bscope)" %args.format)
 
     rend.set_data(data)
     rend.set_units(args.units)
@@ -163,7 +165,7 @@ def main():
 
     else:
         if not args.range:
-            print  "min/max: ", amin(out), amax(out)
+            print("min/max: ", amin(out), amax(out))
             img = toimage(out, low = amin(out), high  = amax(out),mode = "I")
         else:
             img = toimage(out, low = args.range[0], high  = args.range[1], mode = "I")

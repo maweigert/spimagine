@@ -5,14 +5,16 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
 import sys, os
 import numpy as np
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
 import OpenGL.GL as gl
 import OpenGL.arrays.vbo as glvbo
 
@@ -65,18 +67,18 @@ class TestWidget(QtOpenGL.QGLWidget):
 
 
 
-        print self.context().format().majorVersion()
-        print self.context().format().minorVersion()
+        print(self.context().format().majorVersion())
+        print(self.context().format().minorVersion())
 
 
-        print gl.glGetString(gl.GL_VERSION);
+        print(gl.glGetString(gl.GL_VERSION));
 
 
 
 
 
 if __name__=='__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = TestWidget(size=QtCore.QSize(800, 800))
 

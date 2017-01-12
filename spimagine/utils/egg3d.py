@@ -4,7 +4,9 @@ receive input data of Loics Egg3d controller and emit qt signals
 
 """
 
-from PyQt4 import QtCore,QtGui
+from __future__ import absolute_import
+from __future__ import print_function
+from PyQt5 import QtCore,QtGui, QtWidgets
 
 import socket
 
@@ -58,7 +60,7 @@ class Egg3dListener(QtCore.QThread):
         self.socket = s
 
     def run(self):
-        print "Egg3dlistener started"
+        print("Egg3dlistener started")
         self.isActive = True
         self.vals = []
         while self.isActive:
@@ -75,7 +77,7 @@ class Egg3dListener(QtCore.QThread):
                 self._quaternionChanged.emit(*val[:4])
                     
             except  Exception as e:
-                print "could not read", e
+                print("could not read", e)
             time.sleep(0.005)
 
 
@@ -93,27 +95,27 @@ class Egg3dController(QtCore.QObject):
             self.listener.set_socket(self.socket)
             self.socket.connect(("localhost",port))
             # self.listener._zoomChanged.connect(self.foo)
-            print "connection with Egg3d established!"
+            print("connection with Egg3d established!")
         except Exception as e:
-            print "Couldnt connect with port %i:  %s"%(port,e)
+            print("Couldnt connect with port %i:  %s"%(port,e))
             raise Exception("Connection refused at port %s"%port)
 
 
     def start(self):
-        print "starting Egg3dController..."
+        print("starting Egg3dController...")
 
         self._reset()
         self.listener.start()
 
     def stop(self):
-        print "stopping Egg3dController..."
+        print("stopping Egg3dController...")
         self.listener.isActive = False
         # self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
 
 
     def foo(self,zoom):
-        print zoom
+        print(zoom)
 
 
 

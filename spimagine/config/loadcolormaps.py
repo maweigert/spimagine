@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import re
@@ -64,8 +66,8 @@ def loadcolormaps():
             try:
                 cmaps[match.group(1)] = _arrayFromImage(os.path.join(basePath,fName))[0,:,:]
             except Exception as e:
-                print e
-                print "could not load %s"%fName
+                print(e)
+                print("could not load %s"%fName)
 
     return cmaps
 
@@ -77,6 +79,6 @@ if __name__ == '__main__':
     
     d =  loadcolormaps()
 
-    print "time to load cmaps: %s s"%(time()-t)
+    print("time to load cmaps: %s s"%(time()-t))
 
-    print len(d)
+    print(len(d))

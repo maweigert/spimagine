@@ -2,9 +2,11 @@
 Implements generic classes for processing of volumetric data
 """
 
+from __future__ import absolute_import, print_function
 import sys
 import numpy as np
 import gputools
+from six.moves import zip
 
 
 
@@ -26,7 +28,7 @@ class ImageProcessor(object):
         raise NotImplementedError()
 
     def __getattr__(self,attr):
-        if self.kwargs.has_key(attr):
+        if attr in self.kwargs:
             return self.kwargs[attr]
         else:
             return super(ImageProcessor,self).__getattr__(attr)

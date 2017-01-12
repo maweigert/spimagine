@@ -3,9 +3,11 @@
 mweigert@mpi-cbg.de
 """
 
+from __future__ import absolute_import
 import numpy as np
-from spimagine.volumerender.volume_render import VolumeRenderer
-import pylab
+from spimagine.volumerender.volumerender import VolumeRenderer
+from spimagine.utils.transform_matrices import *
+import matplotlib.pyplot as plt
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -33,20 +35,20 @@ def test_simple_rendering():
 
     # drawing
     #pylab.ioff()
-    pylab.figure(1)
-    pylab.clf()
+    plt.figure(1)
+    plt.clf()
     for i,out in enumerate(outs):
-        pylab.subplot(1,len(outs),i+1)
-        pylab.imshow(out)
-        pylab.axis("off")
-        pylab.title("%s"%(dtype))
+        plt.subplot(1,len(outs),i+1)
+        plt.imshow(out)
+        plt.axis("off")
+        plt.title("%s"%(dtype))
 
-    pylab.show()
-    pylab.pause(2)
+    plt.show()
+    plt.pause(2)
     return rend
 
 def test_surface():
-    from spimagine.utils.transform_matrices import *
+
     N = 128
     x = np.linspace(-1,1,N)
     Z,Y,X = np.meshgrid(x,x,x,indexing="ij")
@@ -63,15 +65,15 @@ def test_surface():
     #rend.render(data=data.astype(np.float32), maxVal = 100., method="max_project")
 
     # drawing
-    #pylab.ioff()
-    pylab.figure(1)
-    pylab.clf()
+    #plt.ioff()
+    plt.figure(1)
+    plt.clf()
 
-    pylab.imshow(rend.output)
-    pylab.axis("off")
+    plt.imshow(rend.output)
+    plt.axis("off")
 
-    pylab.show()
-    pylab.pause(.1)
+    plt.show()
+    plt.pause(.1)
     return rend
 
 

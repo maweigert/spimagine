@@ -1,10 +1,11 @@
+from __future__ import absolute_import, print_function
 from .version import __version__
 
-try:
-    from pkg_resources import get_distribution, DistributionNotFound
-    __version__ = get_distribution("spimagine").version
-except Exception as e:
-    print e
+# try:
+#     from pkg_resources import get_distribution, DistributionNotFound
+#     __version__ = get_distribution("spimagine").version
+# except Exception as e:
+#     print(e)
 
 
 import logging
@@ -29,3 +30,5 @@ from spimagine.gui.mainwidget import MainWidget
 from spimagine.gui.mesh import Mesh, SphericalMesh, EllipsoidMesh
 
 from spimagine.utils import *
+
+from spimagine.models import *

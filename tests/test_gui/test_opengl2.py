@@ -5,14 +5,16 @@ mweigert@mpi-cbg.de
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
 
 import sys, os
 import numpy as np
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
 import OpenGL.GL as gl
 import OpenGL.arrays.vbo as glvbo
 
@@ -26,7 +28,7 @@ class TestWidget(QtOpenGL.QGLWidget):
 
         self.index = np.array([0,1,2,0,3,2],dtype=np.uint32)
 
-        print self.cols
+        print(self.cols)
         self.vbo = glvbo.VBO(self.data)
         self.vbo_cols = glvbo.VBO(self.cols)
         self.vbo_index = glvbo.VBO(self.index, target=gl.GL_ELEMENT_ARRAY_BUFFER)
@@ -69,18 +71,18 @@ class TestWidget(QtOpenGL.QGLWidget):
 
         gl.glDrawElements(gl.GL_TRIANGLES, len(self.index), gl.GL_UNSIGNED_INT, None)
 
-        print self.context().format().majorVersion()
-        print self.context().format().minorVersion()
+        print(self.context().format().majorVersion())
+        print(self.context().format().minorVersion())
 
 
-        print gl.glGetString(gl.GL_VERSION);
+        print(gl.glGetString(gl.GL_VERSION));
 
 
 
 
 
 if __name__=='__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = TestWidget(size=QtCore.QSize(800, 800))
 

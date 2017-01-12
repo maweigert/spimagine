@@ -11,12 +11,14 @@ email: mweigert@mpi-cbg.de
 
 
 
+from __future__ import absolute_import, print_function, unicode_literals, division
+
 import os
 import numpy as np
 import sys
 
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
 
 
 
@@ -39,7 +41,7 @@ from spimagine.gui.slice_view import SliceWidget
 
 from spimagine.gui.imageprocessor_view import ImageProcessorListView
 
-import spimagine.utils.egg3d 
+import spimagine.utils.egg3d
 from spimagine.models.imageprocessor import *
 
 
@@ -52,6 +54,8 @@ from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
 from spimagine.utils.imgutils import write3dTiff
 
 import logging
+from six.moves import range
+from six.moves import zip
 logger = logging.getLogger(__name__)
 
 
@@ -75,20 +79,19 @@ def absPath(myPath):
 
 
 
-class MainWidget(QtGui.QWidget):
+class MainWidget(QtWidgets.QWidget):
     N_SCALE_MIN_EXP = -16
     N_SCALE_MAX_EXP = 17
     N_SCALE_SLIDER = 500
 
     def __init__(self, parent = None):
-        super(QtGui.QWidget,self).__init__(parent)
+        super(QtWidgets.QWidget,self).__init__(parent)
 
         self.myparent = parent
 
         self.isCloseFlag = False
 
-        self.isFullScreen = False
-        self.setWindowTitle('SpImagine')
+        self.setWindowTitle('spimagine')
 
         self.resize(900, 700)
 
@@ -172,17 +175,17 @@ class MainWidget(QtGui.QWidget):
             absPath("images/icon_slice_inactive.png"), tooltip="slice view")
 
 
-        self.sliderTime = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.sliderTime.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderTime = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.sliderTime.setTickPosition(QtWidgets.QSlider.TicksBothSides)
         self.sliderTime.setTickInterval(1)
         self.sliderTime.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.sliderTime.setTracking(False)
 
 
-        self.spinTime = QtGui.QSpinBox()
+        self.spinTime = QtWidgets.QSpinBox()
         self.spinTime.setStyleSheet("color:white;border:0px solid black;background-color:black;")
-        self.spinTime.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinTime.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.spinTime.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.spinTime.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
@@ -233,7 +236,7 @@ class MainWidget(QtGui.QWidget):
             return 2**x
 
         def func2(x):
-            return np.log2(x)
+            return np.log2(x) if x>0 else -1.e20
 
         self.maxSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))
         self.transform._maxChanged.connect(lambda x:self.maxSlider.setValue(func2(x)))
@@ -269,7 +272,7 @@ class MainWidget(QtGui.QWidget):
         color:black;
         """)
 
-        hbox0 = QtGui.QHBoxLayout()
+        hbox0 = QtWidgets.QHBoxLayout()
         hbox0.addWidget(self.minSlider)
 
         hbox0.addWidget(self.maxSlider)
@@ -286,7 +289,7 @@ class MainWidget(QtGui.QWidget):
         hbox0.addWidget(self.volSettingsView)
         hbox0.addWidget(self.settingsView)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.bwdButton)
         hbox.addWidget(self.startButton)
         hbox.addWidget(self.fwdButton)
@@ -315,7 +318,7 @@ class MainWidget(QtGui.QWidget):
         hbox.addSpacing(5)
         hbox.addWidget(self.checkSettings)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addLayout(hbox0)
 
         vbox.addLayout(hbox)
@@ -332,7 +335,7 @@ class MainWidget(QtGui.QWidget):
 
         self.egg3d = spimagine.utils.egg3d.Egg3dController()
 
-        # widget = QtGui.QWidget()
+        # widget = QtWidgets.QWidget()
         self.setLayout(vbox)
 
 
@@ -440,7 +443,7 @@ class MainWidget(QtGui.QWidget):
 
         for imp in self.impListView.impViews:
             if imp.is_active():
-                print "active: ", imp.proc.name, imp.proc.kwargs
+                print("active: ", imp.proc.name, imp.proc.kwargs)
                 data = imp.proc.apply(data)
 
         self.glWidget.renderer.update_data(data)
@@ -479,7 +482,7 @@ class MainWidget(QtGui.QWidget):
             self._quatWeights *= 1./sum(self._quatWeights)
             self.egg3d.start()
         except Exception as e:
-            print e
+            print(e)
             self.settingsView.checkEgg.setCheckState(QtCore.Qt.Unchecked)
 
 
@@ -514,15 +517,14 @@ class MainWidget(QtGui.QWidget):
         # super(MainWidget,self).keyPressEvent(event)
 
     def initActions(self):
-        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.closeMe)
+        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.closeMe)
 
-        # self.exitAction = QtGui.QAction('Quit', self)
+        # self.exitAction = QtWidgets.QAction('Quit', self)
         # self.exitAction.setShortcut('Ctrl+Q')
         # self.exitAction.setStatusTip('Exit application')
         # self.exitAction.triggered.connect(self.foo)
 
     def setModel(self,dataModel):
-
         self.glWidget.setModel(dataModel)
         self.sliceWidget.setModel(dataModel)
 
@@ -589,7 +591,7 @@ class MainWidget(QtGui.QWidget):
 
 
     def screenShot(self):
-        fileName = QtGui.QFileDialog.getSaveFileName(self, 'Save screenshot as',
+        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
                                                      '.', selectedFilter='*.png')
 
         if fileName:
@@ -624,13 +626,13 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.refresh()
 
     def openFile(self,e):
-        # path = QtGui.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
+        # path = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Path (File or Folder)',
         #                                              '.', selectedFilter='*.tif')
 
 
-        f = QtGui.QFileDialog()
+        f = QtWidgets.QFileDialog()
         f.setWindowTitle('Open Path (File or Folder)')
-        f.setFileMode(QtGui.QFileDialog.ExistingFile & QtGui.QFileDialog.Directory)
+        f.setFileMode(QtWidgets.QFileDialog.ExistingFile & QtWidgets.QFileDialog.Directory)
         f.exec_()
         path = f.selectedFiles()
 
@@ -638,7 +640,6 @@ class MainWidget(QtGui.QWidget):
             return
 
         path = str(path[0])
-        print path
         if path:
             try:
                 if self.glWidget.dataModel:
@@ -648,13 +649,13 @@ class MainWidget(QtGui.QWidget):
                     self.glWidget.setModel(DataModel.fromPath(path,
                         prefetchSize = self.glWidget.N_PREFETCH))
             except Exception as e:
-                mbox = QtGui.QMessageBox()
+                mbox = QtWidgets.QMessageBox()
                 mbox.setText(str(e))
-                mbox.setIcon(QtGui.QMessageBox.Warning)
+                mbox.setIcon(QtWidgets.QMessageBox.Warning)
                 mbox.exec_()
 
     def saveFile(self,e):
-        path = QtGui.QFileDialog.getSaveFileName(self, 'Save as Tif File',
+        path = QtWidgets.QFileDialog.getSaveFileName(self, 'Save as Tif File',
                                                      '.', selectedFilter='*.tif')
 
         path = str(path)
@@ -679,8 +680,8 @@ class MainWidget(QtGui.QWidget):
 
     def contextMenuEvent(self,event):
          # create context menu
-        popMenu = QtGui.QMenu(self)
-        action = QtGui.QAction('toggle controls', self)
+        popMenu = QtWidgets.QMenu(self)
+        action = QtWidgets.QAction('toggle controls', self)
         action.triggered.connect(self.toggleControls)
         popMenu.addAction(action)
         popMenu.setStyleSheet("background-color: white")
@@ -740,19 +741,36 @@ class MainWidget(QtGui.QWidget):
         self.glWidget.render()
         self.glWidget.updateGL()
 
-    def mouseDoubleClickEvent(self,event):
-        super(MainWidget,self).mouseDoubleClickEvent(event)
-        if self.isFullScreen:
-            self.showNormal()
+    def _show_fullscreen(self):
+        self.show()
+        self.showFullScreen()
+
+    def _show_normal(self):
+        self.show()
+        self.showNormal()
+
+    def toggle_fullscreen(self):
+        if self.isFullScreen():
+            QtCore.QTimer.singleShot(200, self._show_normal)
         else:
-            self.showFullScreen()
+            QtCore.QTimer.singleShot(200, self._show_fullscreen)
+
+    def mouseDoubleClickEvent(self,event):
+
+        super(MainWidget,self).mouseDoubleClickEvent(event)
+
+        self.toggle_fullscreen()
 
         self.glWidget.resized = True
 
         # there's a bug in Qt that disables drop after fullscreen, so reset it...
         self.setAcceptDrops(True)
 
-        self.isFullScreen = not self.isFullScreen
+
+    def moveEvent(self, evt):
+        if hasattr(self, "glWidget"):
+            self.glWidget.moveEvent(evt)
+
 
 
 def test_sphere():
@@ -775,7 +793,7 @@ def test_sphere():
         d += 200.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
 
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
 
@@ -792,11 +810,31 @@ def test_sphere():
     sys.exit(app.exec_())
 
 
+
+def test_empty():
+    from spimagine import DataModel, NumpyData, SpimData, TiffData
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    win = MainWidget()
+
+    d = np.zeros((600,) * 3, np.float32)
+
+    d[0, 0, 0] = 1.
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    win.show()
+
+    win.raise_()
+
+    sys.exit(app.exec_())
+
 def test_surface():
     from spimagine import DataModel, NumpyData, DemoData
     from spimagine.gui.mesh import SphericalMesh
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
 
@@ -807,7 +845,6 @@ def test_surface():
 
 
 
-    #win.setModel(DataModel(NumpyData(d)))
     win.setModel(DataModel(DemoData()))
 
     # win.glWidget.add_surface_ellipsoid((1.,0,0),
@@ -832,4 +869,6 @@ def test_surface():
 if __name__ == '__main__':
     #test_sphere()
 
-    test_surface()
+    # test_surface()
+
+    test_empty()

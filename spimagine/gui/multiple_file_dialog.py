@@ -1,17 +1,18 @@
-from PyQt4 import QtGui
+from __future__ import absolute_import
+from PyQt5 import QtGui, QtWidgets
 import os
 
 
-class MultipleFileDialog(QtGui.QFileDialog):
+class MultipleFileDialog(QtWidgets.QFileDialog):
     def __init__(self, *args):
-        QtGui.QFileDialog.__init__(self, *args)
+        QtWidgets.QFileDialog.__init__(self, *args)
         self.setOption(self.DontUseNativeDialog, False)
         self.setFileMode(self.ExistingFiles)
-        btns = self.findChildren(QtGui.QPushButton)
+        btns = self.findChildren(QtWidgets.QPushButton)
         self.openBtn = [x for x in btns if 'open' in str(x.text()).lower()][0]
         self.openBtn.clicked.disconnect()
         self.openBtn.clicked.connect(self.openClicked)
-        self.tree = self.findChild(QtGui.QTreeView)
+        self.tree = self.findChild(QtWidgets.QTreeView)
 
     def openClicked(self):
         inds = self.tree.selectionModel().selectedIndexes()
@@ -29,12 +30,12 @@ class MultipleFileDialog(QtGui.QFileDialog):
 if __name__ == '__main__':
     import sys
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MultipleFileDialog()
 
     win.exec_()
 
-    # path = QtGui.QFileDialog.getOpenFileNames(None, 'Open Tif File',
+    # path = QtWidgets.QFileDialog.getOpenFileNames(None, 'Open Tif File',
     #                                           '.', selectedFilter='*.tif')
 

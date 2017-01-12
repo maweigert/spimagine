@@ -10,6 +10,8 @@ email: mweigert@mpi-cbg.de
 """
 
 
+from __future__ import absolute_import, print_function
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,9 +21,10 @@ logger = logging.getLogger(__name__)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
+from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 
 from OpenGL.GL import *
 from OpenGL.GL import shaders
@@ -29,7 +32,7 @@ from OpenGL.GL import shaders
 import spimagine
 
 
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
 from spimagine.models.data_model import DataModel
 from spimagine.models.transform_model import TransformModel
@@ -175,7 +178,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             self.makeCurrent()
             self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
         except:
-            print "could not load colormap %s"%name
+            print("could not load colormap %s"%name)
 
 
     def set_colormap_rgb(self,color=[1.,1.,1.]):
@@ -198,9 +201,9 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         logger.debug("initializeGL")
 
-        self.programTex = QtOpenGL.QGLShaderProgram()
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Vertex,vertShaderTex)
-        self.programTex.addShaderFromSourceCode(QtOpenGL.QGLShader.Fragment, fragShaderTex)
+        self.programTex = QOpenGLShaderProgram()
+        self.programTex.addShaderFromSourceCode(QOpenGLShader.Vertex,vertShaderTex)
+        self.programTex.addShaderFromSourceCode(QOpenGLShader.Fragment, fragShaderTex)
         self.programTex.link()
         self.programTex.bind()
         logger.debug("GLSL programTex log:%s",self.programTex.log())
@@ -239,6 +242,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
                                  amax(self.dataModel[0]),
                                  self.dataModel.stackUnits())
 
+
             self.refresh()
 
 
@@ -261,13 +265,11 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         self.renderUpdate = True
 
     def resizeGL(self, width, height):
+        # height = max(10,height)
 
-        height = max(10,height)
-
-        self.width , self.height = width, height
+        self._viewport_width, self._viewport_height = width, height
 
         self.resized = True
-
         self.resetViewPort()
 
 
@@ -289,10 +291,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         w,h = dim[0],dim[1]
 
 
-
-        # fac = 1.*min(self.width,self.height)/max(w,h)
-
-        fac = min(1.*self.width/w,1.*self.height/h)
+        fac = min(1.*self._viewport_width/w,1.*self._viewport_height/h)
 
 
         return int(fac*w),int(fac*h)
@@ -300,9 +299,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def resetViewPort(self):
         w,h = self.getDataWidthHeight()
-
-
-        glViewport((self.width-w)/2,(self.height-h)/2,w,h)
+        glViewport((self._viewport_width-w)//2,(self._viewport_height-h)//2,w,h)
 
 
 
@@ -410,11 +407,14 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
     def getRelativeCoords(self,x0,y0):
         w, h = self.getDataWidthHeight()
 
-        x = 2.*(x0-.5*(self.width-w))/w-1
-        y = 2.*(y0-.5*(self.height-h))/h-1
+        w = w*self.width()/self._viewport_width
+        h = w * self.height() / self._viewport_height
 
-        x = (x0-.5*(self.width-w))/w
-        y = 1-(y0-.5*(self.height-h))/h
+        x = 2.*(x0-.5*(self.width()-w))/w-1
+        y = 2.*(y0-.5*(self.height()-h))/h-1
+
+        x = (x0-.5*(self.width()-w))/w
+        y = 1-(y0-.5*(self.height()-h))/h
 
         return x,y
 
@@ -450,7 +450,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
 
-        self.zoom_fac *=  1.4**(-event.delta()/1000.)
+        self.zoom_fac *=  1.4**(-event.angleDelta().y()/1000.)
 
         self.zoom_fac = clip(self.zoom_fac,0,1.)
 
@@ -458,7 +458,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
 
-class SliceWidget(QtGui.QWidget):
+class SliceWidget(QtWidgets.QWidget):
 
     def __init__(self, parent = None,**kwargs):
         super(SliceWidget,self).__init__(parent,**kwargs)
@@ -473,8 +473,8 @@ class SliceWidget(QtGui.QWidget):
                                                  absPath("images/icon_y.png"),
                                                  absPath("images/icon_z.png"))
 
-        self.sliderSlice = QtGui.QSlider(QtCore.Qt.Horizontal,self)
-        self.sliderSlice.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.sliderSlice = QtWidgets.QSlider(QtCore.Qt.Horizontal,self)
+        self.sliderSlice.setTickPosition(QtWidgets.QSlider.TicksBothSides)
         self.sliderSlice.setTickInterval(1)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderSlice.setFocusPolicy(QtCore.Qt.WheelFocus)
@@ -484,9 +484,9 @@ class SliceWidget(QtGui.QWidget):
 
         self.setFocusPolicy(QtCore.Qt.NoFocus)
 
-        self.spinSlice = QtGui.QSpinBox(self)
+        self.spinSlice = QtWidgets.QSpinBox(self)
         self.spinSlice.setStyleSheet("color:white;")
-        self.spinSlice.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.spinSlice.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.spinSlice.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.spinSlice.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
@@ -500,13 +500,13 @@ class SliceWidget(QtGui.QWidget):
         color:white;
         """)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.checkSlice)
 
         hbox.addWidget(self.sliderSlice)
         hbox.addWidget(self.spinSlice)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.glSliceWidget)
         vbox.addLayout(hbox)
 
@@ -561,7 +561,7 @@ class SliceWidget(QtGui.QWidget):
 if __name__ == '__main__':
     from spimagine import DemoData, NumpyData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # win = GLSliceWidget(size=QtCore.QSize(500,500))
 

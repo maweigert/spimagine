@@ -2,16 +2,19 @@
 *.pyc
 #pycharm files
 .idea
-
 .idea/
+
+
 # build folder
 build/
 dist/
 build_mac/dist/
 build_mac/build/
 build_mac/*.log
+build_linux/dist
+build_linux/build/
+build_linux/*.log
 
-spimagine/test_data
 # /bin
 # /dist
 
@@ -20,7 +23,7 @@ spimagine/test_data
 
 
 #test data sets
-tests/data
+# tests/data
 
 
 

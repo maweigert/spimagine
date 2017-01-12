@@ -4,7 +4,7 @@
 
 The rendering widget
 
-It renderes a projection via the OpenCL (defined in volume_render.py)
+It renderes a projection via the OpenCL (defined in volumerender.py)
 into a texture which is drawn by simple OpenGL calls onto the canvas.
 
 It should handle all user interaction via a transformation model.
@@ -12,9 +12,7 @@ It should handle all user interaction via a transformation model.
 
 author: Martin Weigert
 email: mweigert@mpi-cbg.de
-"""
 
-"""
 understanding glBlendFunc:
 
 first color:     d
@@ -33,19 +31,23 @@ c = s*s.w + d*(1-s.w)
 
 """
 
+from __future__ import absolute_import, print_function, unicode_literals, division
+
 import logging
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 import sys
 import os
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-from PyQt4 import QtOpenGL
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtOpenGL
+from PyQt5.QtGui import QOpenGLShaderProgram, QOpenGLShader
 from OpenGL.GL import *
 import OpenGL.arrays.vbo as glvbo
 import spimagine
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
 from spimagine.models.transform_model import TransformModel
 from spimagine.models.data_model import DataModel
@@ -54,7 +56,7 @@ import numpy as np
 from spimagine.gui.gui_utils import *
 
 # on windows numpy.linalg.inv crashes without notice, so we have to import scipy.linalg
-if os.name=="nt":
+if os.name == "nt":
     from scipy import linalg
 else:
     from numpy import linalg
@@ -68,8 +70,8 @@ from spimagine.utils.quaternion import Quaternion
 # logger.setLevel(logging.DEBUG)
 
 def _next_golden(n):
-    res = round((np.sqrt(5)-1.)/2.*n)
-    return int(round((np.sqrt(5)-1.)/2.*n))
+    res = round((np.sqrt(5) - 1.) / 2. * n)
+    return int(round((np.sqrt(5) - 1.) / 2. * n))
 
 
 def absPath(myPath):
@@ -85,7 +87,6 @@ def absPath(myPath):
 
 class GLWidget(QtOpenGL.QGLWidget):
     _dataModelChanged = QtCore.pyqtSignal()
-
 
     _BACKGROUND_BLACK = (0., 0., 0., 0.)
     _BACKGROUND_WHITE = (1., 1., 1., 0.)
@@ -133,18 +134,22 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.refresh()
 
+        # self.installEventFilter(self)
+
     def set_background_mode_black(self, mode_back=True):
         self._background_mode_black = mode_back
         self.refresh()
 
     def setModel(self, dataModel):
-        logger.debug("setModel to %s"%dataModel)
-        if self.dataModel is None or (self.dataModel!=dataModel):
+        logger.debug("setModel to %s" % dataModel)
+        if self.dataModel is None or (self.dataModel != dataModel):
             self.dataModel = dataModel
             self.transform.setModel(dataModel)
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.emit()
+
+
 
 
     def dragEnterEvent(self, event):
@@ -157,7 +162,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         for url in event.mimeData().urls():
 
-            path = url.toLocalFile().toLocal8Bit().data()
+            # path = url.toLocalFile().toLocal8Bit().data()
+
+            path = url.toLocalFile()
 
             if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
@@ -178,8 +185,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             arr = spimagine.config.__COLORMAPDICT__[name]
             self._set_colormap_array(arr)
         except KeyError:
-            print "could not load colormap '%s'"%name
-            print "valid names: %s"%spimagine.config.__COLORMAPDICT__.keys()
+            print("could not load colormap '%s'" % name)
+            print("valid names: %s" % list(spimagine.config.__COLORMAPDICT__.keys()))
 
     def set_colormap_rgb(self, color=[1., 1., 1.]):
         self._set_colormap_array(np.outer(np.linspace(0, 1., 255), np.array(color)))
@@ -187,13 +194,13 @@ class GLWidget(QtOpenGL.QGLWidget):
     def _set_colormap_array(self, arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
         self.makeCurrent()
-        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape), self.texture_LUT)
+        self.texture_LUT = fillTexture2d(arr.reshape((1,) + arr.shape), self.texture_LUT)
         self.refresh()
 
     def _shader_from_file(self, fname_vert, fname_frag):
-        shader = QtOpenGL.QGLShaderProgram()
-        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex, fname_vert)
-        shader.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment, fname_frag)
+        shader = QOpenGLShaderProgram()
+        shader.addShaderFromSourceFile(QOpenGLShader.Vertex, fname_vert)
+        shader.addShaderFromSourceFile(QOpenGLShader.Fragment, fname_frag)
         shader.link()
         shader.bind()
         logger.debug("GLSL program log:%s", shader.log())
@@ -256,7 +263,18 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.set_background_color(0,0,0,.0)
         self.set_background_mode_black(True)
+        self.clear_canvas()
+
+
         # self.set_background_color(1,1,1,.6)
+
+    def clear_canvas(self):
+        if self._background_mode_black:
+            glClearColor(*self._BACKGROUND_BLACK)
+        else:
+            glClearColor(*self._BACKGROUND_WHITE)
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def setTransform(self, transform):
         self.transform = transform
@@ -266,13 +284,18 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataModelChanged(self):
         logger.debug("+++++++++ data model changed")
-        logger.debug("dataModelchanged: min %s max %s"%(np.amin(self.dataModel[0]),
-                                                        np.amax(self.dataModel[0])))
+
         if self.dataModel:
+            logger.debug("dataModelchanged: min %s max %s" % (np.amin(self.dataModel[0]),
+                                                              np.amax(self.dataModel[0])))
+
             self.renderer.set_data(self.dataModel[0], autoConvert=True)
+
             self.transform.reset(minVal=np.amin(self.dataModel[0]),
                                  maxVal=np.amax(self.dataModel[0]),
                                  stackUnits=self.dataModel.stackUnits())
+
+
             self.meshes = []
             self.refresh()
 
@@ -281,10 +304,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClearColor(r, g, b, a)
 
     def dataSourceChanged(self):
-        # print "SETDATA: ", self.dataModel[0].shape
-        logger.debug("dataSourcechanged: min %s max %s"%(np.amin(self.dataModel[0]),
-                                                         np.amax(self.dataModel[0])))
+
+        logger.debug("dataSourcechanged: min %s max %s" % (np.amin(self.dataModel[0]),
+                                                           np.amax(self.dataModel[0])))
         self.renderer.set_data(self.dataModel[0], autoConvert=True)
+
         self.transform.reset(minVal=np.amin(self.dataModel[0]),
                              maxVal=np.amax(self.dataModel[0]),
                              stackUnits=self.dataModel.stackUnits())
@@ -296,7 +320,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer.set_box_boundaries([x1, x2, y1, y2, z1, z2])
 
     def setStackUnits(self, px, py, pz):
-        logger.debug("setStackUnits to %s"%[px, py, pz])
+        logger.debug("setStackUnits to %s" % [px, py, pz])
         self.renderer.set_units([px, py, pz])
 
     def dataPosChanged(self, pos):
@@ -311,16 +335,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderedSteps = 0
 
     def resizeGL(self, width, height):
-
-        height = max(10, height)
-
-        self.width, self.height = width, height
-
-        # make the viewport squarelike
-        w = max(width, height)
-        glViewport((width-w)/2, (height-w)/2, w, w)
-
-        self.resized = True
+        # somehow in qt5 the OpenGLWidget width/height parameters above are double the value of self.width/height
+        self._viewport_width, self._viewport_height = width, height
 
     def add_mesh(self, mesh=SphericalMesh()):
         """
@@ -341,7 +357,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                             glvbo.VBO(mesh.vertices.astype(np.float32, copy=False)),
                             glvbo.VBO(np.array(mesh.normals).astype(np.float32, copy=False)),
                             glvbo.VBO(np.array(mesh.indices).astype(np.uint32, copy=False),
-                                      target=  GL_ELEMENT_ARRAY_BUFFER)])
+                                      target=GL_ELEMENT_ARRAY_BUFFER)])
 
         self.refresh()
         # sort according to opacity as the opaque objects should be drawn first
@@ -353,7 +369,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.bind()
 
         self.texture = fillTexture2d(self.output, self.texture)
-
 
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
@@ -389,7 +404,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         pos, dim = self.transform.slicePos, self.transform.sliceDim
 
-        coords = slice_coords(1.*pos/self.dataModel.size()[2-dim+1], dim)
+        coords = slice_coords(1. * pos / self.dataModel.size()[2 - dim + 1], dim)
 
         texcoords = [[0., 0.], [1, 0.], [1., 1.],
                      [1., 1.], [0., 1.], [0., 0.]]
@@ -436,14 +451,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDrawArrays(GL_LINES, 0, len(self.cubeCoords))
         glDisable(GL_DEPTH_TEST)
 
-
     def _paintGL_mesh(self, mesh, vbo_vertices, vbo_normals, vbo_indices):
         """
         paint a mesh (which has all the coordinates and colors in it
         """
         glEnable(GL_DEPTH_TEST)
         glDisable(GL_BLEND)
-
 
         prog = self.programMeshLight
         prog.bind()
@@ -454,19 +467,18 @@ class GLWidget(QtOpenGL.QGLWidget):
                              QtGui.QMatrix4x4(*self._mat_modelview.flatten()))
 
         prog.setUniformValue("normMatrix",
-                         QtGui.QMatrix4x4(*self._mat_normal.flatten()))
+                             QtGui.QMatrix4x4(*self._mat_normal.flatten()))
 
         if mesh.light:
             prog.setUniformValue("light",
-                         QtGui.QVector3D(*mesh.light))
+                                 QtGui.QVector3D(*mesh.light))
             prog.setUniformValue("light_components",
-                         QtGui.QVector3D(.2,.5,.3))
+                                 QtGui.QVector3D(.2, .5, .3))
         else:
             prog.setUniformValue("light",
-                         QtGui.QVector3D(0,0,0))
+                                 QtGui.QVector3D(0, 0, 0))
             prog.setUniformValue("light_components",
-                         QtGui.QVector3D(1.,0,0))
-
+                                 QtGui.QVector3D(1., 0, 0))
 
         if not mesh.facecolor is None:
             r, g, b = mesh.facecolor[:3]
@@ -477,14 +489,11 @@ class GLWidget(QtOpenGL.QGLWidget):
             prog.enableAttributeArray("position")
             vbo_vertices.bind()
 
-
             glVertexAttribPointer(prog.attributeLocation("position"), 3, GL_FLOAT, GL_FALSE, 0, vbo_vertices)
-
 
             prog.enableAttributeArray("normal")
             vbo_normals.bind()
             glVertexAttribPointer(prog.attributeLocation("normal"), 3, GL_FLOAT, GL_FALSE, 0, vbo_normals)
-
 
             vbo_indices.bind()
 
@@ -499,19 +508,20 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
 
-        #
-        # if not mesh.edgecolor is None:
-        #     r, g, b = mesh.edgecolor
-        #     a = mesh.alpha
-        #
-        #     prog.enableAttributeArray("position")
-        #     vbo_vertices.bind()
-        #     glVertexAttribPointer(prog.attributeLocation("position"), 2, GL_FLOAT, GL_FALSE, 0, vbo_edges)
-        #
-        #     prog.setUniformValue("color",
-        #                          QtGui.QVector4D(r, g, b, a))
-        #
-        #     glDrawArrays(GL_LINES, 0, len(mesh.edges))
+            #
+            # if not mesh.edgecolor is None:
+            #     r, g, b = mesh.edgecolor
+            #     a = mesh.alpha
+            #
+            #     prog.enableAttributeArray("position")
+            #     vbo_vertices.bind()
+            #     glVertexAttribPointer(prog.attributeLocation("position"), 2, GL_FLOAT, GL_FALSE, 0, vbo_edges)
+            #
+            #     prog.setUniformValue("color",
+            #                          QtGui.QVector4D(r, g, b, a))
+            #
+            #     glDrawArrays(GL_LINES, 0, len(mesh.edges))
+
 
 
     def paintGL(self):
@@ -519,22 +529,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.makeCurrent()
 
-
-        if not glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE:
+        if not glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:
             return
 
-        # hack
-        if self.resized:
-            w = max(self.width, self.height)
-            glViewport((self.width-w)/2, (self.height-w)/2, w, w)
-            self.resized = False
+        w = max(self._viewport_width, self._viewport_height)
+        # force viewport to always be a square
+        glViewport((self._viewport_width - w) // 2, (self._viewport_height - w) // 2, w, w)
 
-        if self._background_mode_black:
-            glClearColor(*self._BACKGROUND_BLACK)
-        else:
-            glClearColor(*self._BACKGROUND_WHITE)
-
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        self.clear_canvas()
 
         self._mat_modelview = self.transform.getModelView()
         self._mat_proj = self.transform.getProjection()
@@ -555,7 +557,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             self._paintGL_render()
 
         for (m, vbo_verts, vbo_normals, vbo_indices) in self.meshes:
-            self._paintGL_mesh(m, vbo_verts, vbo_normals,vbo_indices)
+            self._paintGL_mesh(m, vbo_verts, vbo_normals, vbo_indices)
 
     def render(self):
         logger.debug("render")
@@ -581,21 +583,21 @@ class GLWidget(QtOpenGL.QGLWidget):
                 renderMethod = "max_project"
 
             self.renderer.render(method=renderMethod, return_alpha=True, numParts=self.NSubrenderSteps, currentPart=(
-                                                                                                                        self.renderedSteps*_next_golden(
-                                                                                                                            self.NSubrenderSteps))%self.NSubrenderSteps)
+                                                                                                                        self.renderedSteps * _next_golden(
+                                                                                                                            self.NSubrenderSteps)) % self.NSubrenderSteps)
             self.output, self.output_alpha = self.renderer.output, self.renderer.output_alpha
 
             if self.transform.isSlice:
-                if self.transform.sliceDim==0:
+                if self.transform.sliceDim == 0:
                     out = self.dataModel[self.transform.dataPos][:, :, self.transform.slicePos]
-                elif self.transform.sliceDim==1:
+                elif self.transform.sliceDim == 1:
                     out = self.dataModel[self.transform.dataPos][:, self.transform.slicePos, :]
-                elif self.transform.sliceDim==2:
+                elif self.transform.sliceDim == 2:
                     out = self.dataModel[self.transform.dataPos][self.transform.slicePos, :, :]
 
                 min_out, max_out = np.amin(out), np.amax(out)
-                if max_out>min_out:
-                    self.sliceOutput = (1.*(out-min_out)/(max_out-min_out))
+                if max_out > min_out:
+                    self.sliceOutput = (1. * (out - min_out) / (max_out - min_out))
                 else:
                     self.sliceOutput = np.zeros_like(out)
 
@@ -621,8 +623,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         # has to be png
 
         name, ext = os.path.splitext(fName)
-        if ext!=".png":
-            fName = name+".png"
+        if ext != ".png":
+            fName = name + ".png"
 
         self.render()
         self.paintGL()
@@ -635,17 +637,17 @@ class GLWidget(QtOpenGL.QGLWidget):
         #     self.render()
         #     self.renderUpdate = False
         #     self.updateGL()
-        if self.renderedSteps<self.NSubrenderSteps:
+        if self.renderedSteps < self.NSubrenderSteps:
             # print ((self.renderedSteps*7)%self.NSubrenderSteps)
             s = time.time()
             self.render()
-            logger.debug("time to render:  %.2f"%(1000.*(time.time()-s)))
+            logger.debug("time to render:  %.2f" % (1000. * (time.time() - s)))
             self.renderedSteps += 1
             self.updateGL()
 
     def wheelEvent(self, event):
         """ self.transform.zoom should be within [1,2]"""
-        newZoom = self.transform.zoom*1.2**(event.delta()/1400.)
+        newZoom = self.transform.zoom * 1.2 ** (event.angleDelta().y() / 1000.)
         newZoom = np.clip(newZoom, .4, 3)
         self.transform.setZoom(newZoom)
 
@@ -653,11 +655,13 @@ class GLWidget(QtOpenGL.QGLWidget):
         # self.refresh()
 
     def posToVec3(self, x, y, r0=.8, isRot=True):
-        x, y = 2.*x/self.width-1., 1.-2.*y/self.width
-        r = np.sqrt(x*x+y*y)
-        if r>r0-1.e-7:
-            x, y = 1.*x*r0/r, 1.*y*r0/r
-        z = np.sqrt(max(0, r0**2-x*x-y*y))
+        x, y = 2. * x / self.width() - 1., 1. - 2. * y / self.width()
+
+        r = np.sqrt(x * x + y * y)
+        if r > r0 - 1.e-7:
+            x, y = 1. * x * r0 / r, 1. * y * r0 / r
+        z = np.sqrt(max(0, r0 ** 2 - x * x - y * y))
+
         if isRot:
             M = np.linalg.inv(self.transform.quatRot.toRotation3())
             x, y, z = np.dot(M, [x, y, z])
@@ -665,17 +669,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         return x, y, z
 
     def posToVec2(self, x, y):
-        x, y = 2.*x/self.width-1., 1.-2.*y/self.width
+        x, y = 2. * x / self.width() - 1., 1. - 2. * y / self.width()
         return x, y
 
     def mousePressEvent(self, event):
         super(GLWidget, self).mousePressEvent(event)
 
-
-        if event.buttons()==QtCore.Qt.LeftButton:
+        if event.buttons() == QtCore.Qt.LeftButton:
             self._x0, self._y0, self._z0 = self.posToVec3(event.x(), event.y())
 
-        if event.buttons()==QtCore.Qt.RightButton:
+        if event.buttons() == QtCore.Qt.RightButton:
             (self._x0, self._y0), self._invRotM = self.posToVec2(event.x(), event.y()), linalg.inv(
                 self.transform.quatRot.toRotation3())
 
@@ -694,33 +697,54 @@ class GLWidget(QtOpenGL.QGLWidget):
         # print self.finalMat
         # print c[0], cUser[0]
         # Rotation
-        if event.buttons()==QtCore.Qt.LeftButton:
+
+
+        if event.buttons() == QtCore.Qt.LeftButton:
             x1, y1, z1 = self.posToVec3(event.x(), event.y())
+            logger.debug("mouse position: %s %s %s " % (x1, y1, z1))
             n = np.cross(np.array([self._x0, self._y0, self._z0]), np.array([x1, y1, z1]))
             nnorm = linalg.norm(n)
-            if np.abs(nnorm)>=1.:
-                nnorm *= 1./np.abs(nnorm)
+            if np.abs(nnorm) >= 1.:
+                nnorm *= 1. / np.abs(nnorm)
             w = np.arcsin(nnorm)
-            n *= 1./(nnorm+1.e-10)
-            q = Quaternion(np.cos(.5*w), *(np.sin(.5*w)*n))
-            self.transform.setQuaternion(self.transform.quatRot*q)
+            n *= 1. / (nnorm + 1.e-10)
+            q = Quaternion(np.cos(.5 * w), *(np.sin(.5 * w) * n))
+            self.transform.setQuaternion(self.transform.quatRot * q)
 
         # Translation
-        if event.buttons()==QtCore.Qt.RightButton:
+        if event.buttons() == QtCore.Qt.RightButton:
             x, y = self.posToVec2(event.x(), event.y())
 
-            dx, dy, foo = np.dot(self._invRotM, [x-self._x0, y-self._y0, 0])
+            dx, dy, foo = np.dot(self._invRotM, [x - self._x0, y - self._y0, 0])
 
             self.transform.addTranslate(dx, dy, foo)
             self._x0, self._y0 = x, y
 
         self.refresh()
 
+    def _enforce_resize(self):
+        """ this is to enforce the resizeGL event """
+        self.resize(self.width() + 1, self.height())
+        self.resize(self.width() - 1, self.height())
+
+    def onScreenNumberChange(self, evt):
+        self._enforce_resize()
+
+    def _get_screen_number(self):
+        return QtGui.QGuiApplication.instance().desktop().screenNumber(QtGui.QCursor.pos())
+
+    def moveEvent(self, evt):
+        current_screen = self._get_screen_number()
+        if hasattr(self, "_current_screen") and self._current_screen != current_screen:
+            self.onScreenNumberChange(evt)
+
+        self._current_screen = current_screen
+
 
 def test_sphere():
     from data_model import DataModel, NumpyData, SpimData, TiffData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(500, 500))
 
@@ -735,10 +759,10 @@ def test_sphere():
 
     Ns = 5
     r = .6
-    phi = np.linspace(0, 2*pi, Ns+1)[:-1]
+    phi = np.linspace(0, 2 * pi, Ns + 1)[:-1]
     d = np.zeros_like(X)
     for p in phi:
-        d += 100.*np.exp(-10*(Z**2+(Y-r*np.sin(p))**2+(X-r*np.cos(p))**2))
+        d += 100. * np.exp(-10 * (Z ** 2 + (Y - r * np.sin(p)) ** 2 + (X - r * np.cos(p)) ** 2))
 
     win.setModel(DataModel(NumpyData(d)))
 
@@ -751,10 +775,33 @@ def test_sphere():
     sys.exit(app.exec_())
 
 
+def test_empty():
+    from spimagine import DataModel, NumpyData, SpimData, TiffData
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    win = GLWidget(size=QtCore.QSize(1000, 1000))
+
+    d = np.zeros((800,) * 3, np.float32)
+
+    d[0, 0, 0] = 1.
+
+
+    win.show()
+
+    win.raise_()
+
+    QtCore.QThread.msleep(1000)
+
+    win.setModel(DataModel(NumpyData(d)))
+
+    sys.exit(app.exec_())
+
+
 def test_demo():
     from data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800, 800))
 
@@ -770,12 +817,11 @@ def test_demo():
 def test_demo_simple():
     from spimagine import DataModel, DemoData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = GLWidget(size=QtCore.QSize(800, 800))
 
     win.setModel(DataModel(DemoData()))
-
     win.show()
 
     win.raise_()
@@ -786,9 +832,9 @@ def test_demo_simple():
 def test_surface():
     from spimagine import DataModel, DemoData
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(800, 800))
+    win = GLWidget(size=QtCore.QSize(800, 600))
 
     win.setModel(DataModel(DemoData()))
 
@@ -817,8 +863,11 @@ def test_surface():
     sys.exit(app.exec_())
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    test_empty()
+
+
     # test_sphere()
 
     # test_demo_simple()
-    test_surface()
+    # test_surface()

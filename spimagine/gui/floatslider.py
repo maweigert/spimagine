@@ -1,9 +1,11 @@
 
+from __future__ import absolute_import, print_function
+
 import numpy as np
 
 import os
 
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 
 import logging
 
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class FloatSlider(QtGui.QSlider):
+class FloatSlider(QtWidgets.QSlider):
     floatValueChanged = QtCore.pyqtSignal(float)
     def __init__(self,*args):
         super(FloatSlider,self).__init__(*args)
@@ -22,7 +24,7 @@ class FloatSlider(QtGui.QSlider):
         self.setStyleSheet("QToolTip { color:white;}")
 
     def setRange(self,minVal,maxVal,steps=100):
-        assert(minVal < maxVal)
+        assert(minVal <= maxVal)
         super(FloatSlider,self).setRange(0,steps)
         self.minVal = minVal
         self.maxVal = maxVal
@@ -31,14 +33,16 @@ class FloatSlider(QtGui.QSlider):
     def _from_float(self,x):
         ind = int(self.steps*(x-self.minVal)/(self.maxVal-self.minVal))
         ind = max(0,min(self.steps,ind))
-        logger.debug("floatslider:  index from float %s = %s"%(x,ind))
+        logger.debug("floatslider (id = %s):  index from float %s = %s"%(id(self), x,ind))
         return ind
 
     def _from_int(self,n):
+
         return self.minVal+1.*(self.maxVal-self.minVal)*n/self.steps
 
+
     def setValue(self,val):
-        logger.debug("floatslider: setValue to : %s"%val)
+        logger.debug("floatslider (id = %s): setValue to : %s"%(id(self),val))
         self.floatValue = val
         super(FloatSlider,self).setValue(self._from_float(val))
 
@@ -55,7 +59,7 @@ class FloatSlider(QtGui.QSlider):
 
 
 
-class MainWindow(QtGui.QWidget):
+class MainWindow(QtWidgets.QWidget):
 
     def __init__(self):
         super(MainWindow,self).__init__()
@@ -70,7 +74,7 @@ class MainWindow(QtGui.QWidget):
         self.setWindowTitle("Key Frame View")
 
 
-        self.edit = QtGui.QLineEdit("")
+        self.edit = QtWidgets.QLineEdit("")
         self.edit.setValidator(QtGui.QDoubleValidator())
         self.edit.returnPressed.connect(lambda: self.slide.setValue(float(self.edit.text())))
 
@@ -80,7 +84,7 @@ class MainWindow(QtGui.QWidget):
 
 
         self.resize(500,200)
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.slide)
         hbox.addWidget(self.edit)
 
@@ -88,17 +92,17 @@ class MainWindow(QtGui.QWidget):
 
 
     def onSlide(self,val):
-        print "int:\t",val
+        print("int:\t",val)
 
     def onSlideFloat(self,val):
-        print "float:\t",val
+        print("float:\t",val)
 
 
 if __name__ == '__main__':
 
     import sys
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWindow()
 

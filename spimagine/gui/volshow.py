@@ -1,19 +1,21 @@
+from __future__ import absolute_import, print_function
 import sys
 import numpy as np
 import os
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from collections import OrderedDict
 
 
 import spimagine
-from spimagine.volumerender.volume_render import VolumeRenderer
+from spimagine.volumerender.volumerender import VolumeRenderer
 
 from spimagine.gui.mainwidget import MainWidget
 
 
 from spimagine.models.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
+import six
 
 _MAIN_APP = None
 
@@ -21,6 +23,7 @@ _MAIN_APP = None
 
 import logging
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -39,10 +42,10 @@ def absPath(myPath):
 
 
 def getCurrentApp():
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
 
-    if not app:
-        app = QtGui.QApplication(sys.argv)
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
 
     if not hasattr(app,"volfigs"):
         app.volfigs = OrderedDict()
@@ -61,28 +64,26 @@ def volfig(num=None, raise_window = True):
 
     app = getCurrentApp()
     app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
-    
+
     #filter the dict
-    app.volfigs =  OrderedDict((n,w) for n,w in app.volfigs.iteritems() if w.isVisible())
+    app.volfigs =  OrderedDict((n,w) for n,w in six.iteritems(app.volfigs) if w.isVisible())
 
 
     if not num:
-        if len(app.volfigs.keys())==0:
+        if len(app.volfigs)==0:
             num = 1
         else:
-            num = max(app.volfigs.iterkeys())+1
+            num = max(app.volfigs.keys())+1
 
-    if app.volfigs.has_key(num):
+    if num in app.volfigs:
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
         window = MainWidget()
-        window.show()
+
     #make num the last window
     app.volfigs[num] = window
 
-    if raise_window:
-        window.raise_()
 
     return window
 
@@ -101,38 +102,61 @@ def volshow(data, autoscale = True,
 
       e.g.
 
-
-volshow( randint(0,10,(10, 20,30,40) )
+        volshow( randint(0,10,(10, 20,30,40) )
 
 
     - an instance of a class derived from the abstract bass class GenericData
 
       e.g.
 
-from spimagine.data_model import GenericData
+    from spimagine.data_model import GenericData
 
-class myData(GenericData):
-    def __getitem__(self,i):
-        return (100*i+3)*ones((100,100,100)
-    def size(self):
-        return (4,100,100,100)
+    class myData(GenericData):
+        def __getitem__(self,i):
+            return (100*i+3)*ones((100,100,100)
+        def size(self):
+            return (4,100,100,100)
 
-volshow(myData())
+    volshow(myData())
 
         or
-from spimagine.data_model import DataModel
 
-volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
+    from spimagine.data_model import DataModel
 
-
-
-    returns window.glWidget if not in blocking mode
+    volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
 
-    available colormaps: cmap = ["coolwarm","jet","hot","grays"]
-    if cmap = None, then the default one is used
+
+
+    Parameters
+    ----------
+    data: ndarray
+        the volumetric data to render, 3d or 4d
+
+    autoscale: boolean
+        autoscales the data
+
+    stackUnits: tuple
+        the voxel dimensions (dx, dy, dz)
+
+    blocking: boolean
+        if true, starts the qt event loop and waits till finished
+        (use this e.g. when running from outside ipython)
+
+    cmap: str
+        the colormap to use
+        available colormaps: cmap = ["viridis", "coolwarm","jet","hot","grays"]
+        if None, then the default one is used
+
+    raise_window: boolean
+        if true, raises the window
+
+    Returns
+    -------
+        the widget w
 
     """
+
 
     logger.debug("volshow")
 
@@ -144,17 +168,6 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 
     from time import time
 
-    t = time()
-
-    # check whether there are already open windows, if not create one
-    try:
-        num,window = [(n,w) for n,w in app.volfigs.iteritems()][-1]
-    except:
-        num = 1
-
-    window = volfig(num, raise_window = raise_window)
-
-    logger.debug("volfig: %s s "%(time()-t))
     t = time()
 
 
@@ -180,23 +193,37 @@ volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
         m = DataModel(NumpyData(data))
 
 
+
     logger.debug("create model: %s s "%( time()-t))
     t = time()
 
+    # check whether there are already open windows, if not create one
+    try:
+        num, window = [(n, w) for n, w in six.iteritems(app.volfigs)][-1]
+    except:
+        num = 1
+
+    window = volfig(num)
+    logger.debug("volfig: %s s " % (time() - t))
+    t = time()
+
+
     window.setModel(m)
 
-    if cmap is None or not spimagine.config.__COLORMAPDICT__.has_key(cmap):
+    logger.debug("set model: %s s" % (time() - t));
+
+    if cmap is None or cmap not in spimagine.config.__COLORMAPDICT__:
         cmap = spimagine.config.__DEFAULTCOLORMAP__
 
 
     window.glWidget.set_colormap(cmap)
 
-
-
-    logger.debug("set model: %s s"%( time()-t));
-    t = time()
-
     window.glWidget.transform.setStackUnits(*stackUnits)
+
+    window.show()
+
+    if raise_window:
+        window.raise_()
 
     if blocking:
         getCurrentApp().exec_()

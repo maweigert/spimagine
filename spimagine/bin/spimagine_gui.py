@@ -16,11 +16,12 @@ email: mweigert@mpi-cbg.de
 """
 
 
+from __future__ import absolute_import, print_function
 import sys
 import os
 
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import argparse
 
@@ -63,7 +64,11 @@ def main():
 
     parser.add_argument('-D',
                         action='store_true',
-                        help = "output DEBUG messages")
+                        help="output DEBUG messages")
+
+    parser.add_argument('-v',"--verbose",
+                        action='store_true',
+                        help="output DEBUG messages")
 
     try:
         args = parser.parse_args()
@@ -71,22 +76,30 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-        
-    if args.D:
-        logger = logging.getLogger("spimagine")
+    logger = logging.getLogger("spimagine")
+
+
+    if args.D or args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    app = QtGui.QApplication(sys.argv)
+    # if sys.platform.startswith("win"):
+    # 	QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("CleanLooks"))
+    # print(QtWidgets.QStyleFactory.create("Fusion"))
+    # QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+
+    # QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create(QtWidgets.QStyleFactory.keys()[1]))
+
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    logger.debug("available qt styles: %s " % str(QtWidgets.QStyleFactory.keys()))
+    logger.debug("used qt styles: %s " % app.style().metaObject().className())
+    
 
 
     #splash screen
-    # print 'FIIIIIIIIIIII'
-    # print absPath('../gui/images/splash.png')
-    # print os.listdir(absPath("."))
-    # print sys._MEIPASS
-
     pixmap = QtGui.QPixmap(absPath('../gui/images/splash.png'))
-    splash = QtGui.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
+    splash = QtWidgets.QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.setMask(pixmap.mask())
     splash.show()
     app.processEvents()
@@ -100,8 +113,8 @@ def main():
     
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
-    if sys.platform.startswith("win"):
-    	QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("CleanLooks"))
+
+
 
 
     win = MainWidget()

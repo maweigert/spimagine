@@ -1,13 +1,20 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 logger = logging.getLogger(__name__)
+import six
+if six.PY2:
+    from ConfigParser import SafeConfigParser
+    import StringIO as io
+else:
+    from configparser import SafeConfigParser
+    import io
 
-import ConfigParser
-import StringIO
 
 
-class MyConfigParser(ConfigParser.SafeConfigParser):
+class MyConfigParser(SafeConfigParser):
     def __init__(self,fName = None, defaults = {}):
-        ConfigParser.SafeConfigParser.__init__(self,defaults)
+        SafeConfigParser.__init__(self,defaults)
         self.dummySection = "DUMMY"
         if fName:
             self.read(fName)
@@ -16,14 +23,14 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         try:
             text = open(fName).read()
         except IOError:
-            print "could not open %s"%fName
+            print("could not open %s"%fName)
         else:
-            file = StringIO.StringIO("[%s]\n%s"%(self.dummySection,text))
+            file = io.StringIO("[%s]\n%s"%(self.dummySection,text))
             self.readfp(file, fName)
 
     def get(self,key, defaultValue = None):
         try:
-            val =  ConfigParser.ConfigParser.get(self,self.dummySection,key)
+            val =  SafeConfigParser.get(self,self.dummySection,key)
             logger.debug("from config file: %s = %s "%(key,val))
             return val
         except Exception as e:

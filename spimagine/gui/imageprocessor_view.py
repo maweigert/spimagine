@@ -1,13 +1,16 @@
+from __future__ import absolute_import, print_function, division
+
 import sys
 
 import numpy as np
 
-from PyQt4 import QtCore, QtGui, Qt
+from PyQt5 import QtCore, QtGui, Qt, QtWidgets
 from sortedcontainers import SortedDict
 
 from spimagine.models.imageprocessor import ImageProcessor
 
 from spimagine.gui import gui_utils
+import six
 
 class ImageFlow(QtCore.QObject):
     # _dataPosChanged = QtCore.pyqtSignal(int)
@@ -54,18 +57,18 @@ checkBoxStyleStr = """
     """
 
 def createImgCheckBox(fName_active,fName_inactive):
-    checkBox = QtGui.QCheckBox()
+    checkBox = QtWidgets.QCheckBox()
     checkBox.setStyleSheet(
             checkBoxStyleStr%(absPath(fName_active),absPath(fName_inactive)))
     return checkBox
 
 
 
-class ImageProcessorView(QtGui.QWidget):
+class ImageProcessorView(QtWidgets.QWidget):
     _stateChanged = QtCore.pyqtSignal(bool)
 
     def __init__(self, proc = None):
-        super(QtGui.QWidget,self).__init__()
+        super(QtWidgets.QWidget,self).__init__()
 
         self.resize(100, 50)
         self.set_processor(proc)
@@ -83,34 +86,34 @@ class ImageProcessorView(QtGui.QWidget):
 
         # def createStandardCheckbox(parent, img1=None , img2 = None, tooltip = ""):
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
 
-        gridBox = QtGui.QGridLayout()
+        gridBox = QtWidgets.QGridLayout()
 
         self.checkActive = gui_utils.createImageCheckbox(self,
                                                          absPath("images/icon_processor_active"),
                                                          absPath("images/icon_processor_inactive"))
 
 
-        label = QtGui.QLabel(self.proc.name)
+        label = QtWidgets.QLabel(self.proc.name)
 
         gridBox.addWidget(self.checkActive,0,0)
 
         gridBox.addWidget(label,0,1)
 
-        for i, (key, val)  in enumerate(self.proc.kwargs.iteritems()):
+        for i, (key, val)  in enumerate(six.iteritems(self.proc.kwargs)):
             dtype = type(val)
             if dtype == bool:
-                check = QtGui.QCheckBox("",self)
+                check = QtWidgets.QCheckBox("",self)
                 check.stateChanged.connect(self.set_proc_attr_check(check,key,val))
-                gridBox.addWidget(QtGui.QLabel(key),i+1,0)
+                gridBox.addWidget(QtWidgets.QLabel(key),i+1,0)
                 gridBox.addWidget(check,i+1,1)
 
             elif dtype in (int,float,np.int,np.float):
-                edit = QtGui.QLineEdit(str(val))
+                edit = QtWidgets.QLineEdit(str(val))
                 edit.setValidator(QtGui.QDoubleValidator())
                 edit.returnPressed.connect(self.set_proc_attr_edit(edit,key,dtype))
-                gridBox.addWidget(QtGui.QLabel(key),i+1,0)
+                gridBox.addWidget(QtWidgets.QLabel(key),i+1,0)
                 gridBox.addWidget(edit,i+1,1)
 
         vbox.addLayout(gridBox)
@@ -149,15 +152,15 @@ class ImageProcessorView(QtGui.QWidget):
 
 
 
-class ImageProcessorListView(QtGui.QWidget):
+class ImageProcessorListView(QtWidgets.QWidget):
     _stateChanged = QtCore.pyqtSignal()
     def __init__(self, imps = []):
-        super(QtGui.QWidget,self).__init__()
+        super(QtWidgets.QWidget,self).__init__()
 
         self.impViews = [ImageProcessorView(p) for p in imps]
 
-        vbox = QtGui.QVBoxLayout()
-        self.gridBox = QtGui.QGridLayout()
+        vbox = QtWidgets.QVBoxLayout()
+        self.gridBox = QtWidgets.QGridLayout()
 
 
         for impView in self.impViews:
@@ -177,11 +180,7 @@ class ImageProcessorListView(QtGui.QWidget):
 
     def _include_imp_view(self,impView):
         impView._stateChanged.connect(self.stateChanged)
-        # print self.gridBox.rowCount()
         self.gridBox.addWidget(impView,self.gridBox.rowCount(),0)
-        # line =  QtGui.QFrame()
-        # line.setFrameShape(QtGui.QFrame.HLine)
-        # self.mainBox.addWidget(line)
 
 
     def add_image_processor(self, imp):
@@ -196,10 +195,10 @@ class ImageProcessorListView(QtGui.QWidget):
 
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, ):
-        super(QtGui.QMainWindow,self).__init__()
+        super(QtWidgets.QMainWindow,self).__init__()
 
         self.resize(300, 200)
         self.setWindowTitle('Test')
@@ -214,7 +213,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
         def myfunc(data,para=1.):
-            print "myfunc with para", para
+            print("myfunc with para", para)
             return data*para
 
         imp = imageprocessor.FuncProcessor(myfunc,"myfunc",para=.1)
@@ -225,13 +224,13 @@ class MainWindow(QtGui.QMainWindow):
         self.setStyleSheet("background-color:black;")
 
     def close(self):
-        QtGui.qApp.quit()
+        QtWidgets.qApp.quit()
 
 
 
 if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWindow()
     win.show()

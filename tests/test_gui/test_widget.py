@@ -1,9 +1,16 @@
-__author__ = 'mweigert'
+"""
+
+
+mweigert@mpi-cbg.de
+
+"""
+
+from __future__ import absolute_import, print_function
 
 import sys
 
-from PyQt4 import QtGui, QtCore
-
+from PyQt5 import QtGui, QtCore, QtWidgets
+from time import time
 from spimagine import MainWidget, DemoData, DataModel, qt_exec
 from spimagine.gui.glwidget import GLWidget
 
@@ -12,13 +19,14 @@ from spimagine import logger
 
 
 def test_widget():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
     #win = GLWidget()
 
+    t = time()
     win.setModel(DataModel(DemoData()))
-
+    print("time to set model: ", time()-t)
     win.show()
     win.raise_()
 

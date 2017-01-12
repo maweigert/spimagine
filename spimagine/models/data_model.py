@@ -12,14 +12,17 @@ author: Martin Weigert
 email: mweigert@mpi-cbg.de
 """
 
+from __future__ import absolute_import, print_function
+
 import logging
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 
 import os
 import numpy as np
 import time
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import re
 import glob
 # import h5py
@@ -109,13 +112,13 @@ class SpimData(GenericData):
                 self.stackUnits = imgutils.parseMetaFile(os.path.join(fName, "metadata.txt"))
                 self.fName = fName
             except Exception as e:
-                print e
+                print(e)
                 self.fName = ""
                 raise Exception("couldnt open %s as SpimData"%fName)
 
             try:
                 # try to figure out the dimension of the dark frame stack
-                darkSizeZ = os.path.getsize(os.path.join(self.fName, "data/darkstack.bin"))/2/self.stackSize[2]/ \
+                darkSizeZ = os.path.getsize(os.path.join(self.fName, "data/darkstack.bin"))//2//self.stackSize[2]/ \
                             self.stackSize[3]
                 with open(os.path.join(self.fName, "data/darkstack.bin"), "rb") as f:
                     self.darkStack = np.fromfile(f, dtype="<u2").reshape(
@@ -155,7 +158,7 @@ class Img2dData(GenericData):
                 self.img = np.array([imgutils.openImageFile(fName)])
                 self.stackSize = (1,)+self.img.shape
             except Exception as e:
-                print e
+                print(e)
                 self.fName = ""
                 raise Exception("couldnt open %s as Img2dData"%fName)
                 return
@@ -197,7 +200,7 @@ class TiffData(GenericData):
 
                 self.data = data
             except Exception as e:
-                print e
+                print(e)
                 self.fName = ""
                 raise Exception("couldnt open %s as TiffData"%fName)
                 return
@@ -242,7 +245,7 @@ class TiffFolderData(GenericData):
 
                 self.stackSize = (len(self.fNames),)+_single_size
             except Exception as e:
-                print e
+                print(e)
                 self.fName = ""
                 raise Exception("couldnt open %s as TiffData"%self.fNames[0])
                 return
@@ -256,7 +259,7 @@ class TiffFolderData(GenericData):
                 data = np.squeeze(imgutils.read3dTiff(self.fNames[pos]))
                 data = data.reshape(self.stackSize[1:])
             except Exception as e:
-                print e
+                print(e)
 
             return data
 
@@ -268,12 +271,13 @@ class TiffMultipleFiles(GenericData):
     """2/3d tiff data inside a folder"""
 
     def __init__(self, fName=[]):
-        GenericData.__init__(self, fName)
+        GenericData.__init__(self, "["+", ".join(fName)+"]")
         self.fNames = fName
         self.load(fName)
 
     def load(self, fNames, stackUnits=[1., 1., 1.]):
         if fNames:
+
 
             if len(self.fNames)==0:
                 raise Exception("filelist %s seems to be empty"%fName)
@@ -289,7 +293,7 @@ class TiffMultipleFiles(GenericData):
 
                 self.stackSize = (len(self.fNames),)+_single_size
             except Exception as e:
-                print e
+                print(e)
                 raise Exception("couldnt open %s as TiffData"%self.fNames[0])
                 return
 
@@ -302,7 +306,7 @@ class TiffMultipleFiles(GenericData):
                 data = data.reshape(self.stackSize[1:])
 
             except Exception as e:
-                print e
+                print(e)
                 raise(e)
 
 
@@ -436,7 +440,7 @@ class CZIData(GenericData):
                 self.stackUnits = stackUnits
                 self.fName = fName
             except Exception as e:
-                print e
+                print(e)
 
     def __getitem__(self, pos):
         if self.data.ndim==3:
@@ -496,14 +500,14 @@ class DataLoadThread(QtCore.QThread):
                     try:
                         time.sleep(.0001)
                     except Exception as e:
-                        print e
+                        print(e)
 
             # print "load thead dict length: ", len(self.data.keys())
 
             try:
                 time.sleep(.0001)
             except Exception as e:
-                print e
+                print(e)
 
 
 class DataModel(QtCore.QObject):
@@ -591,7 +595,7 @@ class DataModel(QtCore.QObject):
     def __getitem__(self, pos):
         # self._rwLock.lockForRead()
         if not hasattr(self, "data"):
-            print "something is wrong in datamodel as its lacking a 'data' atttribute!"
+            print("something is wrong in datamodel as its lacking a 'data' atttribute!")
             return None
 
         # switching of the prefetched version for now...
@@ -600,7 +604,7 @@ class DataModel(QtCore.QObject):
         self._rwLock.lockForWrite()
 
 
-        if not self.data.has_key(pos):
+        if pos not in self.data:
             newdata = self.dataContainer[pos]
             self.data[pos] = newdata
         else:
@@ -636,92 +640,5 @@ class DataModel(QtCore.QObject):
                 self.setContainer(TiffFolderData(fName), prefetchSize=prefetchSize)
 
 
-def test_spimdata():
-    d = SpimData("/Users/mweigert/Data/HisGFP")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
-def test_tiffdata():
-    d = TiffData("/Users/mweigert/Data/droso_test.tif")
-
-    m = DataModel(d)
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
-def test_numpydata():
-    d = NumpyData(np.ones((10, 100, 100, 100)))
-
-    m = DataModel(d)
-
-    print m
-    for pos in range(m.sizeT()):
-        print pos
-        print np.mean(m[pos])
-
-
-def test_frompath():
-    m = DataModel.fromPath("/Users/mweigert/Data/HisGFP")
-    m = DataModel.fromPath("/Users/mweigert/Data/droso_test.tif")
-
-
-def test_speed():
-    import time
-
-    fName = "/Users/mweigert/Data/Drosophila_full"
-
-    t = []
-    d = DataModel.fromPath(fName, 1)
-
-    for i in range(100):
-        print i
-
-        if i%10==0:
-            a = d[i/10]
-
-        time.sleep(.1)
-        t.append(time.time())
-
-
-def test_data_sets():
-    fNames = ["test_data/Drosophila_Single",
-              "test_data/HisStack_uint16_0000.tif",
-              "test_data/HisStack_uint8_0000.tif",
-              "test_data/meep.h5",
-              "test_data/retina.czi"
-              ]
-
-    for fName in fNames:
-        try:
-            d = DataModel.fromPath(fName)
-            print fName, d[0].shape
-        except Exception as e:
-            print e
-            print "ERROR    could not open %s"%fName
-
-
 if __name__=='__main__':
-
-    # test_data_sets()
-    # test_spimdata()
-
-    # test_tiffdata()
-    # test_numpydata()
-
-    # test_speed()
-
-    # test_frompath()
-
-
-    d = DataModel(TiffFolderData("/home/martin/Data_new/Tomancak_Droso/volumes"), prefetchSize=0)
-
-    for i in np.random.randint(0, d.sizeT(), 100):
-        print i
-        a = d[i]
+    pass
