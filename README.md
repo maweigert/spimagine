@@ -38,7 +38,8 @@ brew install clinfo
 clinfo
 ```
 ####  Install the package
-If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
+If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/v0.2.0/spimagine.dmg):
+
 
 To install it as a proper package, do
 
