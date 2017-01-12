@@ -8,7 +8,7 @@ python3 setup.py bdist_wheel
 # twine upload -r pypitest dist/gputools*
 # python setup.py register
 
-# twine upload dist/*whl
+twine upload dist/*whl
 
 
 
