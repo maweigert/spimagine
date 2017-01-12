@@ -22,7 +22,8 @@ or alternatively the [talk at EuroScipy 2015](https://www.youtube.com/watch?v=Me
 
 ## Requirements
 
-Python 2 + a working OpenCL environment 
+* Python 2.7 or 3.5+
+* a working OpenCL environment 
 
 ##### Mac
 
@@ -32,9 +33,7 @@ OpenCL should be provided by default :)
 e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
 ```bash
-sudo apt-get install opencl-header  nvidia-libopencl1-35 nvidia-opencl-icd-352
-	
-sudo modprobe nvidia-352-uvm
+sudo apt-get install opencl-header  nvidia-libopencl1-352 nvidia-opencl-icd-352
 ```
 
 until clinfo shows your GPU as a valid OpenCL device:
@@ -53,18 +52,20 @@ Install your the SDK of your GPU vendor.
 #### Mac
 If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
 
-Otherwise install PyQt4, e.g. with homebrew:
+Otherwise:
+
+* (optional)
+If you are still on python2, you have the get PyQt5 e.g. with homebrew 
 ```
-brew install pyqt
+brew install pyqt5 --with-python --without-python3
 ```
 
-then with pip
+* install the package with pip
 ```
-pip install git+https://github.com/maweigert/gputools
-pip install git+https://github.com/maweigert/spimagine
+pip install spimagine
 ```
 
-or the developmental branch (recommended)
+or its developmental branch 
 ```
 pip install git+https://github.com/maweigert/spimagine@develop
 ```
@@ -72,7 +73,7 @@ pip install git+https://github.com/maweigert/spimagine@develop
 #### Linux
 
 ```
-apt-get install python-qt4 python-qt4-gl
+apt-get install python-qt5 python-qt5-gl
 
 pip install git+https://github.com/maweigert/gputools
 pip install git+https://github.com/maweigert/spimagine@develop
@@ -80,7 +81,7 @@ pip install git+https://github.com/maweigert/spimagine@develop
 
 #### Windows
 
-install pyopencl and PyQt4 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
+install pyopencl and PyQt5 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 ```
 git clone https://github.com/maweigert/gputools.git
