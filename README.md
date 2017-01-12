@@ -25,63 +25,74 @@ or alternatively the [talk at EuroScipy 2015](https://www.youtube.com/watch?v=Me
 * Python 2.7 or 3.5+
 * a working OpenCL environment 
 
-##### Mac
+## Installation
 
-OpenCL should be provided by default :)
+### Mac
 
-##### Linux
-e.g. for nvidia cards, install the latest drivers and then the opencl lib/headers
 
-```bash
+#### Verify the availability of OpenCL
+On OSX the neccessary OpenCL libraries should be provided by default. 
+Check with `clinfo` that your GPU is listed as available device:
+```
+brew install clinfo
+clinfo
+```
+####  Install the package
+If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
+
+To install it as a proper package, do
+
+* Python 2
+```
+brew install pyqt5 --with-python --without-python3
+pip2 install spimagine
+```
+
+* Python 3
+```
+pip3 install spimagine
+```
+
+For the most recent versions, install the developmental branch 
+```
+pip(2|3) install git+https://github.com/maweigert/spimagine@develop
+```
+
+
+### Linux
+
+#### Verify the availability of OpenCL
+
+Check with `clinfo` that your GPU is listed as available device:
+```
+sudo apt-get install clinfo
+clinfo
+```
+Depending on your graphics card, install relevant the opencl libaries, headers and icd, e.g. for nvidia
+
+```
 sudo apt-get install opencl-header  nvidia-libopencl1-352 nvidia-opencl-icd-352
 ```
 
-until clinfo shows your GPU as a valid OpenCL device:
+On https://wiki.tiker.net/OpenCLHowTo you can find some further information
+
+####  Install the package
+
+* Python 2
 ```
-sudo apt-get install clinfo
-sudo clinfo
-```
-
-##### Windows
-
-Install your the SDK of your GPU vendor.  
-
-
-## Installation
-
-#### Mac
-If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
-
-Otherwise:
-
-* (optional)
-If you are still on python2, you have the get PyQt5 e.g. with homebrew 
-```
-brew install pyqt5 --with-python --without-python3
+pip2 install spimagine
 ```
 
-* install the package with pip
+* Python 3
 ```
-pip install spimagine
+pip3 install spimagine
 ```
 
-or its developmental branch 
-```
-pip install git+https://github.com/maweigert/spimagine@develop
-```
-	
-#### Linux
-
-```
-apt-get install python-qt5 python-qt5-gl
-
-pip install git+https://github.com/maweigert/gputools
-pip install git+https://github.com/maweigert/spimagine@develop
-```
 
 #### Windows
 
-install pyopencl and PyQt5 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
+Install the OpenCL SDK of your graphcis card vendor.
+Install pyopencl and PyQt5 prebuilt binaries from http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 ```
 git clone https://github.com/maweigert/gputools.git
@@ -105,8 +116,6 @@ pip should install the standalone viewer in the local bin folder (e.g. "~/.local
 ```
 spimagine [input]
 ```
-
- 
 
 Right now the following formats are supported as input 
 
