@@ -58,9 +58,9 @@ a.datas += addAll("/Users/mweigert/python/gputools/gputools/fft/kernels")
 a.datas += addAll("/Users/mweigert/python/gputools/gputools/transforms/kernels")
 
 
-# a.datas += addAll("/usr/local/lib/python2.7/site-packages/pyopencl/",
-#                   prefix = "pyopencl/",
-#                   keep_relative_structure = True)
+a.datas += addAll("/usr/local/lib/python2.7/site-packages/pyopencl/",
+                  prefix = "pyopencl/",
+                  keep_relative_structure = True)
 
 a.datas += addAll("/usr/local/lib/python2.7/site-packages/reikna",
                   reg_str = ".*\.mako",
