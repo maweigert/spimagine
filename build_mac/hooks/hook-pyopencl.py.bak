@@ -9,8 +9,8 @@ import pyopencl
 __PATH__ = os.path.dirname(pyopencl.__file__)
 
 
-datas = _get_toc_objects(os.path.join(__PATH__, "cl/"),
-                       dir_prefix = "pyopencl/cl")
+datas = _get_toc_objects(os.path.join(__PATH__, ""),
+                       dir_prefix = "pyopencl/")
 
 
 print "\n"*5
