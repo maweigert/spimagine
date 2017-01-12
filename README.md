@@ -183,12 +183,16 @@ into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the who
 
 ### troubleshooting
 
-#### getting it to work from inside the jupyter notebook
+#### getting it to work from inside the jupyter notebook / ipython 
 
 As the main widget relies on the qt event loop running, one has to include 
 
 ```python
-%gui qt
+%gui qt5
+```
+at the beginning of the notebook or start Ipython with the qt5 backend:
+
+```
+ipython --matplotlib=qt5
 ```
 
-at the beginning of the notebook
