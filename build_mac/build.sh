@@ -1,6 +1,7 @@
 #!/bin/sh
 
-version=`python -c "import spimagine;print spimagine.__version__"`
+#get the version string
+version=`python -c "import os, sys;tmp = sys.stdout;sys.stdout = open(os.devnull,'w');sys.stderr= open(os.devnull,'w');import spimagine;sys.stdout = tmp;print(spimagine.__version__)"`
 
 
 iconName=spimagine 
@@ -28,5 +29,5 @@ cp $iconName.icns dist/spimagine.app/Contents/Resources/
 
 #create the dmg
 echo "creating the dmg..."
-hdiutil create dist/spimagine.dmg -srcfolder dist/spimagine.app/
+hdiutil create dist/spimagine_v${version}.dmg -srcfolder dist/spimagine.app/
 # hdiutil create dist/spimagine.dmg -srcfolder dist/spimagine.app/
