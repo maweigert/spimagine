@@ -26,6 +26,6 @@ build_linux/*.log
 
 #test data sets
 # tests/data
-
+tests/test_config/config_example.txt
 
 
