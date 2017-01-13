@@ -1,0 +1,7 @@
+id_platform = 99 
+id_device = 101 
+colormap = foo 
+texture_width = 754 
+window_width = 123 
+window_height = 123 
+max_steps = 400 

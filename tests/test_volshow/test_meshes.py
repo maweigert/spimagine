@@ -36,7 +36,7 @@ def test_mesh():
         theta = np.arccos(n[2]/np.sqrt(np.sum(n**2)))
         m = SphericalMesh(r=r, pos=p, facecolor=col, light=(-1, -1, 1))
         w.glWidget.add_mesh(m)
-
+    w.show()
     QtCore.QTimer.singleShot(2000, w.closeMe)
     qt_exec()
 

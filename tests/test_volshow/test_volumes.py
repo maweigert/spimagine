@@ -19,7 +19,7 @@ from spimagine import volshow, volfig, logger, qt_exec
 import time
 
 def single_data(data, t_close_ms= 1000, **kwargs):
-    w = volshow(data,**kwargs)
+    w = volshow(data,raise_window = False, **kwargs)
     QtCore.QTimer.singleShot(t_close_ms,w.closeMe)
 
     qt_exec()

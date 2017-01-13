@@ -15,6 +15,17 @@
 
 #define LOOPUNROLL 16
 
+__kernel void
+foo(__global float *d_output,
+uint Nx,
+             __constant float* invM)
+{
+ uint x = get_global_id(0);
+  uint y = get_global_id(1);
+
+  d_output[x+Nx*y] = (float)invM[x+Nx*y];
+}
+
 
 // the basic max_project ray casting
 __kernel void

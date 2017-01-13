@@ -28,7 +28,7 @@ def test_widget():
     win.setModel(DataModel(DemoData()))
     print("time to set model: ", time()-t)
     win.show()
-    win.raise_()
+    # win.raise_()
 
     QtCore.QTimer.singleShot(100,win.closeMe)
     #QtCore.QTimer.singleShot(100,win.close)

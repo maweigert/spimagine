@@ -12,7 +12,7 @@ import logging
 from spimagine import volshow, volfig, logger, qt_exec, NumpyData, DataModel
 
 def single_data(data):
-    w = volshow(data)
+    w = volshow(data,raise_window = False)
     QtCore.QTimer.singleShot(1000,w.closeMe)
     qt_exec()
 

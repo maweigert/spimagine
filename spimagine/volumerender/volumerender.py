@@ -314,9 +314,40 @@ class VolumeRenderer:
         if dtype in [np.uint16, np.uint8]:
             method = "max_project_short"
         elif dtype==np.float32:
+
             method = "max_project_float"
         else:
             raise NotImplementedError("wrong dtype: %s", dtype)
+
+        # #self.invMBuf = OCLArray.from_array(np.ones(16, np.float32))
+        # out = OCLArray.from_array(np.zeros(16, np.float32))
+        #
+        # src_str = """
+        # __kernel void foo(__constant float *input, __global float * output)
+        # {
+        #
+        # int i = get_global_id(0);
+        #
+        # output[i] = input[i];
+        #
+        # }
+        # """
+        # prog = OCLProgram(src_str=src_str)
+        #
+        # prog.run_kernel("foo", self.invMBuf.shape, None, self.invMBuf.data, out.data)
+        # print(out.get())
+        # method = "foo"
+        #
+        # self.proc.run_kernel(method,
+        #                      (self.width, self.height),
+        #                      None,
+        #                      self.buf.data,
+        #                      np.int32(self.width),
+        #                      self.invMBuf.data)
+        # print(self.invMBuf.get())
+        # print(self.buf.get())
+
+
 
         self.proc.run_kernel(method,
                              (self.width, self.height),
@@ -335,10 +366,11 @@ class VolumeRenderer:
                              np.float32(self.gamma),
                              np.float32(self.alphaPow),
                              np.int32(numParts),
-                             np.int32(currentPart),
+                               np.int32(currentPart),
                              self.invPBuf.data,
                              self.invMBuf.data,
                              self.dataImg)
+
         self.output = self.buf.get()
         self.output_alpha = self.buf_alpha.get()
         self.output_depth = self.buf_depth.get()

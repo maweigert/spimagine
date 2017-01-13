@@ -34,7 +34,7 @@ def test_simple_rendering():
         outs.append(rend.output)
 
     # drawing
-    #pylab.ioff()
+
     plt.figure(1)
     plt.clf()
     for i,out in enumerate(outs):
@@ -59,7 +59,6 @@ def test_surface():
 
     rend = VolumeRenderer((400,400))
 
-
     rend.set_modelView(mat4_translate(0,0,-5.))
     rend.render(data=data.astype(np.uint16), maxVal = 20., method="iso_surface")
     #rend.render(data=data.astype(np.float32), maxVal = 100., method="max_project")
@@ -77,10 +76,26 @@ def test_surface():
     return rend
 
 
+def rend_const():
+    from gputools.utils.utils import remove_cache_dir, get_cache_dir
+    remove_cache_dir()
+
+    data = (123*np.ones((100,100,100))).astype(np.float32)
+
+    rend = VolumeRenderer((4,4))
+
+    rend.render(data, maxVal = 200.)
+
+    return rend
+
+
 if __name__ == "__main__":
     from gputools import remove_cache_dir
 
     remove_cache_dir()
     #rend = test_simple_rendering()
-    rend = test_surface()
+    #rend = test_surface()
+    rend = rend_const()
     out = rend.output
+
+    print(out)
