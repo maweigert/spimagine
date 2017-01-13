@@ -224,7 +224,8 @@ def volshow(data, autoscale = True,
     window.show()
 
     if raise_window:
-        window.raise_()
+        window.raise_window()
+
 
     if blocking:
         getCurrentApp().exec_()

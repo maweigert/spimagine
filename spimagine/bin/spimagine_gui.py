@@ -127,7 +127,8 @@ def main():
         win.setModel(DataModel(DemoData()))
 
     win.show()
-    win.raise_()
+    win.raise_window()
+
 
     splash.finish(win)
 

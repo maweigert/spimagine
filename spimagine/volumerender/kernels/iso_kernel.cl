@@ -181,9 +181,9 @@ __kernel void iso_surface(
 
   // phong shading
   float4 light = (float4)(2,-1,-2,0);
-  float c_ambient = .3;
-  float c_diffuse = .4;
-  float c_specular = .3;
+  float c_ambient = .3f;
+  float c_diffuse = .4f;
+  float c_specular = .3f;
 
   light = mult(invM,light);
   light = normalize(light);
@@ -437,9 +437,9 @@ if (x+y==0)
   // now phong shading
   float4 light = (float4)(2,-1,-2,0);
 
-  float c_ambient = .3;
-  float c_diffuse = .4;
-  float c_specular = .3;
+  float c_ambient = .3f;
+  float c_diffuse = .4f;
+  float c_specular = .3f;
 
 
   // c_ambient = 0.;

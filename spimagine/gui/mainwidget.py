@@ -509,6 +509,9 @@ class MainWidget(QtWidgets.QWidget):
     def initUI(self):
         pass
 
+    def raise_window(self):
+        #self.setWindowState(QtCore.Qt.WindowActive)
+        self.raise_()
 
     def keyPressEvent(self, event):
         if type(event) == QtGui.QKeyEvent:

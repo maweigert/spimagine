@@ -210,6 +210,7 @@ max_project_short(__global float *d_output,
                   )
 
 {
+
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |
 	// CLK_FILTER_NEAREST ;

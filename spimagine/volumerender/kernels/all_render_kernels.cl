@@ -7,7 +7,7 @@
  */
 
 #ifndef maxSteps
-#define maxSteps 187
+#define maxSteps 500
 #endif
 
 #ifdef QUALIFIER_CONSTANT_TO_GLOBAL

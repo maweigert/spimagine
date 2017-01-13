@@ -52,7 +52,7 @@ __kernel void conv_y(__global float * input,
 
   
   for (int ht = h_start; ht< h_end; ++ht){
-       float val = exp((float)(-10.f*(ht-Nh/2.)*(ht-Nh/2.)/Nh/Nh));
+       float val = exp((float)(-10.f*(ht-Nh/2.f)*(ht-Nh/2.f)/Nh/Nh));
       sum_val += val;
       res += val*input[i+(start+ht)*Nx];
   }
@@ -85,7 +85,7 @@ __kernel void conv_vec_x(__global float * input,
   const int h_end = ((i+Nh/2)>=Nx)?Nh-(i+Nh/2-Nx+1):Nh;
 
   for (int ht = h_start; ht< h_end; ++ht){
-      float val = exp((float)(-5.f*(ht-Nh/2.)*(ht-Nh/2.)/Nh/Nh));
+      float val = exp((float)(-5.f*(ht-Nh/2.f)*(ht-Nh/2.f)/Nh/Nh));
       sum_val += val;
       res_x += val*input[0+3*(start+ht)+3*j*Nx];
       res_y += val*input[1+3*(start+ht)+3*j*Nx];
@@ -124,7 +124,7 @@ __kernel void conv_vec_y(__global float * input,
 
 
   for (int ht = h_start; ht< h_end; ++ht){
-       float val = exp((float)(-5.f*(ht-Nh/2.)*(ht-Nh/2.)/Nh/Nh));
+       float val = exp((float)(-5.f*(ht-Nh/2.f)*(ht-Nh/2.f)/Nh/Nh));
       sum_val += val;
       res_x += val*input[0+3*(i+(start+ht)*Nx)];
       res_y += val*input[1+3*(i+(start+ht)*Nx)];
