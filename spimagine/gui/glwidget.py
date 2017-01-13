@@ -61,6 +61,9 @@ if os.name == "nt":
 else:
     from numpy import linalg
 
+import pyopencl.array as cl_array
+from gputools import OCLArray
+
 import time
 from spimagine.utils.quaternion import Quaternion
 
@@ -148,9 +151,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.dataModel._dataSourceChanged.connect(self.dataSourceChanged)
             self.dataModel._dataPosChanged.connect(self.dataPosChanged)
             self._dataModelChanged.emit()
-
-
-
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -286,18 +286,38 @@ class GLWidget(QtOpenGL.QGLWidget):
         logger.debug("+++++++++ data model changed")
 
         if self.dataModel:
-            logger.debug("dataModelchanged: min %s max %s" % (np.amin(self.dataModel[0]),
-                                                              np.amax(self.dataModel[0])))
+            logger.debug("dataModelchanged")
 
             self.renderer.set_data(self.dataModel[0], autoConvert=True)
 
-            self.transform.reset(minVal=np.amin(self.dataModel[0]),
-                                 maxVal=np.amax(self.dataModel[0]),
-                                 stackUnits=self.dataModel.stackUnits())
 
+            mi, ma = self._get_min_max()
+
+            self.transform.reset(minVal=mi,
+                                 maxVal=ma,
+                                 stackUnits=self.dataModel.stackUnits())
 
             self.meshes = []
             self.refresh()
+
+    def _get_min_max(self):
+        # as amax is too slow for bug arrays, do it on the gpu
+
+        if self.dataModel:
+            try:
+                im = self.renderer.dataImg
+                tmp_buf = OCLArray.empty(im.shape, im.dtype)
+                tmp_buf.copy_image(im)
+                mi = float(cl_array.min(tmp_buf).get())
+                ma = float(cl_array.max(tmp_buf).get())
+
+
+            except Exception as e:
+                print(e)
+                mi = np.amin(self.dataModel[0])
+                ma = np.amax(self.dataModel[0])
+        return mi, ma
+
 
     def set_background_color(self, r, g, b, a=1.):
         self._background_color = (r, g, b, a)
@@ -305,12 +325,15 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def dataSourceChanged(self):
 
-        logger.debug("dataSourcechanged: min %s max %s" % (np.amin(self.dataModel[0]),
-                                                           np.amax(self.dataModel[0])))
+        logger.debug("dataSourcechanged")
+
+
         self.renderer.set_data(self.dataModel[0], autoConvert=True)
 
-        self.transform.reset(minVal=np.amin(self.dataModel[0]),
-                             maxVal=np.amax(self.dataModel[0]),
+        mi, ma = self._get_min_max()
+
+        self.transform.reset(minVal=mi,
+                             maxVal=ma,
                              stackUnits=self.dataModel.stackUnits())
 
         self.refresh()
@@ -413,6 +436,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programSlice.setAttributeArray("texcoord", texcoords)
 
         self.textureSlice = fillTexture2d(self.sliceOutput, self.textureSlice)
+
+
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureSlice)
@@ -522,10 +547,7 @@ class GLWidget(QtOpenGL.QGLWidget):
             #
             #     glDrawArrays(GL_LINES, 0, len(mesh.edges))
 
-
-
     def paintGL(self):
-
 
         self.makeCurrent()
 
@@ -785,7 +807,6 @@ def test_empty():
     d = np.zeros((800,) * 3, np.float32)
 
     d[0, 0, 0] = 1.
-
 
     win.show()
 

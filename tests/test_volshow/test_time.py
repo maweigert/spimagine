@@ -75,12 +75,14 @@ def data_model(data):
 if __name__ == '__main__':
     d = np.zeros((700,) * 3, np.uint8)
 
+
+
     print("rendering %s MB"%int(d.nbytes/1.e6))
 
 
-    _with_glwidget(d)
+    # _with_glwidget(d)
 
-    # _with_mainwidget(d)
+    _with_mainwidget(d)
 
     #
     # data_model(d)
