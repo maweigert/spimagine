@@ -29,6 +29,7 @@ setup(name='spimagine',
           'Pillow>=3.3',
           "PyOpenGL",
           "pyopencl",
+          "gputools",
           "sortedcontainers"
       ],
       extras_require={
