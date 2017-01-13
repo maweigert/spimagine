@@ -102,21 +102,22 @@ class VolumeRenderer:
 
         # self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        build_options_basic = ["-I", "%s"%absPath("kernels/"),
-                               "-D", "maxSteps=%s"%spimagine.config.__DEFAULTMAXSTEPS__]
+        build_options_basic = ["-I", "%s" % absPath("kernels/"),
+                               "-D", "maxSteps=%s" % spimagine.config.__DEFAULTMAXSTEPS__,
+                               ]
 
-        self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+        if spimagine.config.__QUALIFIER_CONSTANT_TO_GLOBAL__:
+            build_options_basic += ["-D","QUALIFIER_CONSTANT_TO_GLOBAL"]
+
+        try:
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                build_options=
                                build_options_basic+
                                ["-cl-finite-math-only",
                                 "-cl-fast-relaxed-math",
                                 "-cl-unsafe-math-optimizations",
                                 "-cl-mad-enable"])
-        try:
-            pass
-
         except Exception as e:
-
             logger.debug(str(e))
             self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
                                    build_options=

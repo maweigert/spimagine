@@ -28,8 +28,8 @@ __kernel void iso_surface(
 						  float boxMax_z,
 						  float isoVal,
 						  float gamma,
-						  __constant float* invP,
-						  __constant float* invM,
+						  __QUALIFIER_CONSTANT float* invP,
+						  __QUALIFIER_CONSTANT float* invM,
 						  __read_only image3d_t volume,
 						  int isShortType)
 {
@@ -252,8 +252,8 @@ __kernel void iso_surface2(
 						  float boxMax_z,
 						  float isoVal,
 						  float gamma,
-						  __constant float* invP,
-						  __constant float* invM,
+						  __QUALIFIER_CONSTANT float* invP,
+						  __QUALIFIER_CONSTANT float* invM,
 						  __read_only image3d_t volume,
 						  int isShortType)
 {
@@ -521,8 +521,8 @@ __kernel void shading(
 						  __global float *d_output,
 						  __global float *d_alpha_output,
 						  uint Nx, uint Ny,
-						  __constant float* invP,
-						  __constant float* invM,
+						  __QUALIFIER_CONSTANT float* invP,
+						  __QUALIFIER_CONSTANT float* invM,
                            float occ_strength,
 						  __global float* input_normals,
 						  __global float* input_depth,

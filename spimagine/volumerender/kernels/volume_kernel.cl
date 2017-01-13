@@ -15,38 +15,28 @@
 
 #define LOOPUNROLL 16
 
-__kernel void
-foo(__global float *d_output,
-uint Nx,
-             __constant float* invM)
-{
- uint x = get_global_id(0);
-  uint y = get_global_id(1);
-
-  d_output[x+Nx*y] = (float)invM[x+Nx*y];
-}
-
 
 // the basic max_project ray casting
 __kernel void
-max_project_float(__global float *d_output, __global float *d_alpha_output,
- __global float *d_depth_output,
-				 uint Nx, uint Ny,
-				 float boxMin_x,
-				 float boxMax_x,
-				 float boxMin_y,
-				 float boxMax_y,
-				 float boxMin_z,
-				 float boxMax_z,
-				 float minVal,
-				 float maxVal,
-				 float gamma,
-				 float alpha_pow,
-				 int numParts,
-				 int currentPart,
-				 __constant float* invP,
-				 __constant float* invM,
-				 __read_only image3d_t volume
+max_project_float(__global float *d_output,
+                  __global float *d_alpha_output,
+                  __global float *d_depth_output,
+                  uint Nx, uint Ny,
+                  float boxMin_x,
+                  float boxMax_x,
+                  float boxMin_y,
+                  float boxMax_y,
+                  float boxMin_z,
+                  float boxMax_z,
+                  float minVal,
+                  float maxVal,
+                  float gamma,
+                  float alpha_pow,
+                  int numParts,
+                  int currentPart,
+                  __QUALIFIER_CONSTANT float* invP,
+                  __QUALIFIER_CONSTANT float* invM,
+                  __read_only image3d_t volume
 				 )
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
@@ -199,24 +189,26 @@ max_project_float(__global float *d_output, __global float *d_alpha_output,
 __kernel void
 max_project_short(__global float *d_output,
                 __global float *d_alpha_output,
-                __global float *d_depth_output,
-				 uint Nx, uint Ny,
-				 float boxMin_x,
-				 float boxMax_x,
-				 float boxMin_y,
-				 float boxMax_y,
-				 float boxMin_z,
-				 float boxMax_z,
-				 float minVal,
-				 float maxVal,
-				 float gamma,
-				 float alpha_pow,
-				 int numParts,
-				 int currentPart,
-				 __constant float* invP,
-				 __constant float* invM,
-				 __read_only image3d_t volume
-				 )
+                  __global float *d_depth_output,
+                  uint Nx,
+                  uint Ny,
+                  float boxMin_x,
+                  float boxMax_x,
+                  float boxMin_y,
+                  float boxMax_y,
+                  float boxMin_z,
+                  float boxMax_z,
+                  float minVal,
+                  float maxVal,
+                  float gamma,
+                  float alpha_pow,
+                  int numParts,
+                  int currentPart,
+                  __QUALIFIER_CONSTANT float* invP,
+                  __QUALIFIER_CONSTANT float* invM,
+                  __read_only image3d_t volume
+                  )
+
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
 	CLK_ADDRESS_CLAMP_TO_EDGE |

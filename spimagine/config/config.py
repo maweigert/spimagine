@@ -24,6 +24,7 @@ defaults = {
     "window_width": 900,
     "window_height": 800,
     "max_steps": 200,
+    "_qualifier_constant_to_global": 0,
 }
 
 
@@ -42,6 +43,8 @@ __DEFAULT_WIDTH__ = _get_param("window_width", int)
 
 __DEFAULT_HEIGHT__ = _get_param("window_height", int)
 __DEFAULTMAXSTEPS__ = _get_param("max_steps", int)
+
+__QUALIFIER_CONSTANT_TO_GLOBAL__ = _get_param("_qualifier_constant_to_global", bool)
 
 __COLORMAPDICT__ = loadcolormaps()
 
