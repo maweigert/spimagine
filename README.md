@@ -191,6 +191,14 @@ As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL 
 
 ### troubleshooting
 
+#### logging (debug mode)
+
+To get a logging output, run it as standalone from the command line with the debug flag   
+```
+$ spimagine -D
+```
+
+
 #### getting it to work from inside the jupyter notebook / ipython 
 
 As the main widget relies on the qt event loop running, one has to include 
