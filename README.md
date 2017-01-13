@@ -167,7 +167,7 @@ After opening the panel, different keyframes can be inserted by right clickling 
 
 ### configuration 
 
-Some configuration data (e.g. the default OpenCL platform and device, colormaps, etc) can be changed in the config file "$HOME/.spimagine" (create it if necessary)  
+Some configuration data (e.g. the default OpenCL platform and device, colormaps, etc) can be changed in the config file `$HOME/.spimagine` (create it if necessary)  
 
 ```#~/.spimagine
 
@@ -185,7 +185,7 @@ spimagine.config.defaults
 ```
 for available keys and their defaults.
 
-As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL backend, it will use gputools' default OpenCL platform/device otherwise (which itself can be changed in "$HOME/.gputools")
+As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL backend, it will use gputools' default OpenCL platform/device otherwise (which itself can be changed in `$HOME/.gputools`)
 
 
 
@@ -212,3 +212,11 @@ at the beginning of the notebook or start Ipython with the qt5 backend:
 ipython --matplotlib=qt5
 ```
 
+#### widget is blank/black on OSX with Nvidia Web driver
+
+If you use Nvidias Wed Driver on Osx, you might see a blank canvas which is apparently due to a bug in the OpenCL implementation.
+The workaround so far is to set the flag 
+```
+_qualifier_constant_to_global = 1
+```
+in `$HOME/.spimagine`
