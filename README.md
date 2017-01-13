@@ -191,11 +191,11 @@ As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL 
 
 ### troubleshooting
 
-#### logging (debug mode)
+#### logging (verbose mode)
 
-To get a logging output, run it as standalone from the command line with the debug flag   
+To get a logging output, run it as standalone from the command line with the verbose flag  (-v) set
 ```
-$ spimagine -D
+$ spimagine -v
 ```
 
 
