@@ -455,7 +455,7 @@ class VolumeRenderer:
                              np.int32(self.dtype in [np.uint16, np.uint8])
                              )
         self._convolve_vec(self.buf_normals, 7)
-
+        #
         self.proc.run_kernel("occlusion",
                              (self.width, self.height),
                              None,

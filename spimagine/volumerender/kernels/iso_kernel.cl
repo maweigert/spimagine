@@ -126,12 +126,7 @@ __kernel void iso_surface(
 	}
   }
 
-  if (hitIso){
-	t_hit = tnear+i*dt;
-	t1 = tnear+(i-1)*dt;
-	t2 = tnear+i*dt;
-  }
-  else{
+  if (!hitIso){
   	  d_output[x+Nx*y] = 0.f;
   	  d_alpha_output[x+Nx*y] = 0.f;
   	  d_depth_output[x+Nx*y] = INFINITY;
@@ -140,41 +135,24 @@ __kernel void iso_surface(
   	  d_normals_output[2+3*x+3*Nx*y] = 0.f;
   	  return;
   }
-	 
-  
+
+
 
   //if intersection found bisect, TODO!
-
-  int maxBisect = 10;
-  t_hit -= dt;
+  const int maxBisect = 10;
   hitIso = 0;
 
-  float dt2 = dt/maxBisect;
-  float4 delta_pos2 = .5f*dt2*direc;
-  pos -= delta_pos;
+  float4 delta_pos2 = delta_pos/maxBisect;
+  pos = 0.5f *(1.f + orig + tnear*direc)+(i-1)*delta_pos;
 
-  for(i=0; i<=maxBisect; i++) {
-
+  int j = 1;
+  for(j=1; j<=maxBisect; j++) {
   	newVal = read_image(volume, volumeSampler, pos, isShortType);
     pos += delta_pos2;
 	if ((newVal>isoVal) != isGreater){
 	  hitIso = 1;
 	  break;
 	}
-  }
-  
-
-  if (hitIso){
-  	  t_hit += i*dt2;
-  }
-  else{
-  	  d_output[x+Nx*y] = 0.f;
-  	  d_alpha_output[x+Nx*y] = 0.f;
-  	  d_depth_output[x+Nx*y] = INFINITY;
-  	  d_normals_output[3*x+3*Nx*y] = 0.f;
-  	  d_normals_output[1+3*x+3*Nx*y] = 0.f;
-  	  d_normals_output[2+3*x+3*Nx*y] = 0.f;
-  	  return;
   }
 
   // compute the normals and shading
