@@ -147,10 +147,11 @@ class MainSettingsPanel(QtWidgets.QWidget):
         vbox.addLayout(hbox)
 
         self.setStyleSheet("""
-        QFrame,QLabel,QLineEdit {
+        QFrame,QLabel,QPushButton,QComboBox, QListView,QLineEdit {
         color: white;
         }
         """)
+
         vbox.addStretch()
 
         self.setLayout(vbox)
@@ -164,6 +165,7 @@ class MainSettingsPanel(QtWidgets.QWidget):
 
 
     def folderSelect(self,event):
+
         dirName= QtWidgets.QFileDialog.getExistingDirectory(self, 'select output folder',
                 self.dirName)
         if dirName:
