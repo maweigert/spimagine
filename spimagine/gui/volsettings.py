@@ -278,6 +278,6 @@ if __name__ == '__main__':
 
     win = MainWindow()
     win.show()
-    win.raise_window()
+    win.raise_()
 
     sys.exit(app.exec_())
