@@ -257,7 +257,8 @@ class MainWidget(QtWidgets.QWidget):
                                                    BlurXYZProcessor(),
                                                    NoiseProcessor(),
                                                    FFTProcessor(),
-                                                   LucyRichProcessor()])
+                                                   #LucyRichProcessor()
+                                                   ])
 
         self.impListView.hide()
 
