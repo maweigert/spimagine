@@ -134,9 +134,10 @@ the package provides interactive visualisation to be used e.g. within IPython
 
 ```python 
 from spimagine import volshow
+import numpy as np
 
 # create a 3d or 4d numpy array
-data = linspace(0,1,100**3).reshape((100,)*3)          
+data = np.linspace(0,1,100**3).reshape((100,)*3)          
 	
 # render the data and returns the widget 
 w = volshow(data)       
