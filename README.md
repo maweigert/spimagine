@@ -38,7 +38,8 @@ brew install clinfo
 clinfo
 ```
 ####  Install the package
-If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/0.1.2-alpha/spimagine.dmg):
+If you only want to use the standalone application (without installing it as a proper python package and make it usable from within the interpreter) you can just download the [App bundle](https://github.com/maweigert/spimagine/releases/download/v0.2.0/spimagine.dmg):
+
 
 To install it as a proper package, do
 
@@ -166,25 +167,37 @@ After opening the panel, different keyframes can be inserted by right clickling 
 
 ### configuration 
 
-the default parameters (colormap/render width...) can be set by creating the config file "$HOME/.spimagine" and populating it with the default values, e.g.
+Some configuration data (e.g. the default OpenCL platform and device, colormaps, etc) can be changed in the config file `$HOME/.spimagine` (create it if necessary)  
+
+```#~/.spimagine
+
+id_platform = 0  
+# id_platform =-1 to choose the device with biggest memory) 
+
+id_device = 1 
+max_steps  = 400
+colormap = viridis
 
 ```
-max_steps  = 200
-width = 600
-colormap = hot
+See 
+```python
+spimagine.config.defaults
 ```
+for available keys and their defaults.
 
-As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL backend, it will use gputools' default OpenCL platform/device - this can be changed by putting
+As *Spimagine* uses [gputools](https://github.com/maweigert/gputools) as OpenCL backend, it will use gputools' default OpenCL platform/device otherwise (which itself can be changed in `$HOME/.gputools`)
 
-```
-id_platform = 0
-id_device = 1
-```
-into  "$HOME/.spimagine"  (or in "$HOME/.gputools" if you want to change the whole gputools default)
-(put id_platform =-1 to choose the device with biggest memory) 
 
 
 ### troubleshooting
+
+#### logging (verbose mode)
+
+To get a logging output, run it as standalone from the command line with the verbose flag  (-v) set
+```
+$ spimagine -v
+```
+
 
 #### getting it to work from inside the jupyter notebook / ipython 
 
@@ -199,3 +212,11 @@ at the beginning of the notebook or start Ipython with the qt5 backend:
 ipython --matplotlib=qt5
 ```
 
+#### widget is blank/black on OSX with Nvidia Web driver
+
+If you use Nvidias Wed Driver on Osx, you might see a blank canvas which is apparently due to a bug in the OpenCL implementation.
+The workaround so far is to set the flag 
+```
+_qualifier_constant_to_global = 1
+```
+in `$HOME/.spimagine`
