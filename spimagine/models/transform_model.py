@@ -220,7 +220,8 @@ class TransformModel(QtCore.QObject):
         self._transformChanged.emit()
 
     def setZoom(self,zoom = 1.):
-        self.zoom = np.clip(zoom,.5,2)
+        #self.zoom = np.clip(zoom,.5,2)
+        self.zoom = np.clip(zoom, .3, 2)
         self.update()
         self._transformChanged.emit()
 
@@ -254,6 +255,7 @@ class TransformModel(QtCore.QObject):
     def update(self):
         if self.isPerspective:
             self.cameraZ = 4*(1-np.log(self.zoom)/np.log(2.))
+
             self.scaleAll = 1.
         else:
             self.cameraZ = 0.
@@ -263,6 +265,7 @@ class TransformModel(QtCore.QObject):
         self.isPerspective = isPerspective
         if isPerspective:
             self.projection = mat4_perspective(60.,1.,.1,10)
+
         else:
             self.projection = mat4_ortho(-2.,2.,-2.,2.,-1.5,1.5)
 
