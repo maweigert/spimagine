@@ -260,6 +260,7 @@ class TiffFolderData(GenericData):
                 data = data.reshape(self.stackSize[1:])
             except Exception as e:
                 print(e)
+                return None
 
             return data
 
