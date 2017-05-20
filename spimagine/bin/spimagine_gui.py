@@ -62,6 +62,13 @@ def main():
                         default=0,
                         help='prefetch size (should not be negative, e.g. -p 2)')
 
+    parser.add_argument('-u',
+                        dest='units',
+                        nargs = 3,
+                        type=float,
+                        default=[1.,1.,1.],
+                        help='voxel units')
+
     parser.add_argument('-D',
                         action='store_true',
                         help="output DEBUG messages")
@@ -113,9 +120,6 @@ def main():
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
 
-
-
-
     win = MainWidget()
     win.resize(spimagine.config.__DEFAULT_WIDTH__, spimagine.config.__DEFAULT_HEIGHT__)
     if args.fname:
@@ -125,6 +129,8 @@ def main():
             win.setModel(DataModel.fromPath(args.fname))
     else:
         win.setModel(DataModel(DemoData()))
+
+    win.transform.setStackUnits(*args.units)
 
     win.show()
     win.raise_window()
