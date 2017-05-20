@@ -55,7 +55,7 @@ def main():
                         nargs='*',
                         help='the files/folder to open (e.g. tif, folder of tif) ',
                         default = None)
-    
+
     parser.add_argument('-p',
                         dest='prefetch',
                         type = int,
@@ -77,9 +77,11 @@ def main():
                         action='store_true',
                         help="output DEBUG messages")
 
+
     try:
         args = parser.parse_args()
-    except:
+    except Exception as e:
+        print(e)
         parser.print_help()
         sys.exit(0)
 
@@ -101,7 +103,7 @@ def main():
 
     logger.debug("available qt styles: %s " % str(QtWidgets.QStyleFactory.keys()))
     logger.debug("used qt styles: %s " % app.style().metaObject().className())
-    
+
 
 
     #splash screen
@@ -115,13 +117,14 @@ def main():
     from spimagine.gui.mainwidget import MainWidget
     from spimagine.models.data_model import DemoData, DataModel
 
-        
+
 
     app.setWindowIcon(QtGui.QIcon(absPath('../gui/images/spimagine.png')))
 
 
     win = MainWidget()
     win.resize(spimagine.config.__DEFAULT_WIDTH__, spimagine.config.__DEFAULT_HEIGHT__)
+    splash.hide()
     if args.fname:
         if len(args.fname)==1:
             win.setModel(DataModel.fromPath(args.fname[0]))
