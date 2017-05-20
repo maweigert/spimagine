@@ -20,11 +20,8 @@ from __future__ import absolute_import, print_function
 import sys
 import os
 
-
 from PyQt5 import QtGui, QtCore, QtWidgets
-
 import argparse
-
 import logging
 logger = logging.getLogger(__name__)
 
