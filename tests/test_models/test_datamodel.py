@@ -4,7 +4,7 @@ mweigert@mpi-cbg.de
 from __future__ import absolute_import, print_function
 import os
 import numpy as np
-from spimagine import DataModel, SpimData, TiffData, NumpyData
+from spimagine import DataModel, SpimData, TiffData, NumpyData, RawData
 from six.moves import range
 
 
@@ -88,17 +88,29 @@ def test_tiffdata():
         print((np.mean(m[pos])))
 
 
+def test_rawdata():
+    d = RawData(rel_path("../data/raw_64_65_66.raw"), shape = (1,1,66,65,64), dtype = np.uint16)
+
+    print(d.size())
+    m = DataModel(d)
+    print(m)
+    for pos in range(m.sizeT()):
+        print(pos)
+        print((np.mean(m[pos])))
+
+
+
 
 
 if __name__ == '__main__':
-
+    test_rawdata()
 
 
     # test_tiffdata()
     # test_numpydata()
     #
     # test_spimdata()
-    test_speed()
+    #test_speed()
 
     # test_frompaths()
     # test_folder()
