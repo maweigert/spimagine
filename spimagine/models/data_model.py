@@ -227,8 +227,7 @@ class RawData(GenericData):
     def load(self, fname, shape=None, dtype=np.uint16, stackUnits=[1., 1., 1.]):
         if fname:
             try:
-
-
+                print(shape, dtype)
                 if shape is None or dtype is None:
                     shape, dtype, ok = ShapeDtypeDialog.get_properties()
                     if not ok:
@@ -238,6 +237,8 @@ class RawData(GenericData):
 
                 if len(shape) < 4:
                     shape = (1,) * (len(shape) - 4) + shape
+                elif len(shape)>4:
+                    raise ValueError("shape should have length of 4!")
 
                 self.data = data.reshape(shape)
                 self.stackSize = shape
@@ -273,7 +274,6 @@ class RawMultipleFiles(GenericData):
                 raise Exception("filelist %s seems to be empty" % fnames)
 
             try:
-
 
                 if shape is None or dtype is None:
                     shape, dtype, ok = ShapeDtypeDialog.get_properties()

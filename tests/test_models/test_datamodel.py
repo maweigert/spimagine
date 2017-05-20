@@ -64,6 +64,9 @@ def test_frompaths():
 
     print(fnames)
     for f in fnames:
+        if os.path.splitext(f)[1] ==".raw":
+            print("raw ...skipping")
+            continue
         print(f)
         d = DataModel.fromPath(f)
         print(d)
@@ -89,7 +92,8 @@ def test_tiffdata():
 
 
 def test_rawdata():
-    d = RawData(rel_path("../data/raw_64_65_66.raw"), shape = (1,1,66,65,64), dtype = np.uint16)
+    d = RawData(rel_path("../data/raw_64_65_66.raw"),
+                shape = (1,66,65,64), dtype = np.uint16)
 
     print(d.size())
     m = DataModel(d)
@@ -97,6 +101,7 @@ def test_rawdata():
     for pos in range(m.sizeT()):
         print(pos)
         print((np.mean(m[pos])))
+
 
 
 
