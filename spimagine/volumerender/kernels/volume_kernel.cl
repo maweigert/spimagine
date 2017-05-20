@@ -77,7 +77,7 @@ max_project_float(__global float *d_output,
 
   direc = mult(invM,normalize(temp-orig0));
   direc.w = 0.0f;
-  
+
 
   // find intersection with box
   float tnear, tfar;
@@ -143,18 +143,18 @@ max_project_float(__global float *d_output,
   		maxInd = cumsum*newVal>colVal?i*LOOPUNROLL+j:maxInd;
   		colVal = fmax(colVal,cumsum*newVal);
 
-  		cumsum  *= (1.f-.1f*alpha_pow*newVal);
+  		cumsum  *= (1.f-.1f*alpha_pow*clamp(newVal,0.f,1.f));
   		pos += delta_pos;
   		if (cumsum<=0.02f)
   		  break;
 
   	  }
   	}
+
   }
 
 
 
-  
   colVal = clamp(pow(colVal,gamma),0.f,1.f);
 
   alphaVal = clamp(colVal,0.f,1.f);
