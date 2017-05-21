@@ -73,7 +73,7 @@ def data_model(data):
     app.exec_()
 
 if __name__ == '__main__':
-    d = np.zeros((700,) * 3, np.uint8)
+    d = np.zeros((1024,) * 3, np.uint16)
 
 
 

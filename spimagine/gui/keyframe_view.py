@@ -444,6 +444,7 @@ class KeyListView(QGraphicsView):
             try:
                 k = KeyFrameList._from_JSON(f.read())
                 self.setModel(k)
+
                 
             except Exception as e:
                 print(e)
@@ -658,7 +659,7 @@ class KeyFramePanel(QWidget):
 
     def onSave(self):
 
-        fName = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
+        fName, _ = QFileDialog.getSaveFileName(self, "save as json file", "", "json files (*.json)")
         if fName:
             self.save_to_JSON(fName)
 
