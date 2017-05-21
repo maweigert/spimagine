@@ -148,8 +148,8 @@ max_project_float(__global float *d_output,
   		if (cumsum<=0.02f)
   		  break;
 
-  		if((x==400)&&(y==400))
-            printf("cumsum (it %d): %.5f\n",j,cumsum);
+        //  if((x==400)&&(y==400))
+        //     printf("cumsum (it %d): %.5f\n",j,cumsum);
 
 
   	  }
