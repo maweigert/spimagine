@@ -467,10 +467,10 @@ class KeyListView(QGraphicsView):
 class KeyFramePanel(QWidget):
     _keyTimeChanged = pyqtSignal(float)
 
-
-    def __init__(self, glWidget):
+    def __init__(self, glWidget, mainwidget = None):
         super(KeyFramePanel,self).__init__()
-        self.glWidget = glWidget
+        self._glWidget = glWidget
+        self._mainwidget = mainwidget
         self.resize(500, 30)
         self.initUI()
 
@@ -639,7 +639,7 @@ class KeyFramePanel(QWidget):
 
         self.setKeyTime(1.*self.recordPos/self.nFrames)
 
-        self.glWidget.saveFrame(os.path.join(self.dirName,"output_%s.png"%(str(self.recordPos).zfill(int(log10(self.nFrames)+1)))))
+        self._glWidget.saveFrame(os.path.join(self.dirName, "output_%s.png" % (str(self.recordPos).zfill(int(log10(self.nFrames) + 1)))))
 
 
 
@@ -650,6 +650,10 @@ class KeyFramePanel(QWidget):
         if self.keyView.transformModel:
             self.keyView.transformModel.fromTransformData(self.keyView.keyList.getTransform(newTime))
 
+        # # block min/max slider feedback
+        # old = self._mainwidget.maxSlider.blockSignals(True)
+        # self.slider.setValue(int(100 * val))
+        # self.slider.blockSignals(old)
 
         self._keyTimeChanged.emit(self.t)
 

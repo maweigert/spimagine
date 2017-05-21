@@ -233,9 +233,11 @@ class MainWidget(QtWidgets.QWidget):
 
 
         def func1(x):
+            #print("func2: %.2f \t->\t %.2f" % (x, 2**x))
             return 2**x
 
         def func2(x):
+            #print("func2: %.2f \t->\t %.2f"%(x,np.log2(x) if x>0 else -1.e20))
             return np.log2(x) if x>0 else -1.e20
 
         self.maxSlider.floatValueChanged.connect(lambda x: self.transform.setMax(func1(x)))

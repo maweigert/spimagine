@@ -44,7 +44,11 @@ class FloatSlider(QtWidgets.QSlider):
     def setValue(self,val):
         logger.debug("floatslider (id = %s): setValue to : %s"%(id(self),val))
         self.floatValue = val
+
+        # this surpressed anoying feedback
+        old = self.blockSignals(True)
         super(FloatSlider,self).setValue(self._from_float(val))
+        self.blockSignals(old)
 
     def value(self):
         return self.floatValue
@@ -52,9 +56,7 @@ class FloatSlider(QtWidgets.QSlider):
 
     def onChanged(self,ind):
         self.floatValue = self._from_int(ind)
-
         self.floatValueChanged.emit(self.floatValue)
-
         # self.floatValueChanged.emit(self._from_int(ind))
 
 

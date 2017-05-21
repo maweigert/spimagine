@@ -203,7 +203,7 @@ class TransformModel(QtCore.QObject):
 
     def setMax(self,maxVal):
         self.maxVal = maxVal
-        
+
         logger.debug("set max to %s"%(self.maxVal))
 
         self._maxChanged.emit(self.maxVal)
