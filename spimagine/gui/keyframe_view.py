@@ -455,7 +455,7 @@ class KeyListView(QGraphicsView):
         logger.debug("dropping...")
         for url in event.mimeData().urls():
             event.accept()
-            path = url.toLocalFile().toLocal8Bit().data()
+            path = url.toLocalFile()
 
             if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
@@ -472,19 +472,22 @@ class KeyFramePanel(QWidget):
         self._glWidget = glWidget
         self._mainwidget = mainwidget
         self.resize(500, 30)
+        self._record_delay = 50
         self.initUI()
 
 
     def initUI(self):
         self.keyView =  KeyListView()
 
+
         self.setAcceptDrops(True)
 
         self.playTimer = QTimer(self)
-        self.playTimer.setInterval(30)
+        self.playTimer.setInterval(50)
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.recordTimer = QTimer(self)
-        self.recordTimer.setInterval(30)
+        self.recordTimer.setInterval(self._record_delay)
+
         self.recordTimer.timeout.connect(self.onRecordTimer)
 
 
@@ -626,6 +629,12 @@ class KeyFramePanel(QWidget):
     def setFrameNumber(self,nFrames):
         self.nFrames = nFrames
 
+    def setRecordDelay(self, delay_in_ms):
+        self._record_delay = delay_in_ms
+
+
+
+
     def setDirName(self,dirName):
         logger.debug("setDirName %s"%dirName)
         self.dirName = str(dirName)
@@ -709,7 +718,7 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.keyPanel)
 
-        self.setStyleSheet("background-color:black;")
+        self.setStyleSheet("background-color:black;color:white")
 
 
     # def resizeEvent(self,event):

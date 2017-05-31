@@ -254,6 +254,7 @@ class MainWidget(QtWidgets.QWidget):
         # self.keyframes = KeyFrameList()
         self.keyPanel = KeyFramePanel(self.glWidget)
         self.keyPanel.hide()
+        self.keyPanel.setStyleSheet("color:white")
 
         self.impListView = ImageProcessorListView([BlurProcessor(),
                                                    BlurXYZProcessor(),
@@ -272,8 +273,9 @@ class MainWidget(QtWidgets.QWidget):
 
         self.setStyleSheet("""
         background-color:black;
-        color:black;
-        """)
+        color:black;""")
+
+
 
         hbox0 = QtWidgets.QHBoxLayout()
         hbox0.addWidget(self.minSlider)
@@ -419,6 +421,7 @@ class MainWidget(QtWidgets.QWidget):
         self.transform._stackUnitsChanged.connect(self.volSettingsView.setStackUnits)
 
         self.settingsView._frameNumberChanged.connect(self.keyPanel.setFrameNumber)
+        self.settingsView._recordDelayChanged.connect(self.keyPanel.setRecordDelay)
 
         self.volSettingsView.colorCombo.currentIndexChanged.connect(self.onColormapChanged)
         self.volSettingsView._rgbColorChanged.connect(self.onRgbColorChanged)

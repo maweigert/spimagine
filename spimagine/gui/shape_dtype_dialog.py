@@ -58,12 +58,13 @@ class ShapeDtypeDialog(QtWidgets.QDialog):
 
     def create_combo(self):
         combo = QtWidgets.QComboBox(self)
-        for t in self.type_dict.keys():
+        for t in sorted(self.type_dict.keys()):
             combo.addItem(t)
         return combo
 
     def parse_properties(self):
         self.shape = tuple(int(edit.text()) for edit in self.edits)[::-1]
+        self.dtype = self.type_dict[self.combo.currentText()]
 
     # static method to create the dialog and return (date, time, accepted)
     @staticmethod

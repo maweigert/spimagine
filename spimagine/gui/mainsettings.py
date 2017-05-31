@@ -61,6 +61,7 @@ class MainSettingsPanel(QtWidgets.QWidget):
 
     _dirNameChanged =  QtCore.pyqtSignal(str)
     _frameNumberChanged = QtCore.pyqtSignal(int)
+    _recordDelayChanged = QtCore.pyqtSignal(int)
     
     def __init__(self):
         super(QtWidgets.QWidget,self).__init__()
@@ -143,6 +144,15 @@ class MainSettingsPanel(QtWidgets.QWidget):
         frameEdit.setValidator(QtGui.QIntValidator(bottom=1))
         frameEdit.returnPressed.connect(lambda: self._frameNumberChanged.emit(int(frameEdit.text())))
         hbox.addWidget(frameEdit)
+
+        vbox.addLayout(hbox)
+
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("record delay (ms):\t"))
+        delayEdit = QtWidgets.QLineEdit("50")
+        delayEdit.setValidator(QtGui.QIntValidator(bottom=50))
+        delayEdit.returnPressed.connect(lambda: self._recordDelayChanged.emit(int(delayEdit.text())))
+        hbox.addWidget(delayEdit)
 
         vbox.addLayout(hbox)
 
