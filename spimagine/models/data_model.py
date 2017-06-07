@@ -231,7 +231,7 @@ class RawData(GenericData):
                 if shape is None or dtype is None:
                     shape, dtype, ok = ShapeDtypeDialog.get_properties()
                     if not ok:
-                        return
+                        return None
 
                 data = np.fromfile(fname, dtype=dtype)
 
@@ -247,7 +247,7 @@ class RawData(GenericData):
                 print(e)
                 self.fName = ""
                 raise Exception("couldnt open %s as RawData" % fname)
-                return
+                return None
 
             self.stackUnits = stackUnits
             self.fName = fname
@@ -278,7 +278,7 @@ class RawMultipleFiles(GenericData):
                 if shape is None or dtype is None:
                     shape, dtype, ok = ShapeDtypeDialog.get_properties()
                     if not ok:
-                        return
+                        return None
 
                 data = np.fromfile(fnames[0], dtype=dtype)
 
@@ -293,7 +293,7 @@ class RawMultipleFiles(GenericData):
             except Exception as e:
                 print(e)
                 raise Exception("couldnt open %s as RawData" % fnames[0])
-                return
+                return None
 
             self.stackUnits = stackUnits
 

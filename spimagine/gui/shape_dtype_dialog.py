@@ -66,7 +66,7 @@ class ShapeDtypeDialog(QtWidgets.QDialog):
         self.shape = tuple(int(edit.text()) for edit in self.edits)[::-1]
         self.dtype = self.type_dict[self.combo.currentText()]
 
-    # static method to create the dialog and return (date, time, accepted)
+
     @staticmethod
     def get_properties(parent=None):
         dialog = ShapeDtypeDialog(parent)
