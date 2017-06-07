@@ -315,7 +315,7 @@ class TransformModel(QtCore.QObject):
         self.setAlphaPow(transformData.alphaPow)
         self.setTranslate(*transformData.translate)
         self.setValueScale(transformData.minVal,transformData.maxVal)
-        # self.setGamma(transformData.gamma)
+        self.setGamma(transformData.gamma)
 
     def toTransformData(self):
         return TransformData(quatRot = self.quatRot, zoom = self.zoom,
