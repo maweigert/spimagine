@@ -22,8 +22,10 @@ or alternatively the [talk at EuroScipy 2015](https://www.youtube.com/watch?v=Me
 
 ## Requirements
 
-* Python 2.7 or 3.5+
+* Python 2.7 or 3.5+ (recommended)
 * a working OpenCL environment 
+
+
 
 ## Installation
 
