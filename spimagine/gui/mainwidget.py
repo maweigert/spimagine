@@ -600,9 +600,10 @@ class MainWidget(QtWidgets.QWidget):
 
 
     def screenShot(self):
-        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
-                                                     '.', selectedFilter='*.png')
+        fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
+                                                     '.', initialFilter='*.png')
 
+        print(fileName)
         if fileName:
             self.glWidget.saveFrame(str(fileName))
 

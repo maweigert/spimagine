@@ -392,6 +392,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.bind()
 
         self.texture = fillTexture2d(self.output, self.texture)
+        #self.textureAlpha = fillTexture2d(self.output_alpha, self.textureAlpha)
 
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
@@ -423,6 +424,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         # draw the slice
         self.programSlice.bind()
         self.programSlice.setUniformValue("mvpMatrix", QtGui.QMatrix4x4(*self._mat_modelviewproject.flatten()))
+
+        self.programSlice.setUniformValue("is_mode_black", self._background_mode_black)
         self.programSlice.enableAttributeArray("position")
 
         pos, dim = self.transform.slicePos, self.transform.sliceDim

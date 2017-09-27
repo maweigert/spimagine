@@ -87,7 +87,7 @@ max_project_float(__global float *d_output,
   if (!hit) {
   	if ((x < Nx) && (y < Ny)) {
   	  d_output[x+Nx*y] = 0.f;
-	  d_alpha_output[x+Nx*y] = 0.f;
+	  d_alpha_output[x+Nx*y] = -1.f;
   	}
   	return;
   }
