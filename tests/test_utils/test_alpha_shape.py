@@ -8,7 +8,8 @@ from __future__ import absolute_import
 import numpy as np
 from spimagine import volfig, Mesh, qt_exec
 from spimagine.utils import alpha_shape
-
+import matplotlib
+matplotlib.use("Qt5Agg")
 
 def test_2d():
     import matplotlib.pyplot as plt
@@ -40,7 +41,8 @@ def test_2d():
         plt.plot(points[edge, 0], points[edge, 1], "k", lw=2)
 
     plt.axis("equal")
-
+    plt.pause(0.1)
+    plt.close()
 
     return points, normals, indices
 
