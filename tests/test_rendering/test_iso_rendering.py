@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import numpy as np
 from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
-import matplotlib.pyplot as plt
+
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
