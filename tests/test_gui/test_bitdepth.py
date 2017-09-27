@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib
+matplotlib.use("Qt5Agg")
+
 from matplotlib.pyplot import cm
 from spimagine import volshow
 import OpenGL.GL as GL
