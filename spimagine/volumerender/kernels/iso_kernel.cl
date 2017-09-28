@@ -1,6 +1,6 @@
 /*
 
-  Iso surface rendering kernels 
+  Iso surface rendering kernels
 
   mweigert@mpi-cbg.de
  */
@@ -34,9 +34,7 @@ __kernel void iso_surface(
 						  int isShortType)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |
-	// CLK_FILTER_NEAREST ;
-	CLK_FILTER_LINEAR ;
+	CLK_ADDRESS_CLAMP_TO_EDGE | SAMPLER_FILTER;
 
   uint x = get_global_id(0);
   uint y = get_global_id(1);
@@ -114,7 +112,7 @@ __kernel void iso_surface(
   float t1 = tnear, t2 = tfar;
 
   int i = 1;
-  
+
   //search for the intersection
   for(i=1; i<maxSteps; i++) {
   	pos += delta_pos;
@@ -236,9 +234,7 @@ __kernel void iso_surface2(
 						  int isShortType)
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |
-	// CLK_FILTER_NEAREST ;
-	CLK_FILTER_LINEAR ;
+	CLK_ADDRESS_CLAMP_TO_EDGE | SAMPLER_FILTER;
 
   uint x = get_global_id(0);
   uint y = get_global_id(1);

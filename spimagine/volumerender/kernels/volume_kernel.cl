@@ -1,10 +1,10 @@
 /*
 
   Volume ray casting kernel
-  
+
   adapted from the Nvidia sdk sample
   http://developer.download.nvidia.com/compute/cuda/4_2/rel/sdk/website/OpenCL/html/samples.html
- 
+
 
   mweigert@mpi-cbg.de
  */
@@ -40,10 +40,8 @@ max_project_float(__global float *d_output,
 				 )
 {
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |
-	// CLK_FILTER_NEAREST ;
-	CLK_FILTER_LINEAR ;
-  
+	CLK_ADDRESS_CLAMP_TO_EDGE | SAMPLER_FILTER;
+
   uint x = get_global_id(0);
   uint y = get_global_id(1);
 
@@ -59,18 +57,18 @@ max_project_float(__global float *d_output,
   float4  direc;
   float4 temp;
   float4 back,front;
-   
+
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
-  
 
-  orig0 = mult(invP,front);  
+
+  orig0 = mult(invP,front);
   orig0 *= 1.f/orig0.w;
 
 
   orig = mult(invM,orig0);
   orig *= 1.f/orig.w;
-  
+
   temp = mult(invP,back);
 
   temp *= 1.f/temp.w;
@@ -92,19 +90,19 @@ max_project_float(__global float *d_output,
   	return;
   }
   // clamp to near plane
-  if (tnear < 0.0f) tnear = 0.0f;  
+  if (tnear < 0.0f) tnear = 0.0f;
 
 
-  // the color values we want 
+  // the color values we want
   float colVal = 0;
   float alphaVal = 0;
 
   const int reducedSteps = maxSteps/numParts;
-  
+
   const float dt = fabs(tfar-tnear)/((reducedSteps/LOOPUNROLL)*LOOPUNROLL);
 
   //apply the shift if mulitpass
-  
+
   orig += currentPart*dt*direc;
 
   //  dither the original
@@ -117,7 +115,7 @@ max_project_float(__global float *d_output,
   float newVal = 0.f;
 
   int maxInd = 0;
-  
+
   if (alpha_pow==0){
   	for(int i=0; i<=reducedSteps/LOOPUNROLL; ++i){
   	  for (int j = 0; j < LOOPUNROLL; ++j){
@@ -132,7 +130,7 @@ max_project_float(__global float *d_output,
   	}
   	colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
   	alphaVal = colVal;
-  
+
   }
   else	{
     float cumsum = 1.f;
@@ -183,7 +181,7 @@ max_project_float(__global float *d_output,
 	  d_output[x+Nx*y] = fmax(colVal,d_output[x+Nx*y]);
 	  d_alpha_output[x+Nx*y] = fmax(alphaVal,d_alpha_output[x+Nx*y]);
 	}
-	
+
   }
 }
 
@@ -216,10 +214,8 @@ max_project_short(__global float *d_output,
 {
 
   const sampler_t volumeSampler =   CLK_NORMALIZED_COORDS_TRUE |
-	CLK_ADDRESS_CLAMP_TO_EDGE |
-	// CLK_FILTER_NEAREST ;
-	CLK_FILTER_LINEAR ;
-  
+	CLK_ADDRESS_CLAMP_TO_EDGE | SAMPLER_FILTER;
+
   uint x = get_global_id(0);
   uint y = get_global_id(1);
 
@@ -235,25 +231,25 @@ max_project_short(__global float *d_output,
   float4  direc;
   float4 temp;
   float4 back,front;
-   
+
   front = (float4)(u,v,-1,1);
   back = (float4)(u,v,1,1);
-  
 
-  orig0 = mult(invP,front);  
+
+  orig0 = mult(invP,front);
   orig0 *= 1.f/orig0.w;
 
 
   orig = mult(invM,orig0);
   orig *= 1.f/orig.w;
-  
+
   temp = mult(invP,back);
 
   temp *= 1.f/temp.w;
 
   direc = mult(invM,normalize(temp-orig0));
   direc.w = 0.0f;
-  
+
 
   // find intersection with box
   float tnear, tfar;
@@ -268,19 +264,19 @@ max_project_short(__global float *d_output,
   	return;
   }
   // clamp to near plane
-  if (tnear < 0.0f) tnear = 0.0f;  
+  if (tnear < 0.0f) tnear = 0.0f;
 
 
-  // the color values we want 
+  // the color values we want
   float colVal = 0;
   float alphaVal = 0;
 
   const int reducedSteps = maxSteps/numParts;
-  
+
   const float dt = fabs(tfar-tnear)/((reducedSteps/LOOPUNROLL)*LOOPUNROLL);
 
   //apply the shift if mulitpass
-  
+
   orig += currentPart*dt*direc;
 
   //  dither the original
@@ -303,7 +299,7 @@ max_project_short(__global float *d_output,
   	}
   	colVal = (maxVal == 0)?colVal:(colVal-minVal)/(maxVal-minVal);
   	alphaVal = colVal;
-  
+
   }
   else	{
   	float cumsum = 1.f;
@@ -323,8 +319,8 @@ max_project_short(__global float *d_output,
 
  // if ((x==250) &&(y==250))
 //	printf("kern: %.20f\n",pos.z);
-  
-  
+
+
   colVal = clamp(pow(colVal,gamma),0.f,1.f);
 
   // alphaVal = clamp(alphaVal,0.f,1.f);
@@ -342,7 +338,7 @@ max_project_short(__global float *d_output,
 	  d_output[x+Nx*y] = fmax(colVal,d_output[x+Nx*y]);
 	  d_alpha_output[x+Nx*y] = fmax(alphaVal,d_alpha_output[x+Nx*y]);
 	}
-	
+
   }
 
 

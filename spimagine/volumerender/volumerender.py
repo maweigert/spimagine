@@ -68,14 +68,14 @@ class VolumeRenderer:
     """
     dtypes = [np.float32, np.uint16, np.uint8]
 
-    def __init__(self, size=None):
+    def __init__(self, size=None, interpolation='linear'):
         """ e.g. size = (300,300)"""
 
         try:
             # simulate GPU fail...
             # raise Exception()
 
-            # self.dev = OCLDevice(useGPU = True, 
+            # self.dev = OCLDevice(useGPU = True,
             #                      useDevice = spimagine.__OPENCLDEVICE__)
 
             # FIXME
@@ -108,6 +108,16 @@ class VolumeRenderer:
 
         if spimagine.config.__QUALIFIER_CONSTANT_TO_GLOBAL__:
             build_options_basic += ["-D","QUALIFIER_CONSTANT_TO_GLOBAL"]
+
+        interpolation_defines = {"linear": ["-D", "SAMPLER_FILTER=CLK_FILTER_LINEAR"],
+                                 "nearest": ["-D", "SAMPLER_FILTER=CLK_FILTER_NEAREST"]}
+
+        if interpolation in interpolation_defines:
+            self.interp = interpolation
+            build_options_basic += interpolation_defines[interpolation]
+        else:
+            raise KeyError(
+                "interpolation = '%s' not defined ,valid: %s" % (interpolation, list(interpolation_defines.keys())))
 
         try:
             self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),

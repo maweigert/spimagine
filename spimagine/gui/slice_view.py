@@ -131,7 +131,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         self.zoom_cx = 0.5
         self.zoom_cy = 0.5
 
-
+        self.interp = bool(kwargs.get('interp', False))
         # self.refresh()
 
 
@@ -176,7 +176,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
         try:
             arr = spimagine.config.__COLORMAPDICT__[name]
             self.makeCurrent()
-            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+            self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape), self.texture_LUT, self.interp)
         except:
             print("could not load colormap %s"%name)
 
@@ -189,10 +189,10 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
         self.makeCurrent()
-        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape),self.texture_LUT)
+        self.texture_LUT = fillTexture2d(arr.reshape((1,)+arr.shape), self.texture_LUT, self.interp)
         self.refresh()
 
-        
+
     def initializeGL(self):
 
         self.resized = True
@@ -321,7 +321,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             # Draw the render texture
             self.programTex.bind()
 
-            self.texture = fillTexture2d(self.output,self.texture)
+            self.texture = fillTexture2d(self.output, self.texture, self.interp)
 
 
             glEnable(GL_TEXTURE_2D)
