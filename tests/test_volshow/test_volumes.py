@@ -40,12 +40,17 @@ def test_volumes():
 
 
 
+def test_interp():
+    single_data(np.random.uniform(-1, 1, (20,) * 3), interpolation="linear")
+    single_data(np.random.uniform(-1, 1, (20,) * 3), interpolation="nearest")
+
+
 
 if __name__ == '__main__':
-
-    single_data(np.zeros((500,) * 3, np.float32),
-            autoscale=False,
-            t_close_ms=1000)
-
-
-
+    test_interp()
+    # single_data(np.zeros((500,) * 3, np.float32),
+    #         autoscale=False,
+    #         t_close_ms=1000)
+    #
+    #
+    #

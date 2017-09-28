@@ -94,7 +94,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     _BACKGROUND_BLACK = (0., 0., 0., 0.)
     _BACKGROUND_WHITE = (1., 1., 1., 0.)
 
-    def __init__(self, parent=None, N_PREFETCH=0, **kwargs):
+    def __init__(self, parent=None, N_PREFETCH=0, interpolation = "linear", **kwargs):
         logger.debug("init")
 
         super(GLWidget, self).__init__(parent, **kwargs)
@@ -105,7 +105,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.setAcceptDrops(True)
 
         self.renderer = VolumeRenderer((spimagine.config.__DEFAULT_TEXTURE_WIDTH__,
-                                        spimagine.config.__DEFAULT_TEXTURE_WIDTH__))
+                                        spimagine.config.__DEFAULT_TEXTURE_WIDTH__),
+                                       interpolation=interpolation)
 
         self.renderer.set_projection(mat4_perspective(60, 1., .1, 100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
@@ -290,7 +291,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
             self.renderer.set_data(self.dataModel[0], autoConvert=True)
 
-
             mi, ma = self._get_min_max()
 
             self.transform.reset(minVal=mi,
@@ -318,7 +318,6 @@ class GLWidget(QtOpenGL.QGLWidget):
                 ma = np.amax(self.dataModel[0])
         return mi, ma
 
-
     def set_background_color(self, r, g, b, a=1.):
         self._background_color = (r, g, b, a)
         glClearColor(r, g, b, a)
@@ -326,7 +325,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def dataSourceChanged(self):
 
         logger.debug("dataSourcechanged")
-
 
         self.renderer.set_data(self.dataModel[0], autoConvert=True)
 
@@ -392,7 +390,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.bind()
 
         self.texture = fillTexture2d(self.output, self.texture)
-        #self.textureAlpha = fillTexture2d(self.output_alpha, self.textureAlpha)
+        # self.textureAlpha = fillTexture2d(self.output_alpha, self.textureAlpha)
 
         glEnable(GL_BLEND)
         glEnable(GL_TEXTURE_2D)
@@ -439,8 +437,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programSlice.setAttributeArray("texcoord", texcoords)
 
         self.textureSlice = fillTexture2d(self.sliceOutput, self.textureSlice)
-
-
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureSlice)
@@ -767,13 +763,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 
 def test_sphere():
-    from data_model import DataModel, NumpyData, SpimData, TiffData
+    from spimagine import DataModel, NumpyData, SpimData, TiffData
 
     app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(500, 500))
+    win = GLWidget(size=QtCore.QSize(500, 500), interpolation = "nearest")
 
-    x = np.linspace(-1, 1, 128)
+    x = np.linspace(-1, 1, 64)
     Z, Y, X = np.meshgrid(x, x, x)
     # R = sqrt(Z**2+Y**2+(X-.35)**2)
     # R2 = sqrt(Z**2+Y**2+(X+.35)**2)
@@ -784,7 +780,7 @@ def test_sphere():
 
     Ns = 5
     r = .6
-    phi = np.linspace(0, 2 * pi, Ns + 1)[:-1]
+    phi = np.linspace(0, 2 * np.pi, Ns + 1)[:-1]
     d = np.zeros_like(X)
     for p in phi:
         d += 100. * np.exp(-10 * (Z ** 2 + (Y - r * np.sin(p)) ** 2 + (X - r * np.cos(p)) ** 2))
@@ -888,10 +884,10 @@ def test_surface():
 
 
 if __name__ == '__main__':
-    test_empty()
+    # test_empty()
 
 
-    # test_sphere()
+    test_sphere()
 
     # test_demo_simple()
     # test_surface()
