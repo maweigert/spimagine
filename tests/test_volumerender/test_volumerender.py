@@ -44,6 +44,23 @@ def test_simple():
     plt.close()
     return 1
 
+def test_nearest():
+    import matplotlib.pyplot as plt
+
+    N = 64
+    d = np.random.rand(N**3).reshape((N,)*3).astype(np.float32)
+
+    rend = VolumeRenderer((400, 400), 'nearest')
+
+    rend.set_data(d)
+    rend.render()
+    out = rend.output
+    plt.imshow(out)
+    plt.show()
+    plt.pause(0.1)
+    plt.close()
+    return 1
+
 def test_time_to_render():
     import time
     from gputools import get_device
