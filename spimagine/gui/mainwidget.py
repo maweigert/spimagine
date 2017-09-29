@@ -84,7 +84,7 @@ class MainWidget(QtWidgets.QWidget):
     N_SCALE_MAX_EXP = 17
     N_SCALE_SLIDER = 500
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, interpolation = "linear", **kwargs):
         super(QtWidgets.QWidget,self).__init__(parent)
 
         self.myparent = parent
@@ -100,10 +100,11 @@ class MainWidget(QtWidgets.QWidget):
 
         self.initActions()
 
-        self.glWidget = GLWidget(self)
+
+        self.glWidget = GLWidget(self,interpolation = interpolation)
         self.glWidget.setTransform(self.transform)
 
-        self.sliceWidget = SliceWidget(self)
+        self.sliceWidget = SliceWidget(self, interpolation = interpolation)
         self.sliceWidget.hide()
 
         # self.jack = JackPlugin(self.transform)
@@ -600,9 +601,10 @@ class MainWidget(QtWidgets.QWidget):
 
 
     def screenShot(self):
-        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
-                                                     '.', selectedFilter='*.png')
+        fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
+                                                     '.', initialFilter='*.png')
 
+        print(fileName)
         if fileName:
             self.glWidget.saveFrame(str(fileName))
 
@@ -785,7 +787,7 @@ class MainWidget(QtWidgets.QWidget):
 def test_sphere():
     from spimagine import DataModel, NumpyData
 
-    x = np.linspace(-1,1,128)
+    x = np.linspace(-1,1,32)
     Z,Y,X = np.meshgrid(x,x,x)
     # R = sqrt(Z**2+Y**2+(X-.35)**2)
     # R2 = sqrt(Z**2+Y**2+(X+.35)**2)
@@ -876,8 +878,8 @@ def test_surface():
 
 
 if __name__ == '__main__':
-    #test_sphere()
+    test_sphere()
 
     # test_surface()
 
-    test_empty()
+    #test_empty()

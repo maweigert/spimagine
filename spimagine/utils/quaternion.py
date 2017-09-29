@@ -73,9 +73,17 @@ class Quaternion(object):
 
 
 def quaternion_slerp(q1,q2,t):
-    w = np.arccos(q1.dot(q2))
-    if w<1.e-10:
-        return Quaternion.copy(q1)
+    q1,q2 = q1.normalize(), q2.normalize()
+
+    prod = q1.dot(q2)
+    if abs(prod)>.9998:
+        return q1+(q2-q1)*t
+    #picks the shorter great circle
+    if prod<0:
+        q2 = q2*(-1.)
+        prod *= -1.
+
+    w = np.arccos(prod)
     return (q1*(np.sin((1.-t)*w)/np.sin(w)))+q2*(np.sin(t*w)/np.sin(w))
 
 if __name__ == '__main__':

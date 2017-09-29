@@ -33,14 +33,15 @@ setup(name='spimagine',
           "sortedcontainers"
       ],
       extras_require={
-          ':python_version<"3.0"': ["scikit-tensor",
-                                    "ConfigParser",
-                                    ],
-          ':python_version>="3.2"': ["configparser",
-                                    "pyqt5"
-                                     ],
+          ':python_version<"3.0"': [
+              #"scikit-tensor",
+              "ConfigParser",
+          ],
+          ':python_version>="3.2"': [
+              "configparser",
+              "pyqt5"
+          ],
       },
-
 
       package_data={"spimagine": ['volumerender/kernels/*',
                                   'gui/shaders/*',

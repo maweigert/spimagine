@@ -7,6 +7,8 @@ from __future__ import print_function, unicode_literals, absolute_import, divisi
 import numpy as np
 from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils import mat4_translate
+import matplotlib
+matplotlib.use("Qt5Agg")
 
 # two test functions to get the ray coordinates in the kernel...
 def _getOrig(P, M, u=1, v=0):
@@ -38,6 +40,26 @@ def test_simple():
     out = rend.output
     plt.imshow(out)
     plt.show()
+    plt.pause(0.1)
+    plt.close()
+    return 1
+
+def test_nearest():
+    import matplotlib.pyplot as plt
+
+    N = 64
+    d = np.random.rand(N**3).reshape((N,)*3).astype(np.float32)
+
+    rend = VolumeRenderer((400, 400), 'nearest')
+
+    rend.set_data(d)
+    rend.render()
+    out = rend.output
+    plt.imshow(out)
+    plt.show()
+    plt.pause(0.1)
+    plt.close()
+    return 1
 
 def test_time_to_render():
     import time

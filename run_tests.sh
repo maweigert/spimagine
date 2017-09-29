@@ -1,4 +1,4 @@
-# nosetests-2.7 --nocapture --nologcapture -v tests
-# nosetests-3.4 --nocapture --nologcapture -v tests
-nosetests-2.7 -v tests
-nosetests-3.4 -v tests
+# runs nosetest on all tests for both python2 and python3
+
+python2.7 -m nose -v tests/
+python3 -m nose -v tests/

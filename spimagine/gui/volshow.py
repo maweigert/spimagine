@@ -56,7 +56,7 @@ def getCurrentApp():
 
 
 
-def volfig(num=None, raise_window = True):
+def volfig(num=None, raise_window = True, **widget_kwargs):
     """return window"""
 
     logger.debug("volfig")
@@ -79,7 +79,7 @@ def volfig(num=None, raise_window = True):
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
-        window = MainWidget()
+        window = MainWidget(**widget_kwargs)
         window.resize(spimagine.config.__DEFAULT_WIDTH__,spimagine.config.__DEFAULT_HEIGHT__)
 
     #make num the last window
@@ -93,6 +93,7 @@ def volshow(data, autoscale = True,
             stackUnits = [1.,1.,1.],
             blocking = False,
             cmap = None,
+            interpolation = "linear",
             raise_window = True):
     """
     class to visualize 3d/4d data
@@ -149,6 +150,10 @@ def volshow(data, autoscale = True,
         available colormaps: cmap = ["viridis", "coolwarm","jet","hot","grays"]
         if None, then the default one is used
 
+    interpolation: str
+        the interpolation used for rendering/slice views
+        "linear" or "nearest"
+
     raise_window: boolean
         if true, raises the window
 
@@ -204,7 +209,7 @@ def volshow(data, autoscale = True,
     except:
         num = 1
 
-    window = volfig(num)
+    window = volfig(num, interpolation = interpolation)
     logger.debug("volfig: %s s " % (time() - t))
     t = time()
 

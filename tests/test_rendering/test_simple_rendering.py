@@ -7,6 +7,8 @@ from __future__ import absolute_import
 import numpy as np
 from spimagine.volumerender.volumerender import VolumeRenderer
 from spimagine.utils.transform_matrices import *
+import matplotlib
+matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 import logging
 logger = logging.getLogger(__name__)
@@ -42,9 +44,12 @@ def test_simple_rendering():
         plt.imshow(out)
         plt.axis("off")
         plt.title("%s"%(dtype))
+    plt.pause(.1)
+    plt.close()
 
     plt.show()
-    plt.pause(2)
+    plt.pause(.1)
+    plt.close()
     return rend
 
 def test_surface():
@@ -70,9 +75,11 @@ def test_surface():
 
     plt.imshow(rend.output)
     plt.axis("off")
+    plt.close()
 
     plt.show()
     plt.pause(.1)
+    plt.close()
     return rend
 
 

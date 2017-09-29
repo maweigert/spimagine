@@ -118,7 +118,7 @@ def createTristateCheckbox(parent, img1=None , img2 = None,img3 = None, tooltip 
 
 
 
-def fillTexture2d(data,tex = None):
+def fillTexture2d(data,tex = None, interp=True):
     """ data.shape == (Ny,Nx)
           file texture with GL_RED
         data.shape == (Ny,Nx,3)
@@ -135,7 +135,7 @@ def fillTexture2d(data,tex = None):
     GL.glTexParameterf (GL.GL_TEXTURE_2D,
                      GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
     GL.glTexParameterf (GL.GL_TEXTURE_2D,
-                     GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+                     GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR if interp else GL.GL_NEAREST)
 
     GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
     GL.glTexParameterf (GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
@@ -269,4 +269,4 @@ def create_sphere_coords(rx,ry,rz,Nphi=50, Ntheta=30, return_normals = False):
 
 if __name__ == '__main__':
     c =  create_sphere_coords(.8,10,10)
-    
+
