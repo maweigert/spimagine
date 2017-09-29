@@ -350,21 +350,16 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
     def tex_coords_from_xyzoom(self, x0, y0, zoom):
         """returns array of texccords corners when zoomed
-        in onto x0,y0 \in [0,1]"""
+        in onto x0,y0 \in [0,1]
+        
+        zoom == 1   --> fully zoomed out
+        zoom == 0   --> fully zoomed in (to x0,y0)
+        """
 
         q0 = create_quad_coords([0, 1, 0, 1])
         q1 = create_quad_coords([x0, x0, y0, y0])
 
         return zoom * q0 + (1. - zoom) * q1
-
-    # def tex_coords_from_xyzoom(self,x0,y0,zoom):
-    #     """returns array of texccords corners given a zoom
-    #     and the tex center coords"""
-    #
-    #     q0 = create_quad_coords([0,1,0,1])
-    #     q1 = create_quad_coords([x0,x0,y0,y0])
-    #
-    #     return zoom*q0+(1.-zoom)*q1
 
     def getRelativeCoords(self, x0, y0):
         w, h = self.getDataWidthHeight()
@@ -390,11 +385,9 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
         if event.buttons() == QtCore.Qt.LeftButton:
             x, y = self.getRelativeCoords(event.x(), event.y())
-            # print self._x0, x
             self.zoom_x += self.zoom_fac * (self._x0 - x)
             self.zoom_y += self.zoom_fac * (self._y0 - y)
             self._x0, self._y0 = x, y
-
             self.zoom_x, self.zoom_y = clip(self.zoom_x, 0, 1), clip(self.zoom_y, 0, 1)
 
         self.refresh()
@@ -409,7 +402,6 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
 
 
         self.zoom_fac *= 1.4 ** (-event.angleDelta().y() / 1000.)
-
         self.zoom_fac = clip(self.zoom_fac, 0, 1.)
 
         self.refresh()
@@ -501,8 +493,8 @@ class SliceWidget(QtWidgets.QWidget):
     def setModel(self, dataModel):
         self.glSliceWidget.setModel(dataModel)
 
-    def wheelEvent(self, event):
-        self.sliderSlice.wheelEvent(event)
+    # def wheelEvent(self, event):
+    #     self.sliderSlice.wheelEvent(event)
 
 
 if __name__ == '__main__':
