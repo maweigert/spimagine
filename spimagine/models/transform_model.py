@@ -221,9 +221,13 @@ class TransformModel(QtCore.QObject):
         self.update()
         self._transformChanged.emit()
 
-    def addRotation(self, angle, x, y, z):
+    def addRotation(self, angle, x, y, z, from_left = True):
         q = Quaternion(np.cos(angle), np.sin(angle) * x, np.sin(angle) * y, np.sin(angle) * z)
-        self.setQuaternion(self.quatRot * q)
+        if from_left:
+            q_new = q*self.quatRot
+        else:
+            q_new = self.quatRot *q
+        self.setQuaternion(q_new)
 
     def setRotation(self, angle, x, y, z):
         self.setQuaternion(Quaternion(np.cos(angle), np.sin(angle) * x, np.sin(angle) * y, np.sin(angle) * z))

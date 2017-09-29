@@ -744,6 +744,16 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.refresh()
 
+    def resizeEvent(self, event):
+        # enforce each dimension to be divisable by 4 (and so the saved frames)
+        super(GLWidget, self).resizeEvent(event)
+
+        size = event.size()
+        w,h = size.width(),size.height()
+        if not((w%4==0) and (h%4==0)):
+            self.resize(QtCore.QSize((w//4)*4, (h//4)*4))
+
+
     def _enforce_resize(self):
         """ this is to enforce the resizeGL event """
         self.resize(self.width() + 1, self.height())
