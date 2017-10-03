@@ -405,19 +405,22 @@ class TiffMultipleFiles(GenericData):
 
 
 class NumpyData(GenericData):
-    def __init__(self, data, stackUnits=[1., 1., 1.]):
+    def __init__(self, data, stackUnits=[1., 1., 1.], copy = False):
         GenericData.__init__(self, "NumpyData")
+        if copy:
+            self.data = data.copy()
+        else:
+            self.data = data
 
         if len(data.shape) == 2:
             self.stackSize = (1, 1) + data.shape
-            self.data = data.copy().reshape(self.stackSize)
+            self.data = self.data.reshape(self.stackSize)
 
         elif len(data.shape) == 3:
             self.stackSize = (1,) + data.shape
-            self.data = data.copy().reshape(self.stackSize)
+            self.data = self.data.reshape(self.stackSize)
         elif len(data.shape) == 4:
             self.stackSize = data.shape
-            self.data = data.copy()
         else:
             raise TypeError("data should be 3 or 4 dimensional! shape = %s" % str(data.shape))
 
