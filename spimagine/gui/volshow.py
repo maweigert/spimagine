@@ -34,7 +34,7 @@ def _rescale(x, upper, lower=0.):
 
     ma, mi = np.amax(x), np.amin(x)
     if ma == mi:
-        x = upper * np.ones(x.shape)
+        x = lower * np.ones(x.shape)
     else:
         try:
             import numexpr
