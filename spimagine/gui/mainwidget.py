@@ -748,7 +748,9 @@ class MainWidget(QtWidgets.QWidget):
 
 
     def onRotateTimer(self):
-        self.transform.addRotation(-.02,0,1.,0)
+        axis = [0,0,0]
+        axis[spimagine.config.__DEFAULT_SPIN_AXIS__] = 1
+        self.transform.addRotation(-.02,*axis)
         self.glWidget.render()
         self.glWidget.updateGL()
 

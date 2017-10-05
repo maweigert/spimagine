@@ -17,6 +17,7 @@ config_parser = MyConfigParser(__CONFIGFILE__)
 
 defaults = {
     "id_device": 0,
+    "spin_axis" : 1, # x,y,z = 0,1,2
     "id_platform": 0,
     "use_gpu": 1,
     "colormap": "viridis",
@@ -39,6 +40,7 @@ __USE_GPU__ = _get_param("use_gpu", int)
 __DEFAULTCOLORMAP__ = _get_param("colormap", str)
 __DEFAULT_TEXTURE_WIDTH__ = _get_param("texture_width", int)
 __DEFAULT_WIDTH__ = _get_param("window_width", int)
+__DEFAULT_SPIN_AXIS__ = _get_param("spin_axis", int)
 
 
 __DEFAULT_HEIGHT__ = _get_param("window_height", int)
