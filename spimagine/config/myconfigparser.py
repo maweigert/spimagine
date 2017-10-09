@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,11 +16,15 @@ else:
 
 
 class MyConfigParser(SafeConfigParser):
-    def __init__(self, fName=None, defaults={}):
+    def __init__(self, fName=None, defaults={}, create_file = True):
         SafeConfigParser.__init__(self, defaults)
         self.dummySection = "dummy"
         if fName:
+            if create_file and not os.path.exists(fName):
+                os.mknod(fName)
             self.read(fName)
+
+
 
     def read(self, fName):
         try:
