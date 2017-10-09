@@ -140,12 +140,12 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
 
         self.colorCombo = QtWidgets.QComboBox()
 
-        self.colormaps = list(spimagine.config.__COLORMAPDICT__.keys())
+        self.colormaps = list(sorted(spimagine.config.__COLORMAPDICT__.keys()))
 
-        self.colorCombo.setIconSize(QtCore.QSize(100,20))
+        self.colorCombo.setIconSize(QtCore.QSize(80,20))
 
         for s in self.colormaps:
-            self.colorCombo.addItem(QtGui.QIcon(absPath("../colormaps/cmap_%s.png"%s)),"")
+            self.colorCombo.addItem(QtGui.QIcon(absPath("../colormaps/cmap_%s.png"%s)),s)
 
         gridBox.addWidget(self.colorCombo,4,1)
 
