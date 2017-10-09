@@ -45,7 +45,6 @@ def test_simple_rendering():
         plt.axis("off")
         plt.title("%s"%(dtype))
     plt.pause(.1)
-    plt.close()
 
     plt.show()
     plt.pause(.1)
@@ -75,7 +74,6 @@ def test_surface():
 
     plt.imshow(rend.output)
     plt.axis("off")
-    plt.close()
 
     plt.show()
     plt.pause(.1)
