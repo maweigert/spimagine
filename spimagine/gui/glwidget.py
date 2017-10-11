@@ -97,7 +97,9 @@ class GLWidget(QtOpenGL.QGLWidget):
     def __init__(self, parent=None, N_PREFETCH=0, interpolation = "linear", **kwargs):
         logger.debug("init")
 
-        super(GLWidget, self).__init__(parent, **kwargs)
+        fmt = QtOpenGL.QGLFormat(QtOpenGL.QGL.AlphaChannel)
+
+        super(GLWidget, self).__init__(fmt,parent, **kwargs)
 
         self.parent = parent
         self.texture_LUT = None
@@ -261,6 +263,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glEnable(GL_LINE_SMOOTH);
         glDisable(GL_DEPTH_TEST)
+
+        glLineWidth(spimagine.config.__DEFAULT_BOX_LINEWIDTH__)
+
+        print(spimagine.config.__DEFAULT_BOX_LINEWIDTH__)
 
         # self.set_background_color(0,0,0,.0)
         self.set_background_mode_black(True)
@@ -472,7 +478,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable(GL_DEPTH_TEST)
         # glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         glDrawArrays(GL_LINES, 0, len(self.cubeCoords))
+
         glDisable(GL_DEPTH_TEST)
 
     def _paintGL_mesh(self, mesh, vbo_vertices, vbo_normals, vbo_indices):
@@ -622,22 +630,22 @@ class GLWidget(QtOpenGL.QGLWidget):
                 else:
                     self.sliceOutput = np.zeros_like(out)
 
-    def getFrame(self):
-        self.render()
-        self.paintGL()
-        glFlush()
-        ilm = self.grabFrameBuffer()
-        im = im.convertToFormat(QtGui.QImage.Format_RGB32)
+    # def getFrame(self):
+    #     self.render()
+    #     self.paintGL()
+    #     glFlush()
+    #     im = self.grabFrameBuffer()
+    #     im = im.convertToFormat(QtGui.QImage.Format_RGB32)
+    #
+    #     width = im.width()
+    #     height = im.height()
+    #
+    #     ptr = im.bits()
+    #     ptr.setsize(im.byteCount())
+    #     arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
+    #     return arr[..., [2, 1, 0, 3]].copy()
 
-        width = im.width()
-        height = im.height()
-
-        ptr = im.bits()
-        ptr.setsize(im.byteCount())
-        arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
-        return arr[..., [2, 1, 0, 3]].copy()
-
-    def saveFrame(self, fName):
+    def saveFrame(self, fName, with_alpha = False):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
         logger.info("saving frame as %s", fName)
 
@@ -650,7 +658,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.render()
         self.paintGL()
         glFlush()
-        im = self.grabFrameBuffer()
+        im = self.grabFrameBuffer(withAlpha=with_alpha)
         im.save(fName)
 
     def onRenderTimer(self):

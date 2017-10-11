@@ -4,6 +4,7 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
+
 import six
 
 if six.PY2:
@@ -19,9 +20,16 @@ class MyConfigParser(SafeConfigParser):
     def __init__(self, fName=None, defaults={}, create_file = True):
         SafeConfigParser.__init__(self, defaults)
         self.dummySection = "dummy"
+
         if fName:
             if create_file and not os.path.exists(fName):
-                os.mknod(fName)
+                try:
+                    logger.debug("trying to create %s"%fName)
+                    with open(fName,"w") as f:
+                        pass
+                except Exception as e:
+                    logger.debug("failed to create %s"%fName)
+                    logger.debug(e)
             self.read(fName)
 
 
@@ -37,7 +45,7 @@ class MyConfigParser(SafeConfigParser):
                     self.read_file(f)
 
         except Exception as e:
-            print(e)
+            logger.debug(e)
 
 
 

@@ -42,9 +42,9 @@ def _rescale(x, upper, lower=0.):
             mi_32, ma_32 = np.float32(mi), np.float32(ma)
             x = x.astype(np.float32, copy = False)
             x = numexpr.evaluate("lower_32+(upper_32 -lower_32)* (x - mi_32) / (ma_32 - mi_32)")
-        except  ImportError:
+        except ImportError:
             logger.debug("could not find numexpr")
-            x = lower+(upper-lower) * (x - mi) / (ma - mi)
+            x = lower+(upper-lower) * (x.astype(np.float32) - mi) / (ma - mi)
 
     return x
 
