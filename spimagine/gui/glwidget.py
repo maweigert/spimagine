@@ -96,10 +96,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def __init__(self, parent=None, N_PREFETCH=0, interpolation = "linear", **kwargs):
         logger.debug("init")
+        #
+        # fmt = QtOpenGL.QGLFormat(QtOpenGL.QGL.AlphaChannel)
+        #
+        # super(GLWidget, self).__init__(fmt,parent, **kwargs)
 
-        fmt = QtOpenGL.QGLFormat(QtOpenGL.QGL.AlphaChannel)
+        super(GLWidget, self).__init__(parent, **kwargs)
 
-        super(GLWidget, self).__init__(fmt,parent, **kwargs)
 
         self.parent = parent
         self.texture_LUT = None
