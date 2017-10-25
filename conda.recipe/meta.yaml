@@ -1,0 +1,67 @@
+{% set name = "spimagine" %}
+{% set setup_data = load_setup_py_data() %}
+
+package:
+  name: {{ name }}
+  {% if release_type == 'dev' %}
+  version: 'dev.{{setup_data.get('version')}}'
+  {% elif release_type == 'release' %}
+  version: '{{setup_data.get('version')}}'
+  {% endif %}
+
+source:
+  #{% if release_type == 'dev' %}
+  path: ..
+  #git_tag: develop
+  #{% else %}
+  #git_url: git://github.com/maweigert/spimagine
+  #{% endif %}
+
+build:
+  number: 0
+  #{% if release_type == 'dev' %}
+  string: py{{ PY_VER|replace(".", "") }}_{{ GIT_DESCRIBE_HASH }}_{{ PKG_BUILDNUM }}
+  #{% elif release_type == 'release' %}
+  #string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
+  #{% endif %}
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  entry_points:
+    {% for key, list in setup_data['entry_points'].items() %}
+      {% for item in list %}
+    - {{ item }}
+      {% endfor %}
+    {% endfor %}
+
+
+requirements:
+  build:
+    - python {{ python }}
+    - setuptools
+  run:
+    - python {{ python }}
+    - gputools
+    - scipy
+    - pillow >=3.3
+    - pyqt >=5
+    - pyopengl
+    - pyopengl-accelerate # [not linux]
+    - sortedcontainers
+    - configparser # [py2k]
+
+test:
+  imports:
+    - spimagine
+  requires:
+    - nose
+    - matplotlib
+    - termcolor
+    - scikit-image
+  commands:
+    - nosetests -v tests
+#    - spimagine
+
+about:
+  home: {{ setup_data.get('url') }}
+  license: {{ setup_data.get('license') }}
+  license_file: LICENSE.txt
+  summary: {{ setup_data.get('description') }}
