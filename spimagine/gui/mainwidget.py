@@ -717,6 +717,12 @@ class MainWidget(QtWidgets.QWidget):
             if self.playTimer.isActive():
                 self.playTimer.stop()
 
+            if self.keyPanel.recordTimer.isActive():
+                self.keyPanel.recordTimer.stop()
+
+            if self.keyPanel.playTimer.isActive():
+                self.keyPanel.playTimer.stop()
+
             if self.rotateTimer.isActive():
                 self.rotateTimer.stop()
 
