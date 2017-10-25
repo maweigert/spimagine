@@ -25,6 +25,7 @@ defaults = {
     "window_width": 900,
     "window_height": 800,
     "max_steps": 200,
+    "box_linewidth": 1.,
     "_qualifier_constant_to_global": 0,
 }
 
@@ -42,6 +43,7 @@ __DEFAULT_TEXTURE_WIDTH__ = _get_param("texture_width", int)
 __DEFAULT_WIDTH__ = _get_param("window_width", int)
 __DEFAULT_SPIN_AXIS__ = _get_param("spin_axis", int)
 
+__DEFAULT_BOX_LINEWIDTH__= _get_param("box_linewidth", float)
 
 __DEFAULT_HEIGHT__ = _get_param("window_height", int)
 __DEFAULTMAXSTEPS__ = _get_param("max_steps", int)

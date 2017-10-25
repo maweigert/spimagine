@@ -604,7 +604,6 @@ class MainWidget(QtWidgets.QWidget):
         fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
                                                      '.', initialFilter='*.png')
 
-        print(fileName)
         if fileName:
             self.glWidget.saveFrame(str(fileName))
 
@@ -616,8 +615,8 @@ class MainWidget(QtWidgets.QWidget):
         self.glWidget.set_colormap_rgb(color)
 
 
-    def saveFrame(self, fName):
-        self.glWidget.saveFrame(fName)
+    def saveFrame(self, fName, with_alpha = False):
+        self.glWidget.saveFrame(fName, with_alpha = with_alpha)
 
 
 

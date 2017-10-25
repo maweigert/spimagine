@@ -213,7 +213,10 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         color: white;
         }
         """)
-        self.colorCombo.setStyleSheet("background-color:none;color:black")
+        self.colorCombo.setStyleSheet("""
+                                    background-color:none;
+                                    color:black;
+                                    font-size:8pt""")
 
         vbox.addStretch()
 
