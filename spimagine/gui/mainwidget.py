@@ -110,7 +110,7 @@ class MainWidget(QtWidgets.QWidget):
         # self.jack = JackPlugin(self.transform)
         # self.jack.start()
 
-        
+
         self.sliceWidget.setTransform(self.transform)
 
         self.fwdButton = createStandardButton(self,
@@ -145,7 +145,7 @@ class MainWidget(QtWidgets.QWidget):
         self.fileSaveButton = createStandardButton(self,
                         fName = absPath("images/icon_filesave.png"),
                         method = self.saveFile, tooltip = "save file as tif")
-        
+
         self.checkVolSettings = createImageCheckbox(self,
                                                     absPath("images/icon_volsettings_active.png"),
                                                     absPath("images/icon_volsettings_inactive.png"),
@@ -206,7 +206,7 @@ class MainWidget(QtWidgets.QWidget):
         self.minSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.minSlider.setToolTip("min")
 
-        
+
         self.gammaSlider = FloatSlider(QtCore.Qt.Vertical)
         self.gammaSlider.setRange(.01,2.,200)
 
@@ -248,7 +248,7 @@ class MainWidget(QtWidgets.QWidget):
         self.minSlider.floatValueChanged.connect(lambda x: self.transform.setMin(func1(x)))
         self.transform._minChanged.connect(lambda x:self.minSlider.setValue(func2(x)))
 
-        
+
         self.gammaSlider.floatValueChanged.connect(self.transform.setGamma)
         self.transform._gammaChanged.connect(self.gammaSlider.setValue)
 
@@ -443,7 +443,7 @@ class MainWidget(QtWidgets.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
-        
+
 
     def impStateChanged(self):
         data = self.transform.dataModel[self.transform.dataPos]
@@ -466,7 +466,7 @@ class MainWidget(QtWidgets.QWidget):
 
     def onRgbColorChanged(self,r,g,b):
         self.glWidget.set_colormap_rgb([r,g,b])
-        
+
         self.glWidget.refresh()
 
         self.sliceWidget.glSliceWidget.set_colormap_rgb([r,g,b])
@@ -602,8 +602,7 @@ class MainWidget(QtWidgets.QWidget):
 
     def screenShot(self):
         fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save screenshot as',
-                                                     '.', initialFilter='*.png')
-
+                                                     '.', ('*.png'))
         if fileName:
             self.glWidget.saveFrame(str(fileName))
 
@@ -665,11 +664,9 @@ class MainWidget(QtWidgets.QWidget):
                 mbox.exec_()
 
     def saveFile(self,e):
-        path = QtWidgets.QFileDialog.getSaveFileName(self, 'Save as Tif File',
-                                                     '.', selectedFilter='*.tif')
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save as Tif File',
+                                                     '.', ('*.tif'))
 
-        path = str(path)
-        
         if path:
             if self.glWidget.dataModel:
                 write3dTiff(self.glWidget.dataModel[self.transform.dataPos].astype(np.float32),path)
