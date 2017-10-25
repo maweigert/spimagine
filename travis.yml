@@ -1,0 +1,57 @@
+os: osx
+language: python
+python:
+  - 3.6
+  - 3.5
+  - 2.7
+
+branches:
+  only:
+  - conda
+
+install:
+  - sudo apt-get update
+  # Install Anaconda
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export USER=talley
+  - export CONDA_BLD_PATH=~/conda-bld
+
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda install conda-build anaconda-client
+  - conda update -q conda conda-build
+  - conda config --add channels conda-forge
+  - conda config --add channels talley
+  - conda config --set show_channel_urls true
+  - conda info -a
+  - echo $TRAVIS_BUILD_NUMBER
+  - echo $TRAVIS_BRANCH
+  - echo $TRAVIS_PYTHON_VERSION
+
+#  - conda build --py 36 -c talley -c conda-forge conda.recipe
+
+#  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
+#  - source activate test-environment
+#  - python setup.py install
+
+script:
+  - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
+  - echo $OUTPUT
+  - conda build --py $TRAVIS_PYTHON_VERSION  conda.recipe
+
+after_success:
+  - echo $TRAVIS_TEST_RESULT
+  - anaconda -t $CONDA_UPLOAD_TOKEN -v upload --all -u $USER --force -s "Lattice Light Sheet Processing Tools" $OUTPUT
+
+#  - conda convert -p osx-64 -o $CONDA_BLD_PATH $OUTPUT
+#  - ls $CONDA_BLD_PATH/*
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u $USER --force
+#  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh

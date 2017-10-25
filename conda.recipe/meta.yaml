@@ -3,42 +3,30 @@
 
 package:
   name: {{ name }}
-  {% if release_type == 'dev' %}
-  version: 'dev.{{setup_data.get('version')}}'
-  {% elif release_type == 'release' %}
-  version: '{{setup_data.get('version')}}'
-  {% endif %}
+  version: {{ setupdata['version'] }}
 
 source:
-  #{% if release_type == 'dev' %}
-  path: ..
-  #git_tag: develop
-  #{% else %}
-  #git_url: git://github.com/maweigert/spimagine
-  #{% endif %}
+  git_tag: conda
+  git_url: https://github.com/tlambert03/spimagine
 
 build:
   number: 0
-  #{% if release_type == 'dev' %}
-  string: py{{ PY_VER|replace(".", "") }}_{{ GIT_DESCRIBE_HASH }}_{{ PKG_BUILDNUM }}
-  #{% elif release_type == 'release' %}
-  #string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
-  #{% endif %}
+  string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
   script: python setup.py install --single-version-externally-managed --record record.txt
   entry_points:
-    {% for key, list in setup_data['entry_points'].items() %}
+    {% for key, list in setupdata['entry_points'].items() %}
       {% for item in list %}
-    - {{ item }}
+    - {{item}}
       {% endfor %}
     {% endfor %}
 
 
 requirements:
   build:
-    - python {{ python }}
+    - python
     - setuptools
   run:
-    - python {{ python }}
+    - python
     - gputools
     - scipy
     - pillow >=3.3
