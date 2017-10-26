@@ -110,6 +110,62 @@ cd spimagine
 python setup.py install
 ```
 
+## Anaconda Installation
+
+Spimagine can also be installed using the ```conda``` package manager.
+
+1. Install [Anaconda](https://www.anaconda.com/download/), (it doesn't matter whether you download anaconda with Python 2 or 3, you can still install Spimagine in a virtual environment using either Py 2/3).
+2. Launch a ```terminal``` window (OS X, Linux), or ```Anaconda Prompt``` (Windows)
+3. Install Spimagine into a new environment:
+
+```bash
+> conda create -n spimenv -c talley -c conda-forge python=3.6 spimagine
+```
+
+The ``create -n spimenv`` line creates a virtual environment.  This is optional, but strongly recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment each time before using Spimagine (as shown below in step 4).
+
+*Note:  To prevent the need to type ```-c talley -c conda-forge``` every time you update/install spimagine, you may also add those channels to your config as follows:*
+
+```bash
+> conda config --add channels conda-forge
+> conda config --add channels talley
+```
+
+then future installs/updates can be run simply via:
+
+```bash
+> conda update spimagine
+```
+
+
+4. The gui can be launched with ``spimagine``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
+
+```bash
+# Launch Anaconda Prompt and activate the spimagine virtual environment...
+> activate spimenv  # Windows
+$ source activate spimenv  # OS X or Linux
+
+# launch the gui
+> spimagine
+```
+
+### Some notes on troubleshooting the anaconda installation:
+
+The hardest thing to get "right" is the pyopencl installation, which often requires system-specific tinkering, based on your hardware and drivers.  On Windows, the conda package will default to pyopencl 2017.2 with the precompiled OpenCL 1.2 binaries from [Christoph Gohlke](http://www.lfd.uci.edu/~gohlke/pythonlibs/).  This works well for most current NVIDIA GPUs, but if you experience issues (most commonly, you will see "\_cffi" errors), you may need to use a different pyopencl version, that better match your drivers.  To see all of the options for your platform, type the following at the anaconda prompt:
+
+```bash
+> conda search -c conda-forge pyopencl
+```
+
+Then, if you'd like to try a different version, for (openCL v2.0 in the example below) uninstall pyopencl and reinstall a specific version like this:
+
+```bash
+> conda remove --force pyopencl
+> conda install -c conda-forge pyopencl=2017.2
+```
+
+
+The other common bug (most frequently seen on Windows 10) is an OpenGL version mismatch.  This is a problem that is currently unsolved.  See [this thread](https://github.com/maweigert/spimagine/issues/24) to report this bug and track any potential fixes/updates.
 
 ## Usage
 
