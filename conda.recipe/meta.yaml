@@ -1,5 +1,5 @@
 {% set name = "spimagine" %}
-{% set setup_data = load_setup_py_data() %}
+{% set setupdata = load_setup_py_data() %}
 
 package:
   name: {{ name }}
@@ -49,7 +49,7 @@ test:
 #    - spimagine
 
 about:
-  home: {{ setup_data.get('url') }}
-  license: {{ setup_data.get('license') }}
+  home: {{ setupdata.get('url') }}
+  license: {{ setupdata.get('license') }}
   license_file: LICENSE.txt
-  summary: {{ setup_data.get('description') }}
+  summary: {{ setupdata.get('description') }}
