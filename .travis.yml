@@ -65,6 +65,7 @@ install:
   - conda install conda-build anaconda-client
   - conda update -q conda conda-build
   - conda config --add channels conda-forge
+  - conda config --add channels talley
   - conda config --set show_channel_urls true
   - conda info -a
 
