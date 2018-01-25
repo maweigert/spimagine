@@ -1,0 +1,75 @@
+os: osx
+osx_image: xcode6.4
+
+language: generic
+#python:
+#  - 3.6
+env:
+  - CONDA_PY=3.6
+
+# safelist
+branches:
+  only:
+  - conda
+
+before_install:
+  - brew update
+  - brew install python3
+#  - virtualenv env -p python3
+#  - source env/bin/activate
+
+#  - gcc -v
+#  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+#  - sudo apt-get update -qq
+#  - sudo apt-get install -qq g++-4.8 gcc-4.8
+#  - alias gcc=gcc-4.8
+#  - alias g++=g++-4.8
+#  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
+#  - sudo update-alternatives --install /usr/bin/gcc g++ /usr/bin/gcc-4.8 90
+#  - gcc -v
+#
+#  - sudo apt-get install -qq opencl-headers;
+#  - bash .travis/amd_sdk.sh;
+#  - tar -xjf AMD-SDK.tar.bz2;
+#  - AMDAPPSDKROOT=${HOME}/AMDAPPSDK;
+#  - export OPENCL_VENDOR_PATH=${AMDAPPSDKROOT}/etc/OpenCL/vendors;
+#  - mkdir -p ${OPENCL_VENDOR_PATH};
+#  - sh AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDKROOT};
+#  - echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd;
+#  - export LD_LIBRARY_PATH=${AMDAPPSDKROOT}/lib/x86_64:${LD_LIBRARY_PATH};
+#  - export CMAKE_LIBRARY_PATH=${AMDAPPSDKROOT}/lib/x86_64;
+#  - chmod +x ${AMDAPPSDKROOT}/bin/x86_64/clinfo;
+#  - ${AMDAPPSDKROOT}/bin/x86_64/clinfo;
+#  - echo "HUHU"
+#  - ls ${AMDAPPSDKROOT}/lib/x86_64/*
+#  - echo ${LD_LIBRARY_PATH}
+
+install:
+  # Install Anaconda
+  # - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+  #     wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+  #   else
+  #     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  #   fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export USER=talley
+  - export CONDA_BLD_PATH=~/conda-bld
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda install conda-build anaconda-client
+  - conda update -q conda conda-build
+  - conda config --add channels conda-forge
+  - conda config --add channels talley
+  - conda config --set show_channel_urls true
+  - conda info -a
+
+script:
+  - OUTPUT="$(conda build --py $CONDA_PY --output conda.recipe)"
+  - echo $OUTPUT
+  - conda build --py $CONDA_PY  conda.recipe

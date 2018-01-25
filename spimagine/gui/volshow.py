@@ -7,23 +7,47 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from collections import OrderedDict
 
-
 import spimagine
 from spimagine.volumerender.volumerender import VolumeRenderer
 
 from spimagine.gui.mainwidget import MainWidget
 
-
-from spimagine.models.data_model import DataModel, SpimData, TiffData, TiffFolderData,GenericData, EmptyData, DemoData, NumpyData
+from spimagine.models.data_model import DataModel, SpimData, TiffData, TiffFolderData, GenericData, EmptyData, DemoData, \
+    NumpyData
 import six
 
 _MAIN_APP = None
 
-#FIXME app issue
+# FIXME app issue
 
 import logging
+
 logger = logging.getLogger(__name__)
+
+
 # logger.setLevel(logging.DEBUG)
+
+
+def _rescale(x, upper, lower=0.):
+    if upper<lower:
+        raise ValueError("upper<lower! (%s < %s)"%(upper, lower))
+
+    ma, mi = np.amax(x), np.amin(x)
+    if ma == mi:
+        x = lower * np.ones(x.shape)
+    else:
+        try:
+            import numexpr
+            lower_32, upper_32 = np.float32(lower), np.float32(upper)
+            mi_32, ma_32 = np.float32(mi), np.float32(ma)
+            x = x.astype(np.float32, copy = False)
+            x = numexpr.evaluate("lower_32+(upper_32 -lower_32)* (x - mi_32) / (ma_32 - mi_32)")
+        except ImportError:
+            logger.debug("could not find numexpr")
+            x = lower+(upper-lower) * (x.astype(np.float32) - mi) / (ma - mi)
+
+    return x
+
 
 def absPath(myPath):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -32,13 +56,12 @@ def absPath(myPath):
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-        logger.debug("found MEIPASS: %s "%os.path.join(base_path, os.path.basename(myPath)))
+        logger.debug("found MEIPASS: %s " % os.path.join(base_path, os.path.basename(myPath)))
 
         return os.path.join(base_path, os.path.basename(myPath))
     except Exception:
         base_path = os.path.abspath(os.path.dirname(__file__))
         return os.path.join(base_path, myPath)
-
 
 
 def getCurrentApp():
@@ -47,7 +70,7 @@ def getCurrentApp():
     if app is None:
         app = QtWidgets.QApplication(sys.argv)
 
-    if not hasattr(app,"volfigs"):
+    if not hasattr(app, "volfigs"):
         app.volfigs = OrderedDict()
 
     global _MAIN_APP
@@ -55,46 +78,43 @@ def getCurrentApp():
     return _MAIN_APP
 
 
-
-def volfig(num=None, raise_window = True, **widget_kwargs):
+def volfig(num=None, raise_window=True, **widget_kwargs):
     """return window"""
 
     logger.debug("volfig")
 
-
     app = getCurrentApp()
     app.setWindowIcon(QtGui.QIcon(absPath('images/spimagine.png')))
 
-    #filter the dict
-    app.volfigs =  OrderedDict((n,w) for n,w in six.iteritems(app.volfigs) if w.isVisible())
-
+    # filter the dict
+    app.volfigs = OrderedDict((n, w) for n, w in six.iteritems(app.volfigs) if w.isVisible())
 
     if not num:
-        if len(app.volfigs)==0:
+        if len(app.volfigs) == 0:
             num = 1
         else:
-            num = max(app.volfigs.keys())+1
+            num = max(app.volfigs.keys()) + 1
 
     if num in app.volfigs:
         window = app.volfigs[num]
         app.volfigs.pop(num)
     else:
         window = MainWidget(**widget_kwargs)
-        window.resize(spimagine.config.__DEFAULT_WIDTH__,spimagine.config.__DEFAULT_HEIGHT__)
+        window.resize(spimagine.config.__DEFAULT_WIDTH__, spimagine.config.__DEFAULT_HEIGHT__)
 
-    #make num the last window
+    # make num the last window
     app.volfigs[num] = window
-
 
     return window
 
 
-def volshow(data, autoscale = True,
-            stackUnits = [1.,1.,1.],
-            blocking = False,
-            cmap = None,
-            interpolation = "linear",
-            raise_window = True):
+def volshow(data, autoscale=True,
+            stackUnits=[1., 1., 1.],
+            blocking=False,
+            cmap=None,
+            interpolation="linear",
+            show_window = True,
+            raise_window=True):
     """
     class to visualize 3d/4d data
 
@@ -111,11 +131,11 @@ def volshow(data, autoscale = True,
 
       e.g.
 
-    from spimagine.data_model import GenericData
+    from spimagine.models.data_model import GenericData
 
     class myData(GenericData):
         def __getitem__(self,i):
-            return (100*i+3)*ones((100,100,100)
+            return (100*i+3)*np.ones((100,100,100))
         def size(self):
             return (4,100,100,100)
 
@@ -163,44 +183,33 @@ def volshow(data, autoscale = True,
 
     """
 
-
     logger.debug("volshow")
 
     logger.debug("volshow: getCurrentApp")
 
     app = getCurrentApp()
 
-
-
     from time import time
 
     t = time()
 
-
-
     # if isinstance(data,GenericData):
     if isinstance(data, DataModel):
         m = data
-    elif hasattr(data,"stackUnits"):
+    elif hasattr(data, "stackUnits"):
         m = DataModel(data)
     else:
-        if not isinstance(data,np.ndarray):
+        if not isinstance(data, np.ndarray):
             data = np.array(data)
         if autoscale:
-            ma,mi = np.amax(data), np.amin(data)
-            if ma==mi:
-                data = 1000.*np.ones(data.shape)
-            else:
-                data = 1000.*(data-mi)/(ma-mi)
+            data = _rescale(data, 10000,0)
 
         if not data.dtype.type in VolumeRenderer.dtypes:
-            data = data.astype(np.float32,copy=False)
+            data = data.astype(np.float32, copy=False)
 
         m = DataModel(NumpyData(data))
 
-
-
-    logger.debug("create model: %s s "%( time()-t))
+    logger.debug("create model: %s s " % (time() - t))
     t = time()
 
     # check whether there are already open windows, if not create one
@@ -209,10 +218,9 @@ def volshow(data, autoscale = True,
     except:
         num = 1
 
-    window = volfig(num, interpolation = interpolation)
+    window = volfig(num, interpolation=interpolation)
     logger.debug("volfig: %s s " % (time() - t))
     t = time()
-
 
     window.setModel(m)
 
@@ -221,16 +229,15 @@ def volshow(data, autoscale = True,
     if cmap is None or cmap not in spimagine.config.__COLORMAPDICT__:
         cmap = spimagine.config.__DEFAULTCOLORMAP__
 
-
     window.glWidget.set_colormap(cmap)
 
     window.glWidget.transform.setStackUnits(*stackUnits)
 
-    window.show()
+    if show_window:
+        window.show()
 
     if raise_window:
         window.raise_window()
-
 
     if blocking:
         getCurrentApp().exec_()
@@ -243,7 +250,7 @@ def qt_exec():
 
 
 class TimeData(GenericData):
-    def __init__(self,func, dshape):
+    def __init__(self, func, dshape):
         """ func(i) returns the volume
         dshape is [Nt,Nz,Nx,Ny]
         """
@@ -252,7 +259,7 @@ class TimeData(GenericData):
 
         GenericData.__init__(self)
 
-    def __getitem__(self,i):
+    def __getitem__(self, i):
         return self.func(i)
 
     def size(self):
@@ -260,6 +267,4 @@ class TimeData(GenericData):
 
 
 if __name__ == '__main__':
-
-    volshow(DemoData(),blocking = True)
-
+    volshow(DemoData(), blocking=True)

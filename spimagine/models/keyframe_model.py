@@ -278,7 +278,7 @@ class KeyFrameList(QtCore.QObject):
         return newTrans
 
     def _to_JSON(self):
-        return json.dumps(self, cls=KeyFrameEncoder)
+        return json.dumps(self, indent = 4, sort_keys = True, cls=KeyFrameEncoder)
 
     @classmethod
     def _from_JSON(self, jsonStr):

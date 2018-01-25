@@ -1,0 +1,55 @@
+{% set name = "spimagine" %}
+{% set setupdata = load_setup_py_data() %}
+
+package:
+  name: {{ name }}
+  version: {{ setupdata['version'] }}
+
+source:
+  git_tag: conda
+  git_url: https://github.com/tlambert03/spimagine
+
+build:
+  number: 0
+  string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  entry_points:
+    {% for key, list in setupdata['entry_points'].items() %}
+      {% for item in list %}
+    - {{item}}
+      {% endfor %}
+    {% endfor %}
+
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - gputools
+    - scipy
+    - pillow >=3.3
+    - pyqt >=5
+    - pyopengl
+    - pyopengl-accelerate # [not linux]
+    - sortedcontainers
+    - configparser # [py2k]
+
+test:
+  imports:
+    - spimagine
+  requires:
+    - nose
+    - matplotlib
+    - termcolor
+    - scikit-image
+  commands:
+    - nosetests -v tests
+#    - spimagine
+
+about:
+  home: {{ setupdata.get('url') }}
+  license: {{ setupdata.get('license') }}
+  license_file: LICENSE.txt
+  summary: {{ setupdata.get('description') }}

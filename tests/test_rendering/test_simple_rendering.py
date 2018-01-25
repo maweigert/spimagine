@@ -38,6 +38,7 @@ def test_simple_rendering():
     # drawing
 
     plt.figure(1)
+    plt.ion()
     plt.clf()
     for i,out in enumerate(outs):
         plt.subplot(1,len(outs),i+1)
@@ -45,10 +46,9 @@ def test_simple_rendering():
         plt.axis("off")
         plt.title("%s"%(dtype))
     plt.pause(.1)
-    plt.close()
 
     plt.show()
-    plt.pause(.1)
+    plt.pause(1.)
     plt.close()
     return rend
 
@@ -69,16 +69,15 @@ def test_surface():
     #rend.render(data=data.astype(np.float32), maxVal = 100., method="max_project")
 
     # drawing
-    #plt.ioff()
+    plt.ion()
     plt.figure(1)
     plt.clf()
 
     plt.imshow(rend.output)
     plt.axis("off")
-    plt.close()
 
     plt.show()
-    plt.pause(.1)
+    plt.pause(1.)
     plt.close()
     return rend
 

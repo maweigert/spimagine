@@ -29,3 +29,5 @@ build_linux/*.log
 tests/test_config/config_example.txt
 
 
+
+/.DS_Store
