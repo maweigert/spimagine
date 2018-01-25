@@ -1,0 +1,18 @@
+name: spim
+channels:
+  - talley
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - gputools
+  - pyqt
+  - numpy
+  - scipy
+  - pillow
+  - pyopengl
+  - pyopencl
+  - sortedcontainers
+  - nose  # for testing
+  - matplotlib  # for testing
+  - termcolor # for testing
