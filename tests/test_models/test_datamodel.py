@@ -6,6 +6,7 @@ import os
 import numpy as np
 from spimagine import DataModel, SpimData, TiffData, NumpyData, RawData
 from six.moves import range
+import time
 
 
 def rel_path(name):
@@ -21,6 +22,7 @@ def test_spimdata():
         print(pos)
         print(np.mean(m[pos]))
     return m
+    time.sleep(.1)
 
 
 
@@ -53,6 +55,7 @@ def test_speed():
 
         time.sleep(.01)
         t.append(time.time())
+    time.sleep(.1)
 
 
 
@@ -73,11 +76,16 @@ def test_frompaths():
         for i in np.random.randint(0,d.sizeT(),10):
             print(i)
             a =  d[i]
+    time.sleep(.1)
 
 
 def test_folder():
+    print("test folder")
     d = DataModel.fromPath(rel_path("../data/tiffstacks"))
+    print("thread is running: ", d.dataLoadThread.isRunning())
     print(d)
+    time.sleep(.1)
+
 
 
 
@@ -85,10 +93,12 @@ def test_tiffdata():
     d = TiffData(rel_path("../data/flybrain.tif"))
 
     m = DataModel(d)
+    print("thread is running: ", m.dataLoadThread.isRunning())
     print(m)
     for pos in range(m.sizeT()):
         print(pos)
         print((np.mean(m[pos])))
+    time.sleep(.1)
 
 
 def test_rawdata():
@@ -101,6 +111,7 @@ def test_rawdata():
     for pos in range(m.sizeT()):
         print(pos)
         print((np.mean(m[pos])))
+    time.sleep(.1)
 
 
 
@@ -108,7 +119,8 @@ def test_rawdata():
 
 
 if __name__ == '__main__':
-    test_rawdata()
+    pass
+    # test_rawdata()
 
 
     # test_tiffdata()
@@ -117,5 +129,5 @@ if __name__ == '__main__':
     # test_spimdata()
     #test_speed()
 
-    # test_frompaths()
-    # test_folder()
+    test_folder()
+    test_folder()
