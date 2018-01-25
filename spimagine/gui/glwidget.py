@@ -284,7 +284,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         else:
             glClearColor(*self._BACKGROUND_WHITE)
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def setTransform(self, transform):
         self.transform = transform

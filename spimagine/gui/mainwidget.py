@@ -20,8 +20,6 @@ import sys
 from PyQt5 import QtCore
 from PyQt5 import QtGui, QtWidgets
 
-
-
 from spimagine.utils.quaternion import Quaternion
 from spimagine.gui.glwidget import GLWidget
 
@@ -272,9 +270,6 @@ class MainWidget(QtWidgets.QWidget):
         self.settingsView = MainSettingsPanel()
         self.settingsView.hide()
 
-        self.setStyleSheet("""
-        background-color:black;
-        color:black;""")
 
 
 
@@ -443,6 +438,11 @@ class MainWidget(QtWidgets.QWidget):
                                  self.checkKey,self.screenshotButton ]
 
         # self.keyPanel.keyView.setModel(self.keyframes)
+
+        self.setStyleSheet("""
+        background-color:black;
+        color:black;""")
+
 
 
     def impStateChanged(self):
