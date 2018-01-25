@@ -113,6 +113,7 @@ def volshow(data, autoscale=True,
             blocking=False,
             cmap=None,
             interpolation="linear",
+            show_window = True,
             raise_window=True):
     """
     class to visualize 3d/4d data
@@ -232,7 +233,8 @@ def volshow(data, autoscale=True,
 
     window.glWidget.transform.setStackUnits(*stackUnits)
 
-    window.show()
+    if show_window:
+        window.show()
 
     if raise_window:
         window.raise_window()
