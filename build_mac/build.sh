@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #get the version string
-version=`python -c "import os, sys;tmp = sys.stdout;sys.stdout = open(os.devnull,'w');sys.stderr= open(os.devnull,'w');import spimagine;sys.stdout = tmp;print(spimagine.__version__)"`
+version=`python3 -c "import os, sys;tmp = sys.stdout;sys.stdout = open(os.devnull,'w');sys.stderr= open(os.devnull,'w');import spimagine;sys.stdout = tmp;print(spimagine.__version__)"`
 
 
 iconName=spimagine 
@@ -14,9 +14,11 @@ rm -rf dist
 echo "building app..."
 
 #onefile
-pyinstaller -w -F -y spimagine.spec
+pyinstaller -w -F -y spimagine_cp3.6.spec
 #ondedir
 # pyinstaller -w -D -y spimagine.spec 
+
+
 
 echo "prettify bundle..."
 

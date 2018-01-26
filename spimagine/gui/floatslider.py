@@ -37,7 +37,6 @@ class FloatSlider(QtWidgets.QSlider):
         return ind
 
     def _from_int(self,n):
-
         return self.minVal+1.*(self.maxVal-self.minVal)*n/self.steps
 
 
@@ -61,54 +60,3 @@ class FloatSlider(QtWidgets.QSlider):
 
 
 
-class MainWindow(QtWidgets.QWidget):
-
-    def __init__(self):
-        super(MainWindow,self).__init__()
-
-        self.slide = FloatSlider(QtCore.Qt.Horizontal)
-        self.slide.setRange(-12.,10.,400)
-        self.slide.valueChanged.connect(self.onSlide)
-        self.slide.floatValueChanged.connect(self.onSlideFloat)
-
-
-        self.slide.setValue(7.)
-        self.setWindowTitle("Key Frame View")
-
-
-        self.edit = QtWidgets.QLineEdit("")
-        self.edit.setValidator(QtGui.QDoubleValidator())
-        self.edit.returnPressed.connect(lambda: self.slide.setValue(float(self.edit.text())))
-
-
-        self.slide.floatValueChanged.connect(lambda x: self.edit.setText(str(x)))
-
-
-
-        self.resize(500,200)
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.slide)
-        hbox.addWidget(self.edit)
-
-        self.setLayout(hbox)
-
-
-    def onSlide(self,val):
-        print("int:\t",val)
-
-    def onSlideFloat(self,val):
-        print("float:\t",val)
-
-
-if __name__ == '__main__':
-
-    import sys
-
-    app = QtWidgets.QApplication(sys.argv)
-
-    win = MainWindow()
-
-    win.show()
-    win.raise_()
-
-    app.exec_()

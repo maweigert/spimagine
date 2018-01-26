@@ -327,7 +327,7 @@ class GLSliceWidget(QtOpenGL.QGLWidget):
             min_out, max_out = self.transform.minVal, self.transform.maxVal
 
             if max_out > min_out:
-                self.output = (1. * (out - min_out) / (max_out - min_out)) ** self.transform.gamma
+                self.output = np.maximum(0,(1. * (out - min_out) / (max_out - min_out))) ** self.transform.gamma
             else:
                 self.output = np.zeros_like(out)
 

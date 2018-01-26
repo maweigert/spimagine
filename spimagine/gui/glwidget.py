@@ -269,8 +269,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         glLineWidth(spimagine.config.__DEFAULT_BOX_LINEWIDTH__)
 
-        print(spimagine.config.__DEFAULT_BOX_LINEWIDTH__)
-
         # self.set_background_color(0,0,0,.0)
         self.set_background_mode_black(True)
         self.clear_canvas()
@@ -286,6 +284,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+
+    def set_interpolation(self, interpolate = True):
+        interp = "linear" if interpolate else "nearest"
+        self.renderer.rebuild_program(interpolation = interp)
+        self.refresh()
 
     def setTransform(self, transform):
         self.transform = transform

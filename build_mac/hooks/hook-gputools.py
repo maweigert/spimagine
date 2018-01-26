@@ -5,6 +5,6 @@ from hook_utils import _my_collect_data_files
 
 datas = _my_collect_data_files("gputools", flatten_dirs = True)
 
-print "\n"*5
-print datas
-print "\n"*5
+print("\n"*5)
+print(datas)
+print("\n"*5)

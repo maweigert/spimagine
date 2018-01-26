@@ -365,6 +365,12 @@ class MainWidget(QtWidgets.QWidget):
         self.volSettingsView.checkBox.stateChanged.connect(
             self.glWidget.transform.setBox)
 
+        self.volSettingsView.checkInterpolate.stateChanged.connect(
+            self.glWidget.transform.setInterpolate)
+
+        self.transform._interpChanged.connect(self.volSettingsView.checkInterpolate.setChecked)
+        self.transform._interpChanged.connect(self.glWidget.set_interpolation)
+
         self.volSettingsView.checkInvert.stateChanged.connect(
             stateToBool(self.glWidget.set_background_mode_black,invert = True))
 
@@ -374,6 +380,7 @@ class MainWidget(QtWidgets.QWidget):
             stateToBool(self.glWidget.transform.setIso))
 
         self.transform._isoChanged.connect(self.checkIsoView.setChecked)
+
 
 
         self.settingsView.checkEgg.stateChanged.connect(self.onCheckEgg)

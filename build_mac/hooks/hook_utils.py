@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import re
@@ -46,19 +48,19 @@ def _my_collect_data_files(modname, flatten_dirs = False, **kwargs):
 
 if __name__ == '__main__':
 
-    print _module_path("pyopencl")
-    print _module_path("gputools")
-    print _module_path("PyQt5")
+    print(_module_path("pyopencl"))
+    print(_module_path("gputools"))
+    print(_module_path("PyQt5"))
 
 
     # print _get_toc_objects(os.path.join(_module_path("pyopencl"), "cl"),
     #                    dir_prefix = "pyopencl/cl")
 
-    print collect_dynamic_libs("PyQt5")
-    print collect_dynamic_libs("pyopencl")
+    print(collect_dynamic_libs("PyQt5"))
+    print(collect_dynamic_libs("pyopencl"))
 
     # print _my_collect_data_files("pyopencl", include_py_files = True)
     # print _my_collect_data_files("gputools")
-    print _my_collect_data_files("gputools", flatten_dirs = True)
+    print(_my_collect_data_files("gputools", flatten_dirs = True))
 
 

@@ -67,6 +67,8 @@ class VolumeRenderer:
                rend.set_modelView(rotMatX(.7))
     """
     dtypes = [np.float32, np.uint16, np.uint8]
+    interpolation_defines = {"linear": ["-D", "SAMPLER_FILTER=CLK_FILTER_LINEAR"],
+                             "nearest": ["-D", "SAMPLER_FILTER=CLK_FILTER_NEAREST"]}
 
     def __init__(self, size=None, interpolation='linear'):
         """ e.g. size = (300,300)"""
@@ -102,36 +104,7 @@ class VolumeRenderer:
 
         # self.memMax = 2.*get_device().get_info("MAX_MEM_ALLOC_SIZE")
 
-        build_options_basic = ["-I", "%s" % absPath("kernels/"),
-                               "-D", "maxSteps=%s" % spimagine.config.__DEFAULTMAXSTEPS__,
-                               ]
-
-        if spimagine.config.__QUALIFIER_CONSTANT_TO_GLOBAL__:
-            build_options_basic += ["-D","QUALIFIER_CONSTANT_TO_GLOBAL"]
-
-        interpolation_defines = {"linear": ["-D", "SAMPLER_FILTER=CLK_FILTER_LINEAR"],
-                                 "nearest": ["-D", "SAMPLER_FILTER=CLK_FILTER_NEAREST"]}
-
-        if interpolation in interpolation_defines:
-            self.interp = interpolation
-            build_options_basic += interpolation_defines[interpolation]
-        else:
-            raise KeyError(
-                "interpolation = '%s' not defined ,valid: %s" % (interpolation, list(interpolation_defines.keys())))
-
-        try:
-            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
-                               build_options=
-                               build_options_basic+
-                               ["-cl-finite-math-only",
-                                "-cl-fast-relaxed-math",
-                                "-cl-unsafe-math-optimizations",
-                                "-cl-mad-enable"])
-        except Exception as e:
-            logger.debug(str(e))
-            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
-                                   build_options=
-                                   build_options_basic)
+        self.rebuild_program(interpolation = interpolation)
 
         self.invMBuf = OCLArray.empty(16, dtype=np.float32)
 
@@ -160,6 +133,37 @@ class VolumeRenderer:
 
         self.set_modelView()
         self.set_projection()
+
+
+    def rebuild_program(self, interpolation = "linear"):
+        build_options_basic = ["-I", "%s" % absPath("kernels/"),
+                               "-D", "maxSteps=%s" % spimagine.config.__DEFAULTMAXSTEPS__,
+
+                               ]
+
+        if spimagine.config.__QUALIFIER_CONSTANT_TO_GLOBAL__:
+            build_options_basic += ["-D", "QUALIFIER_CONSTANT_TO_GLOBAL"]
+
+        if interpolation in VolumeRenderer.interpolation_defines:
+            build_options_basic += VolumeRenderer.interpolation_defines[interpolation]
+        else:
+            raise KeyError(
+                "interpolation = '%s' not defined ,valid: %s" % (interpolation, list(VolumeRenderer.interpolation_defines.keys())))
+
+        try:
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+                               build_options=
+                               build_options_basic+
+                               ["-cl-finite-math-only",
+                                "-cl-fast-relaxed-math",
+                                "-cl-unsafe-math-optimizations",
+                                "-cl-mad-enable"])
+        except Exception as e:
+            logger.debug(str(e))
+            self.proc = OCLProgram(absPath("kernels/all_render_kernels.cl"),
+                                   build_options=
+                                   build_options_basic)
+        self.proc
 
     def set_dtype(self, dtype=None):
         if hasattr(self, "dtype") and dtype is self.dtype:

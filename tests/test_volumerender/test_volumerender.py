@@ -57,7 +57,7 @@ def test_nearest():
     out = rend.output
     plt.imshow(out)
     plt.show()
-    plt.pause(0.1)
+    plt.pause(.1)
     plt.close()
     return 1
 
@@ -133,6 +133,45 @@ def test_speed_multipass():
 
     return rend
 
+
+def test_linear_nearest_switch():
+    import matplotlib.pyplot as plt
+
+    N = 32
+    d = .4*np.random.rand(N ** 3).reshape((N,) * 3).astype(np.float32)
+
+    rend = VolumeRenderer((400, 400))
+
+    rend.rebuild_program(interpolation="linear")
+
+    rend.set_data(d)
+    rend.render()
+    out1 = rend.output.copy()
+
+    rend.rebuild_program(interpolation="nearest")
+    rend.render()
+    out2 = rend.output
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(out1, cmap = "magma")
+    plt.axis("off")
+
+    plt.subplot(1,2,2)
+    plt.imshow(out2, cmap = "magma")
+    plt.axis("off")
+
+
+    plt.show()
+    plt.pause(.1)
+
+
+    plt.close()
+    return rend
+
+
+
 if __name__=="__main__":
-    rend = test_speed_multipass()
+    #rend = test_speed_multipass()
+    rend = test_linear_nearest_switch()
+
 

@@ -118,6 +118,10 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
                                             absPath("images/wire_cube_incative.png"),
                                             tooltip="toggle box")
 
+        self.checkInterpolate = createStandardCheckbox(self,
+                                                  tooltip="interpolate values")
+        self.checkInterpolate.setChecked(True)
+
         self.checkInvert = createStandardCheckbox(self,
                                                tooltip="invert colors")
 
@@ -130,13 +134,16 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         gridBox.addWidget(QtWidgets.QLabel("projection:\t"),1,0)
         gridBox.addWidget(self.checkProj,1,1)
 
-        gridBox.addWidget(QtWidgets.QLabel("bounding box:\t"),2,0)
-        gridBox.addWidget(self.checkBox,2,1)
+        gridBox.addWidget(QtWidgets.QLabel("bounding box:\t"), 2, 0)
+        gridBox.addWidget(self.checkBox, 2, 1)
 
-        gridBox.addWidget(QtWidgets.QLabel("invert colors:\t"),3,0)
-        gridBox.addWidget(self.checkInvert,3,1)
+        gridBox.addWidget(QtWidgets.QLabel("interpolation:\t"), 3, 0)
+        gridBox.addWidget(self.checkInterpolate, 3, 1)
 
-        gridBox.addWidget(QtWidgets.QLabel("colormap:\t"),4,0)
+        gridBox.addWidget(QtWidgets.QLabel("invert colors:\t"),4,0)
+        gridBox.addWidget(self.checkInvert,4,1)
+
+        gridBox.addWidget(QtWidgets.QLabel("colormap:\t"),5,0)
 
         self.colorCombo = QtWidgets.QComboBox()
 
@@ -147,19 +154,19 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         for s in self.colormaps:
             self.colorCombo.addItem(QtGui.QIcon(absPath("../colormaps/cmap_%s.png"%s)),s)
 
-        gridBox.addWidget(self.colorCombo,4,1)
+        gridBox.addWidget(self.colorCombo,5,1)
 
-        gridBox.addWidget(self.butColor,5,0)
+        gridBox.addWidget(self.butColor,6,0)
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
-        self.sliderAlphaPow.setRange(0,5.,400)
+        self.sliderAlphaPow.setRange(0,2.,400)
         self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
 
-        gridBox.addWidget(QtWidgets.QLabel("opacity transfer:\t"),6,0)
-        gridBox.addWidget(self.sliderAlphaPow,6,1)
+        gridBox.addWidget(QtWidgets.QLabel("opacity transfer:\t"),7,0)
+        gridBox.addWidget(self.sliderAlphaPow,7,1)
 
         self.sliderOcc = FloatSlider(QtCore.Qt.Horizontal)
         self.sliderOcc.setRange(0,1.,100)
@@ -167,8 +174,8 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         self.sliderOcc.setTracking(True)
         self.sliderOcc.setValue(.1)
 
-        gridBox.addWidget(QtWidgets.QLabel("AO strength:\t"),7,0)
-        gridBox.addWidget(self.sliderOcc,7,1)
+        gridBox.addWidget(QtWidgets.QLabel("AO strength:\t"),8,0)
+        gridBox.addWidget(self.sliderOcc,8,1)
 
         self.sliderOccRadius = FloatSlider(QtCore.Qt.Horizontal)
         self.sliderOccRadius.setRange(4.,100.,100)
@@ -176,8 +183,8 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         self.sliderOccRadius.setTracking(True)
         self.sliderOccRadius.setValue(21)
 
-        gridBox.addWidget(QtWidgets.QLabel("AO radius :\t"),8,0)
-        gridBox.addWidget(self.sliderOccRadius,8,1)
+        gridBox.addWidget(QtWidgets.QLabel("AO radius :\t"),9,0)
+        gridBox.addWidget(self.sliderOccRadius,9,1)
 
         self.sliderOccNPoints = FloatSlider(QtCore.Qt.Horizontal)
         self.sliderOccNPoints.setRange(10.,200.,100)
@@ -185,8 +192,8 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         self.sliderOccNPoints.setTracking(True)
         self.sliderOccNPoints.setValue(31)
 
-        gridBox.addWidget(QtWidgets.QLabel("AO n points:\t"),9,0)
-        gridBox.addWidget(self.sliderOccNPoints,9,1)
+        gridBox.addWidget(QtWidgets.QLabel("AO n points:\t"),10,0)
+        gridBox.addWidget(self.sliderOccNPoints,10,1)
 
         vbox.addLayout(gridBox)
 

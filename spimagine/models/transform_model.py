@@ -28,6 +28,7 @@ class TransformModel(QtCore.QObject):
     _boxChanged = QtCore.pyqtSignal(int)
 
     _isoChanged = QtCore.pyqtSignal(bool)
+    _interpChanged = QtCore.pyqtSignal(bool)
 
     _perspectiveChanged = QtCore.pyqtSignal(int)
     # _rotationChanged = QtCore.pyqtSignal(float,float,float,float)
@@ -85,6 +86,7 @@ class TransformModel(QtCore.QObject):
         self.setGamma(1.)
         self.setAlphaPow(0)
         self.setBox(True)
+        self.setInterpolate(True)
 
         self.setOccStrength()
         self.setOccRadius()
@@ -105,6 +107,13 @@ class TransformModel(QtCore.QObject):
         if self._update_value("isIso", isIso):
             self._isoChanged.emit(isIso)
             self._transformChanged.emit()
+
+    def setInterpolate(self, is_interpolate):
+        logger.debug("setting interpolation %s" % is_interpolate)
+        if self._update_value("is_interpolate", is_interpolate):
+            self._interpChanged.emit(is_interpolate)
+            self._transformChanged.emit()
+
 
     def setOccStrength(self, occ_strength=.15):
         if self._update_value("occ_strength", occ_strength):
