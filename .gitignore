@@ -17,6 +17,11 @@ build_linux/dist
 build_linux/build/
 build_linux/*.log
 
+build_windows/dist/
+build_windows/build/
+build_windows/*.log
+
+
 # /bin
 # /dist
 
