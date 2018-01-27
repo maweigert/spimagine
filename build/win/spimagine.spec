@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-a = Analysis(['../spimagine/bin/spimagine_gui.py'],
+a = Analysis(['../../spimagine/bin/spimagine_gui.py'],
              binaries=None,
              hiddenimports=[
                  'scipy.special._ufuncs_cxx',
@@ -16,17 +16,15 @@ a = Analysis(['../spimagine/bin/spimagine_gui.py'],
 pyz = PYZ(a.pure)
 
 
-
-
 # filter binaries.. exclude some dylibs that pyinstaller packaged but
 # we actually dont need (e.g. wxPython)
 
 import re
-# reg = re.compile(".*(PyQt4|PyQt5\.Qt|mpl-data|tcl|zmq|QtWebKit|wxPython|matplotlib).*")
-reg = re.compile(".*(PyQt4|mpl-data|tcl|zmq|QtWebKit|wxPython|matplotlib).*")
+reg = re.compile(".*(PyQt4|mpl-data|tcl|curand|zmq|QtWebKit|wxPython|matplotlib).*")
 
 a.binaries = [s for s in a.binaries if reg.match(s[1]) is None] 
 
+print(a.binaries)
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -34,6 +32,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
+          icon="spimagine.ico",
           name='spimagine',
           debug=False,
           #debug=True,
