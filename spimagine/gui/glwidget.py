@@ -261,6 +261,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
+        # self.set_interpolation(spimagine.config.__DEFAULT_INTERP__ != "nearest")
+
         # glLineWidth(1.0);
         glBlendFunc(GL_ONE, GL_ONE)
 

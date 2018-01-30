@@ -26,6 +26,7 @@ defaults = {
     "window_height": 800,
     "max_steps": 200,
     "box_linewidth": 1.,
+    "interpolation": "linear",
     "_qualifier_constant_to_global": 0,
 }
 
@@ -47,6 +48,8 @@ __DEFAULT_BOX_LINEWIDTH__= _get_param("box_linewidth", float)
 
 __DEFAULT_HEIGHT__ = _get_param("window_height", int)
 __DEFAULTMAXSTEPS__ = _get_param("max_steps", int)
+
+__DEFAULT_INTERP__ = _get_param("interpolation", str)
 
 __QUALIFIER_CONSTANT_TO_GLOBAL__ = _get_param("_qualifier_constant_to_global", bool)
 

@@ -4,7 +4,7 @@ mweigert@mpi-cbg.de
 from __future__ import absolute_import, print_function
 import os
 import numpy as np
-from spimagine import DataModel, SpimData, TiffData, NumpyData, RawData
+from spimagine import DataModel, SpimData, TiffData, NumpyData, RawData, XwingData
 from six.moves import range
 import time
 
@@ -115,11 +115,21 @@ def test_rawdata():
 
 
 
+def test_xwing():
+
+    d = XwingData("/Users/mweigert/Data/XwingTest")
+
+    print(d.size())
+
+    return d
 
 
 
 if __name__ == '__main__':
-    pass
+
+    d = test_xwing()
+
+
     # test_rawdata()
 
 
@@ -129,5 +139,5 @@ if __name__ == '__main__':
     # test_spimdata()
     #test_speed()
 
-    test_folder()
-    test_folder()
+    # test_folder()
+    # test_folder()

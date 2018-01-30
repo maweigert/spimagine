@@ -8,6 +8,7 @@ import os
 import numpy as np
 import re
 from PIL import Image
+import json
 
 
 import warnings 
@@ -94,6 +95,47 @@ def parseMetaFile(fName):
             zN = np.float(re.findall("NumberOfPlanes.*",s)[0].split("\t")[2])
 
             return (.162,.162, (1.*z2-z1)/(zN-1.))
+        except Exception as e:
+            print(e)
+            print("coulndt parse ", fName)
+            return (1.,1.,1.)
+
+
+
+
+def parse_index_xwing(fname):
+    """
+    returns (z,y,z) dimensions of a xwing stack
+    """
+    try:
+        lines = open(fname).readlines()
+    except IOError:
+        print("could not open and read ",fname)
+        return None
+
+    items = lines[0].replace("\t",",").replace("\n","").split(",")
+
+    try:
+        stackSize = [int(i) for i in items[-3:]]
+    except Exception as e:
+        print(e)
+        print("couldnt parse ", fname)
+        return None
+    stackSize.reverse()
+    return stackSize
+
+
+def parse_meta_xwing(fName):
+    """
+    returns pixelSizes (dx,dy,dz)
+    """
+    with open(fName) as f:
+        try:
+            s = json.loads((f.readlines()[0]))
+            x = float(s["VoxelDimX"])
+            y = float(s["VoxelDimY"])
+            z = float(s["VoxelDimZ"])
+            return (x,y,z)
         except Exception as e:
             print(e)
             print("coulndt parse ", fName)

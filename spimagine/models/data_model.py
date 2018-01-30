@@ -470,6 +470,50 @@ class DemoData(GenericData):
         return (self.data * np.exp(-.3 * pos)).astype(np.float32)
 
 
+
+class XwingData(GenericData):
+    """data class for xwing data saved in folder fName
+    fname/
+    |-- default.index.txt
+    |-- default.metadata.txt
+    |-- stacks/
+       |--default/
+          |--000000.raw
+          |--000001.raw
+          |--000002.raw
+          ....
+          
+    """
+
+    def __init__(self, dirname=""):
+        super(XwingData, self).__init__(dirname)
+        self.load(dirname)
+
+    def load(self, dirname):
+        if dirname:
+
+            try:
+                self._stack_names = sorted(glob.glob(os.path.join(dirname,"stacks","default","*.raw")))
+                self.stackSize = [len(self._stack_names)]+imgutils.parse_index_xwing(os.path.join(dirname,"default.index.txt"))
+                self.stackUnits = imgutils.parse_meta_xwing(os.path.join(dirname, "default.metadata.txt"))
+            except Exception as e:
+                print(e)
+                self._stack_names = []
+                raise Exception("couldnt open %s as XwingData" % dirname)
+
+    def __getitem__(self, pos):
+        if self.stackSize and len(self._stack_names)>0:
+            if pos < 0 or pos >= self.stackSize[0]:
+                raise IndexError("0 <= pos <= %i, but pos = %i" % (self.stackSize[0] - 1, pos))
+
+            pos = max(0, min(pos, self.stackSize[0] - 1))
+
+            with open(self._stack_names[pos], "rb") as f:
+                return np.fromfile(f, dtype="<u2").reshape(self.stackSize[1:])
+        else:
+            return None
+
+
 class EmptyData(GenericData):
     def __init__(self):
         GenericData.__init__(self, "EmptyData")
@@ -733,6 +777,8 @@ class DataModel(QtCore.QObject):
         elif os.path.isdir(fName):
             if os.path.exists(os.path.join(fName, "metadata.txt")):
                 self.setContainer(SpimData(fName), prefetchSize)
+            elif os.path.exists(os.path.join(fName, "default.index.txt")):
+                self.setContainer(XwingData(fName), prefetchSize)
             else:
                 self.setContainer(TiffFolderData(fName), prefetchSize=prefetchSize)
 

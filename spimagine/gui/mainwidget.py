@@ -79,7 +79,7 @@ def absPath(myPath):
 
 class MainWidget(QtWidgets.QWidget):
     N_SCALE_MIN_EXP = -16
-    N_SCALE_MAX_EXP = 17
+    N_SCALE_MAX_EXP = 16
     N_SCALE_SLIDER = 500
 
     def __init__(self, parent = None, interpolation = "linear", **kwargs):
@@ -195,12 +195,12 @@ class MainWidget(QtWidgets.QWidget):
 
         self.maxSlider = FloatSlider(QtCore.Qt.Vertical)
 
-        self.maxSlider.setRange(self.N_SCALE_MIN_EXP, self.N_SCALE_MAX_EXP, 500)
+        self.maxSlider.setRange(self.N_SCALE_MIN_EXP, self.N_SCALE_MAX_EXP, 1000)
         self.maxSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.maxSlider.setToolTip("max")
 
         self.minSlider = FloatSlider(QtCore.Qt.Vertical)
-        self.minSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,500)
+        self.minSlider.setRange(self.N_SCALE_MIN_EXP,self.N_SCALE_MAX_EXP,1000)
         self.minSlider.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.minSlider.setToolTip("min")
 
