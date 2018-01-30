@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-a = Analysis(['../spimagine/bin/spimagine_gui.py'],
+a = Analysis(['../../spimagine/bin/spimagine_gui.py'],
              pathex=['/Users/mweigert/python/spimagine/spimagine'],
              binaries=None,
              hiddenimports=[

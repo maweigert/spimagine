@@ -8,18 +8,18 @@
 
 
 # build folder
-build/
-dist/
-build_mac/dist/
-build_mac/build/
-build_mac/*.log
-build_linux/dist
-build_linux/build/
-build_linux/*.log
 
-build_windows/dist/
-build_windows/build/
-build_windows/*.log
+build/osx/dist/
+build/osx/build/
+build/osx/*log/
+
+build/win/dist/
+build/win/build/
+build/win/*log/
+
+build/linux/dist/
+build/linux/build/
+build/linux/*log/
 
 
 # /bin
