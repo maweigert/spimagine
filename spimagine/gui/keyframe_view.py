@@ -483,7 +483,7 @@ class KeyFramePanel(QWidget):
         self.setAcceptDrops(True)
 
         self.playTimer = QTimer(self)
-        self.playTimer.setInterval(50)
+        self.playTimer.setInterval(self._record_delay)
         self.playTimer.timeout.connect(self.onPlayTimer)
         self.recordTimer = QTimer(self)
         self.recordTimer.setInterval(self._record_delay)
@@ -604,6 +604,7 @@ class KeyFramePanel(QWidget):
             self.playButton.setIcon(QIcon(absPath("images/icon_start.png")))
 
         else:
+            self.playTimer.setInterval(self._record_delay)
             self.playTimer.start()
             self.playButton.setIcon(QIcon(absPath("images/icon_pause.png")))
 
@@ -623,6 +624,7 @@ class KeyFramePanel(QWidget):
         else:
             self.recordPos = 0
             self.recordButton.setIcon(QIcon(absPath("images/icon_record_on.png")))
+            self.recordTimer.setInterval(self._record_delay)
             self.recordTimer.start()
 
 
@@ -647,8 +649,9 @@ class KeyFramePanel(QWidget):
             return
 
         self.setKeyTime(1.*self.recordPos/self.nFrames)
+        print("record pos", self.recordPos)
+        QTimer.singleShot(self._record_delay, lambda: self._glWidget.saveFrame(os.path.join(self.dirName, "output_%s.png" % (str(self.recordPos).zfill(int(log10(self.nFrames) + 1))))))
 
-        self._glWidget.saveFrame(os.path.join(self.dirName, "output_%s.png" % (str(self.recordPos).zfill(int(log10(self.nFrames) + 1)))))
 
 
 

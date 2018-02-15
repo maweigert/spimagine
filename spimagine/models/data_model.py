@@ -760,6 +760,7 @@ class DataModel(QtCore.QObject):
         if isinstance(fName, (tuple, list)):
 
             if re.match(".*\.(tif|tiff)", fName[0]):
+                print("heye")
                 self.setContainer(TiffMultipleFiles(fName), prefetchSize)
             elif re.match(".*\.(raw)", fName[0]):
                 self.setContainer(RawMultipleFiles(fName), prefetchSize=0)

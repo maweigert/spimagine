@@ -160,7 +160,7 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
 
 
         self.sliderAlphaPow = FloatSlider(QtCore.Qt.Horizontal)
-        self.sliderAlphaPow.setRange(0,2.,400)
+        self.sliderAlphaPow.setRange(0,1.,400)
         self.sliderAlphaPow.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderAlphaPow.setTracking(True)
         self.sliderAlphaPow.setValue(1.)
@@ -252,11 +252,6 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
     def boundsChanged(self):
         bounds = [s.value()/100. for s in self.sliderBounds]
         self._boundsChanged.emit(*bounds)
-
-
-    def alphaPowChanged(self):
-        alphaPow = 100.*(self.sliderAlphaPow.value()/100.)**3
-        self._alphaPowChanged.emit(alphaPow)
 
     def stackUnitsChanged(self):
         try:
