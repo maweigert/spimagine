@@ -324,6 +324,10 @@ class TransformModel(QtCore.QObject):
         self.setValueScale(transformData.minVal,transformData.maxVal)
         self.setGamma(transformData.gamma)
         self.setValueScale(transformData.minVal, transformData.maxVal)
+        self.setShowSlice(transformData.isSlice)
+        self.setSlicePos(transformData.slicePos)
+        self.setSliceDim(transformData.sliceDim)
+
         # self.setGamma(transformData.gamma)
 
 
@@ -337,4 +341,8 @@ class TransformModel(QtCore.QObject):
                              bounds=self.bounds,
                              isBox=self.isBox,
                              isIso=self.isIso,
-                             alphaPow=self.alphaPow)
+                             alphaPow=self.alphaPow,
+                             isSlice=self.isSlice,
+                             slicePos=self.slicePos,
+                             sliceDim = self.sliceDim
+                             )
