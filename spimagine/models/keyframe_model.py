@@ -134,7 +134,7 @@ class TransformData(object):
         t = f(lam)
         newQuat = quaternion_slerp(x1.quatRot, x2.quatRot, t)
         newZoom = (1. - t) * x1.zoom + t * x2.zoom
-        newPos = int((1. - t) * x1.dataPos + t * x2.dataPos)
+        newPos = int(np.round((1. - t) * x1.dataPos + t * x2.dataPos))
         newMinVal = (1. - t) * x1.minVal + t * x2.minVal
 
         newMaxVal = (1. - t) * x1.maxVal + t * x2.maxVal
