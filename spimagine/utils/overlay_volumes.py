@@ -50,5 +50,5 @@ class OverlayData(GenericData):
         return self.out
 
     def size(self):
-        d = list((self.out.shape[0],) + self.out.shape)
+        d = list((self.out.shape[self.axis],) + self.out.shape)
         return tuple(d)
