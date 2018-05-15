@@ -19,42 +19,17 @@ from __future__ import print_function
 import sys
 import argparse
 
-from volume_render import *
-from scipy.misc import toimage
-from imgutils import read3dTiff, fromSpimFolder
 
-from PIL import Image
+import numpy as np
+from spimagine.utils.imgutils import read3dTiff, fromSpimFolder
+from spimagine.volumerender.volumerender import VolumeRenderer
+from spimagine.models.transform_model import mat4_rotation, mat4_translate, mat4_scale, mat4_ortho, mat4_perspective
+
+
+from scipy.misc import toimage
+from imageio import imsave
 import six
 
-def getTiffSize(fName):
-    img = Image.open(fName, 'r')
-    depth = 0
-    while True:
-        try:
-            img.seek(depth)
-        except EOFError:
-            break
-        depth += 1
-
-    return (depth,)+img.size[::-1]
-
-
-
-# def read3dTiff(fName, depth = -1, dtype = np.uint16):
-
-#     if not depth>0:
-#         depth = getTiffSize(fName)[0]
-
-#     img = Image.open(fName, 'r')
-#     stackSize = (depth,) + img.size[::-1]
-
-#     data = np.empty(stackSize,dtype=dtype)
-
-#     for i in range(stackSize[0]):
-#         img.seek(i)
-#         data[i,...] = np.asarray(img, dtype= dtype)
-
-#     return data
 
 
 def main():
@@ -139,16 +114,16 @@ def main():
     rend.set_data(data)
     rend.set_units(args.units)
 
-    M = scaleMat(*(args.scale*3))
-    M = dot(rotMat(*args.rotation),M)
-    M = dot(transMatReal(*args.translate),M)
+    M = mat4_scale(*(args.scale*3))
+    M = np.dot(mat4_rotation(*args.rotation),M)
+    M = np.dot(mat4_translate(*args.translate),M)
 
     rend.set_modelView(M)
 
     if args.ortho:
-        rend.set_projection(projMatOrtho(-1,1,-1,1,-1,1))
+        rend.set_projection(mat4_ortho(-1,1,-1,1,-1,1))
     else:
-        rend.set_projection(projMatPerspective(60,1.,1,10))
+        rend.set_projection(mat4_perspective(60,1.,1,10))
 
     out = rend.render()
 
@@ -165,8 +140,8 @@ def main():
 
     else:
         if not args.range:
-            print("min/max: ", amin(out), amax(out))
-            img = toimage(out, low = amin(out), high  = amax(out),mode = "I")
+            print("min/max: ", np.amin(out), np.amax(out))
+            img = toimage(out, low = np.amin(out), high  = np.amax(out),mode = "I")
         else:
             img = toimage(out, low = args.range[0], high  = args.range[1], mode = "I")
         img.save(args.output)

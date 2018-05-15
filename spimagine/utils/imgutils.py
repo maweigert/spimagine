@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 import os
 import numpy as np
 import re
-from PIL import Image
+
 import json
 
 
@@ -20,20 +20,6 @@ with warnings.catch_warnings():
 
 
 
-def _read3dTiff_PIL(fName):
-    img = Image.open(fName)
-    i = 0
-    data = []
-    while True:
-        try:
-            img.seek(i)
-        except EOFError:
-            break
-        data.append(np.asarray(img))
-        i += 1
-
-    return np.array(data)
-
 def read3dTiff(fName):
     return imread(fName)
 
@@ -42,17 +28,18 @@ def write3dTiff(data,fName):
     imsave(fName,data)
 
         
-def getTiffSize(fName):
-    img = Image.open(fName, 'r')
-    depth = 0
-    while True:
-        try:
-            img.seek(depth)
-        except Exception as e:
-            break
-        depth += 1
-
-    return (depth,)+img.size[::-1]
+# def getTiffSize(fName):
+#     from PIL import Image
+#     img = Image.open(fName, 'r')
+#     depth = 0
+#     while True:
+#         try:
+#             img.seek(depth)
+#         except Exception as e:
+#             break
+#         depth += 1
+#
+#     return (depth,)+img.size[::-1]
 
 
 def readCziFile(fName):

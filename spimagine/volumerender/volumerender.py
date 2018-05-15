@@ -15,7 +15,7 @@ d = linspace(0,10000,Nx*Ny*Nz).reshape([Nz,Ny,Nx])
 rend.set_data(d)
 rend.set_units([1.,1.,.1])
 rend.set_projection(projMatPerspective(60,1.,1,10))
-rend.set_modelView(dot(transMatReal(0,0,-7),scaleMat(.7,.7,.7)))
+rend.set_modelView(dot(mat4_translate(0,0,-7),mat4_scale(.7,.7,.7)))
 
 out = rend.render()
 
