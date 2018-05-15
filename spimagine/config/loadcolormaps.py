@@ -5,7 +5,7 @@ import sys
 import os
 import re
 import numpy as np
-from imagio import imread
+from imageio import imread
 
 
 def _absPath(myPath):

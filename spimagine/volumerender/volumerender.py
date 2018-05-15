@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 import os
 # this is due to some pyinstaller bug!
 from scipy.integrate import *
-from scipy.misc import imsave
 import numpy as np
 from scipy.linalg import inv
 from time import time
