@@ -94,6 +94,7 @@ class MainWidget(QtWidgets.QWidget):
         self.resize(900, 700)
 
 
+
         self.transform = TransformModel()
 
         self.initActions()

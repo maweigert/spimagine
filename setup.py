@@ -30,6 +30,7 @@ setup(name='spimagine',
           "PyOpenGL",
           "pyopencl",
           "gputools",
+          "imageio",
           "sortedcontainers"
       ],
       extras_require={

@@ -187,7 +187,7 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         gridBox.addWidget(self.sliderOccRadius,9,1)
 
         self.sliderOccNPoints = FloatSlider(QtCore.Qt.Horizontal)
-        self.sliderOccNPoints.setRange(10.,200.,100)
+        self.sliderOccNPoints.setRange(10.,1000.,100)
         self.sliderOccNPoints.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.sliderOccNPoints.setTracking(True)
         self.sliderOccNPoints.setValue(31)
