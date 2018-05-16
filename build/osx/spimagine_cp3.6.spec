@@ -1,18 +1,24 @@
 # -*- mode: python -*-
 
-a = Analysis(['../../spimagine/bin/spimagine_gui.py'],
-             pathex=['/Users/mweigert/python/spimagine/spimagine'],
-             binaries=None,
-             hiddenimports=[
-                 'scipy.special._ufuncs_cxx',
-                 'scipy.linalg.cython_blas',
-                 'scipy.linalg.cython_lapack',
-                 'scipy._lib.messagestream',
-                ],
-             excludes=["PyQt4"],
-             hookspath = ["hooks"],
+a = Analysis(
+    [
+        '../../spimagine/bin/spimagine_gui.py'
+        #'../../spimagine/gui/foo.py'
+    ],
+    # dont give pathex as it leas to maximal recursion depth in recent version
+    # for reasons I really dont know... 
+    # pathex=['/Users/mweigert/python/spimagine/spimagine'],
+    binaries=None,
+    hiddenimports=[
+        'scipy.special._ufuncs_cxx',
+        'scipy.linalg.cython_blas',
+        'scipy.linalg.cython_lapack',
+        'scipy._lib.messagestream',
+    ],
+    excludes=["PyQt4"],
+    hookspath = ["hooks"],
 
-             runtime_hooks=None)
+    runtime_hooks=None)
 
 pyz = PYZ(a.pure)
 
@@ -23,7 +29,7 @@ pyz = PYZ(a.pure)
 # we actually dont need (e.g. wxPython)
 
 import re
-# reg = re.compile(".*(PyQt4|PyQt5\.Qt|mpl-data|tcl|zmq|QtWebKit|wxPython|matplotlib).*")
+
 reg = re.compile(".*(PyQt4|mpl-data|tcl|zmq|QtWebKit|wxPython|matplotlib).*")
 
 a.binaries = [s for s in a.binaries if reg.match(s[1]) is None] 

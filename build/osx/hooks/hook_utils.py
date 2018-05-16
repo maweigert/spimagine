@@ -41,7 +41,7 @@ def _my_collect_data_files(modname, flatten_dirs = False, **kwargs):
     files = collect_data_files(modname, **kwargs)
     if flatten_dirs:
         # files = [(source, os.path.split(dest)[0])for source, dest in files]
-        files = [(source, "") for source, dest in files]
+        files = [(source, ".") for source, dest in files]
 
     return files
 
