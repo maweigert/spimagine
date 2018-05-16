@@ -26,7 +26,6 @@ setup(name='spimagine',
       install_requires=[
           'numpy',
           'scipy',
-          'Pillow>=3.3',
           "PyOpenGL",
           "pyopencl",
           "gputools",
@@ -35,7 +34,6 @@ setup(name='spimagine',
       ],
       extras_require={
           ':python_version<"3.0"': [
-              #"scikit-tensor",
               "ConfigParser",
           ],
           ':python_version>="3.2"': [
@@ -51,9 +49,6 @@ setup(name='spimagine',
                                   'data/*',
                                   'lib/*']},
       entry_points={
-          'console_scripts': [
-              'spimagine_render = spimagine.bin.spim_render:main'
-          ],
           'gui_scripts': [
               'spimagine = spimagine.bin.spimagine_gui:main'
           ]

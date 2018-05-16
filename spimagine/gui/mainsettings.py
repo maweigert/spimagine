@@ -188,33 +188,6 @@ class MainSettingsPanel(QtWidgets.QWidget):
             color = 1./255*np.array(col.getRgb()[:3])
             self._rgbColorChanged.emit(*color)
 
-    def setStackUnits(self,px,py,pz):
-        for e,p in zip(self.stackEdits,[px,py,pz]):
-            e.setText(str(p))
-
-    def setBounds(self,x1,x2,y1,y2,z1,z2):
-        for x,s in zip([x1,x2,y1,y2,z1,z2],self.sliderBounds):
-            flag = s.blockSignals(True)
-            s.setValue(x*100)
-            s.blockSignals(flag)
-
-
-    def boundsChanged(self):
-        bounds = [s.value()/100. for s in self.sliderBounds]
-        self._boundsChanged.emit(*bounds)
-
-
-    def alphaPowChanged(self):
-        alphaPow = 100.*(self.sliderAlphaPow.value()/100.)**3
-        self._alphaPowChanged.emit(alphaPow)
-
-    def stackUnitsChanged(self):
-        try:
-            stackUnits = [float(e.text()) for e in self.stackEdits]
-            self._stackUnitsChanged.emit(*stackUnits)
-        except Exception as e:
-            print("couldnt parse text")
-            print(e)
 
     def playIntervalChanged(self):
         self._playIntervalChanged.emit(int(self.playInterval.text()))

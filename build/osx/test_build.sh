@@ -3,5 +3,5 @@
 rm -rf build
 rm -rf dist
 
-pyinstaller --onefile -y spimagine.spec 
+pyinstaller -w -F -y spimagine_cp3.6.spec
 # pyinstaller  -y spimagine.spec 
