@@ -106,7 +106,7 @@ max_project_float(__global float *d_output,
   orig += currentPart*dt*direc;
 
   //  dither the original
-  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  // uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
   // orig += dt*random(entropy+x,entropy+y)*direc;
 
   float4 delta_pos = .5f*dt*direc;
@@ -279,7 +279,7 @@ max_project_short(__global float *d_output,
   orig += currentPart*dt*direc;
 
   //  dither the original
-  uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
+  // uint entropy = (uint)( 6779514*length(orig) + 6257327*length(direc) );
   // orig += dt*random(entropy+x,entropy+y)*direc;
 
   float4 delta_pos = .5f*dt*direc;

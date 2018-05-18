@@ -11,7 +11,6 @@ __kernel void conv_x(__global float * input,
   int j = get_global_id(1);
   
   int Nx = get_global_size(0);
-  int Ny = get_global_size(1);
 
   float res = 0.f;
   float sum_val= 0.f;
@@ -71,7 +70,6 @@ __kernel void conv_vec_x(__global float * input,
   int j = get_global_id(1);
 
   int Nx = get_global_size(0);
-  int Ny = get_global_size(1);
 
   float res_x = 0.f;
   float res_y = 0.f;

@@ -1,6 +1,10 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+import logging
+logger = logging.getLogger(__name__)
+
 import sys
 import os
 import re
@@ -26,31 +30,14 @@ def _arrayFromImage(fName):
     """converts png image to float32 array
     returns an array of shape [h,w,3]
     """
-    img = imread(fName)
-    # img = np.asarray(Image.open(fName).convert("RGB"))
+    img = np.asarray(imread(fName))
 
     if len(img.shape)<3:
         raise TypeError("image %s appears not to be a 2d rgb image"%fName)
 
     return 1./255*img[:,:,:3]
 
-# def _arrayFromImage_Qt(fName):
-#     """converts png image to float32 array
-#     returns an array of shape [w,h,3]
-#     """
-#     try:
-#         img = QtGui.QImage(fName).convertToFormat(QtGui.QImage.Format_RGB32)
-#         Nx, Ny = img.width(),img.height()
-#         tmp = img.bits().asstring(img.numBytes())
-#         arr = np.frombuffer(tmp, np.uint8).reshape((Ny,Nx,4))
-#         arr = arr.astype(np.float32)/np.amax(arr)
-#         return arr[:,:,:-1][:,:,::-1]
-#     except Exception as e:
-#         print e
-#         print "could not load image %s"%fName
-#         return np.zeros((10,100,3),np.float32)
 
-    
 def loadcolormaps():
     cmaps = {}
 

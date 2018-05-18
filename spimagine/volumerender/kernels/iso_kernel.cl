@@ -49,7 +49,7 @@ __kernel void iso_surface(
 
   // calculate eye ray in world space
   float4 orig0, orig;
-  float4 direc0, direc;
+  float4 direc;
   float4 temp;
   float4 back,front;
 
@@ -109,7 +109,6 @@ __kernel void iso_surface(
 
   float t_hit = INFINITY;
 
-  float t1 = tnear, t2 = tfar;
 
   int i = 1;
 

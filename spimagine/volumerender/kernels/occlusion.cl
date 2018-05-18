@@ -18,7 +18,7 @@ __kernel void occlusion_depth(__global float *d_output,
 
   float occ = 0.f;
 
-  for(int i = 0;i<number_points;++i){
+  for(uint i = 0;i<number_points;++i){
 
     //sample point
 
@@ -53,7 +53,7 @@ __kernel void occlusion(__global float *d_output,
 
   float occ = 0.f;
 
-  for(int i = 0;i<number_points;++i){
+  for(uint i = 0;i<number_points;++i){
 
     //sample point uniformly
     // float r = radius*native_sqrt((float)(random(x+rand_int(i,i*i,0,1000),y+rand_int(i*i,i,294,97701))));
