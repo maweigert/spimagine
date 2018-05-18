@@ -39,7 +39,7 @@ def print_largest(binaries, n_biggest=10):
         print("%.2f MB \t %s"%(os.path.getsize(b[1])/1.e6, b[1]))
                   
 
-reg = re.compile(".*(PyQt4|CUDA|libcurand|mpl-data|tcl|zmq|PyQt5/Qt/lib/QtWebEngineCore|wxPython|matplotlib).*")
+reg = re.compile(".*(PyQt4|CUDA|libcurand|mpl-data|tcl|zmq|PyQt5/Qt/lib/QtWebEngineCore|wxPython|matplotlib|lxml/etree).*")
 
 
 print_largest(a.binaries)
