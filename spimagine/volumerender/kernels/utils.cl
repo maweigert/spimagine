@@ -38,7 +38,7 @@ inline float rand_int(uint x, uint y, int start, int end)
 }
 
 
-int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tnear, float *tfar)
+inline int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tnear, float *tfar)
 {
     // compute intersection of ray with all six bbox planes
     float4 invR = (float4)(1.0f,1.0f,1.0f,1.0f) / r_d;
@@ -60,7 +60,7 @@ int intersectBox(float4 r_o, float4 r_d, float4 boxmin, float4 boxmax, float *tn
 }
 
 
-float4 mult(__QUALIFIER_CONSTANT float* M, float4 v){
+inline float4 mult(__QUALIFIER_CONSTANT float* M, float4 v){
   float4 res;
   res.x = dot(v, (float4)(M[0],M[1],M[2],M[3]));
   res.y = dot(v, (float4)(M[4],M[5],M[6],M[7]));

@@ -449,7 +449,7 @@ class MainWidget(QtWidgets.QWidget):
 
         self.setStyleSheet("""
         background-color:black;
-        color:black;""")
+        color:white;""")
 
 
 

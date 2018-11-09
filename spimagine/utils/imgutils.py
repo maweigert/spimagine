@@ -15,13 +15,14 @@ import warnings
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    from spimagine.lib.tifffile import TiffFile, imsave, imread
+    from tifffile import TiffFile, imsave, imread
     from spimagine.lib.czifile import CziFile
 
-
-
 def read3dTiff(fName):
-    return imread(fName)
+    print(fName)
+    a = imread("/Users/mweigert/Data/Worm_Dagmar/C18G1_2L1_1.mhd.tif")
+    print("done")
+    return a
 
 
 def write3dTiff(data,fName):

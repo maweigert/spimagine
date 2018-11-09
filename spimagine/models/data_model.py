@@ -201,10 +201,11 @@ class TiffData(GenericData):
                     self.stackSize = data.shape
 
                 self.data = data
+
             except Exception as e:
                 print(e)
                 self.fName = ""
-                raise Exception("couldnt open %s as TiffData" % fName)
+                raise Exception("couldnt open %s as TiffData (%s)" % (fName,str(e)))
                 return
 
             self.stackUnits = stackUnits
@@ -756,11 +757,9 @@ class DataModel(QtCore.QObject):
         return np.arange(pos, pos + self.prefetchSize + 1) % self.sizeT()
 
     def loadFromPath(self, fName, prefetchSize=0):
-        print(fName)
+        print("from path", fName)
         if isinstance(fName, (tuple, list)):
-
             if re.match(".*\.(tif|tiff)", fName[0]):
-                print("heye")
                 self.setContainer(TiffMultipleFiles(fName), prefetchSize)
             elif re.match(".*\.(raw)", fName[0]):
                 self.setContainer(RawMultipleFiles(fName), prefetchSize=0)

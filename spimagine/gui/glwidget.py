@@ -94,7 +94,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     _BACKGROUND_BLACK = (0., 0., 0., 0.)
     _BACKGROUND_WHITE = (1., 1., 1., 0.)
 
-    def __init__(self, parent=None, N_PREFETCH=0, interpolation = "linear", **kwargs):
+    def __init__(self, parent=None, N_PREFETCH=0, interpolation="linear", **kwargs):
         logger.debug("init")
         #
         # fmt = QtOpenGL.QGLFormat(QtOpenGL.QGL.AlphaChannel)
@@ -102,7 +102,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         # super(GLWidget, self).__init__(fmt,parent, **kwargs)
 
         super(GLWidget, self).__init__(parent, **kwargs)
-
 
         self.parent = parent
         self.texture_LUT = None
@@ -164,25 +163,32 @@ class GLWidget(QtOpenGL.QGLWidget):
         else:
             event.ignore()
 
-    def dropEvent(self, event):
-
-        for url in event.mimeData().urls():
-
-            # path = url.toLocalFile().toLocal8Bit().data()
-
+    def dropEvent2(self, event):
+        def _url_to_path(url):
             path = url.toLocalFile()
-
             if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
+            return path
 
-            self.setCursor(QtCore.Qt.BusyCursor)
+        self.setCursor(QtCore.Qt.BusyCursor)
+        urls = event.mimeData().urls()
 
+        if len(urls) == 0:
+            return
+        elif len(urls) == 1:
+            path = _url_to_path(urls[0])
+        elif len(urls) > 1:
+            path = tuple(_url_to_path(url) for url in urls)
+
+        try:
             if self.dataModel:
                 self.dataModel.loadFromPath(path, prefetchSize=self.N_PREFETCH)
             else:
                 self.setModel(DataModel.fromPath(path, prefetchSize=self.N_PREFETCH))
 
             self.setCursor(QtCore.Qt.ArrowCursor)
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "", "Error loading Data:\n %s" % str(e))
 
     def set_colormap(self, name):
         """name should be either jet, hot, gray, coolwarm"""
@@ -199,7 +205,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def _set_colormap_array(self, arr):
         """arr should be of shape (N,3) and gives the rgb components of the colormap"""
+        if not arr.ndim == 2 and arr.shape[-1] == 3:
+            raise ValueError("wrong shape of color array: should be (N,3) but is %s")
+
         self.makeCurrent()
+
         self.texture_LUT = fillTexture2d(arr.reshape((1,) + arr.shape), self.texture_LUT)
         self.refresh()
 
@@ -287,10 +297,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         if glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-
-    def set_interpolation(self, interpolate = True):
+    def set_interpolation(self, interpolate=True):
         interp = "linear" if interpolate else "nearest"
-        self.renderer.rebuild_program(interpolation = interp)
+        self.renderer.rebuild_program(interpolation=interp)
         self.refresh()
 
     def setTransform(self, transform):
@@ -655,7 +664,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     #     arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
     #     return arr[..., [2, 1, 0, 3]].copy()
 
-    def saveFrame(self, fName, with_alpha = False):
+    def saveFrame(self, fName, with_alpha=False):
         """FIXME: scaling behaviour still hast to be implemented (e.g. after setGamma)"""
         logger.info("saving frame as %s", fName)
 
@@ -766,10 +775,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         super(GLWidget, self).resizeEvent(event)
 
         size = event.size()
-        w,h = size.width(),size.height()
-        if not((w%4==0) and (h%4==0)):
-            self.resize(QtCore.QSize((w//4)*4, (h//4)*4))
-
+        w, h = size.width(), size.height()
+        if not ((w % 4 == 0) and (h % 4 == 0)):
+            self.resize(QtCore.QSize((w // 4) * 4, (h // 4) * 4))
 
     def _enforce_resize(self):
         """ this is to enforce the resizeGL event """
@@ -795,7 +803,7 @@ def test_sphere():
 
     app = QtWidgets.QApplication(sys.argv)
 
-    win = GLWidget(size=QtCore.QSize(500, 500), interpolation = "nearest")
+    win = GLWidget(size=QtCore.QSize(500, 500), interpolation="nearest")
 
     x = np.linspace(-1, 1, 64)
     Z, Y, X = np.meshgrid(x, x, x)
