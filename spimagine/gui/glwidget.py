@@ -163,7 +163,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         else:
             event.ignore()
 
-    def dropEvent2(self, event):
+    def dropEvent(self, event):
         def _url_to_path(url):
             path = url.toLocalFile()
             if spimagine.config.__SYSTEM_DARWIN__:

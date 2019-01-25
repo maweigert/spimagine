@@ -97,7 +97,7 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
             s.setTracking(True)
             s.setValue(-100+200*(i%2))
             s.valueChanged.connect(self.boundsChanged)
-            s.setStyleSheet("height: 18px; border = 0px;")
+            s.setStyleSheet("height: 22px; border = 0px;")
 
             gridBox.addWidget(s,i,1)
 
@@ -216,9 +216,14 @@ class VolumeSettingsPanel(QtWidgets.QWidget):
         vbox.addWidget(self.statsLabel)
 
         self.setStyleSheet("""
-        QFrame,QLabel,QLineEdit {
+        QFrame,QLabel{
         color: white;
         }
+        QLineEdit {
+        color: gray;
+        background: black;
+         }
+
         """)
         self.colorCombo.setStyleSheet("""
                                     background-color:none;

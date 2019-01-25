@@ -157,9 +157,14 @@ class MainSettingsPanel(QtWidgets.QWidget):
         vbox.addLayout(hbox)
 
         self.setStyleSheet("""
-        QFrame,QLabel,QPushButton,QComboBox, QListView,QLineEdit {
-        color: white;
+        QFrame,QLabel,QPushButton,QComboBox, QListView{
+        color: yellow;
+        background: black;
         }
+        QLineEdit {
+        color: gray;
+        background: black;
+         }
         """)
 
         vbox.addStretch()

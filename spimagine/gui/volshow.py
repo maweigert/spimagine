@@ -131,7 +131,7 @@ def volshow(data, autoscale=True,
 
       e.g.
 
-    from spimagine.models.data_model import GenericData
+    from spimagine import GenericData
 
     class myData(GenericData):
         def __getitem__(self,i):
@@ -143,7 +143,7 @@ def volshow(data, autoscale=True,
 
         or
 
-    from spimagine.data_model import DataModel
+    from spimagine import DataModel
 
     volshow(DataModel(dataContainer=myData(), prefetchSize= 5)
 

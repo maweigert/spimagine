@@ -13,12 +13,12 @@ void main()
 
   vec4 lut;
 
-  //if (is_mode_black)
-  //  lut = texture2D(texture_LUT,col.xy);
-  //else
-  //  lut = texture2D(texture_LUT,vec2(1.,1.)-col.xy);
+  if (is_mode_black)
+    lut = texture2D(texture_LUT,col.xy);
+  else
+    lut = texture2D(texture_LUT,vec2(1.,1.)-col.xy);
 
-  lut = texture2D(texture_LUT,col.xy);
+  //lut = texture2D(texture_LUT,col.xy);
 
 
   gl_FragColor = vec4(lut.xyz,col.x);

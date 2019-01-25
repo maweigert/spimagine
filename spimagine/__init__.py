@@ -17,7 +17,8 @@ logger.setLevel(logging.INFO)
 
 from spimagine.config import config
 
-from spimagine.models.data_model import DataModel,DemoData, SpimData, TiffData, CZIData, TiffFolderData, NumpyData, RawData, RawMultipleFiles, XwingData
+from spimagine.models.data_model import DataModel,DemoData, SpimData, TiffData, CZIData, TiffFolderData, NumpyData, RawData, RawMultipleFiles, XwingData, GenericData
+from spimagine.models.overlay_volumes import OverlayData
 
 from spimagine.models.transform_model import TransformModel, TransformData
 

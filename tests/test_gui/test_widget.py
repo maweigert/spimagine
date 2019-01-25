@@ -11,12 +11,12 @@ import sys
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from time import time
-from spimagine import MainWidget, DemoData, DataModel, qt_exec
+from spimagine import MainWidget, DemoData, NumpyData, DataModel, qt_exec
 from spimagine.gui.glwidget import GLWidget
 
 from spimagine import logger
 #logger.setLevel(logger.DEBUG)
-
+from tifffile import imread
 
 def test_widget():
     app = QtWidgets.QApplication(sys.argv)

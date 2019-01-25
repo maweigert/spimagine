@@ -7,7 +7,7 @@ import numpy as np
 from spimagine.models.data_model import GenericData
 
 class OverlayData(GenericData):
-    """create a data object that overlays to 3d arrays 
+    """create a data object that overlays two 3d arrays 
     along an axis and displays a portion of each for each timepoint
      
      e.g. data = OverlayData(x,y)
@@ -17,7 +17,7 @@ class OverlayData(GenericData):
      data[len(x)-1] = y
     """
 
-    def __init__(self, x, y, axis = 0):
+    def __init__(self, x, y, axis = -1):
         super(OverlayData, self).__init__()
         if x.shape != y.shape:
             raise ValueError("shapes of the two arrays have to be equal!")
