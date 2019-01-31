@@ -158,12 +158,12 @@ class MainSettingsPanel(QtWidgets.QWidget):
 
         self.setStyleSheet("""
         QFrame,QLabel,QPushButton,QComboBox, QListView{
-        color: yellow;
+        color: white;
         background: black;
         }
         QLineEdit {
+        background: black; 
         color: gray;
-        background: black;
          }
         """)
 
