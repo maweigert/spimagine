@@ -58,7 +58,7 @@ class TransformData(object):
                  translate=[0, 0, 0],
                  bounds=[-1, 1, -1, 1, -1, 1],
                  isBox=True,
-                 isIso=False,
+                 renderMode=0,
                  alphaPow=0.,
                  isSlice=False,
                  slicePos=0,
@@ -73,7 +73,7 @@ class TransformData(object):
                      translate=translate,
                      bounds=bounds,
                      isBox=isBox,
-                     isIso=isIso,
+                     renderMode=renderMode,
                      alphaPow=alphaPow,
                      isSlice=isSlice,
                      slicePos=slicePos,
@@ -88,7 +88,7 @@ class TransformData(object):
                              translate = %s,
                              bounds = %s,
                              isBox = %s,
-                             isIso = %s,
+                             renderMode= %s,
                              alphaPow = %s,
                              isSlice = %s,
                              slicePos = %s,
@@ -102,14 +102,14 @@ class TransformData(object):
                                      self.translate.__repr__().replace("array","np.array"),
                                      self.bounds.__repr__().replace("array","np.array"),
                                      self.isBox,
-                                     self.isIso,
+                                     self.renderMode,
                                      self.alphaPow,
                                      self.isSlice,
                                      self.slicePos,
                                      self.sliceDim)
 
     def setData(self, quatRot, zoom, dataPos, minVal, maxVal,
-                gamma, translate, bounds, isBox, isIso, alphaPow, isSlice, slicePos, sliceDim):
+                gamma, translate, bounds, isBox, renderMode, alphaPow, isSlice, slicePos, sliceDim):
         self.quatRot = Quaternion.copy(quatRot)
         self.zoom = zoom
         self.dataPos = dataPos
@@ -119,7 +119,7 @@ class TransformData(object):
         self.gamma = gamma
         self.bounds = np.array(bounds)
         self.isBox = isBox
-        self.isIso = isIso
+        self.renderMode = renderMode
         self.alphaPow = alphaPow
         self.translate = np.array(translate)
         self.isSlice = isSlice
@@ -147,7 +147,7 @@ class TransformData(object):
 
         # some things should not be interpolated...
         newBox = x1.isBox
-        newIso = x1.isIso
+        newRenderMode = x1.renderMode
 
         newSlice = x1.isSlice
         newSlicePos = int((1. - t) * x1.slicePos + t * x2.slicePos)
@@ -161,7 +161,7 @@ class TransformData(object):
                              translate=newTranslate,
                              bounds=newBounds,
                              isBox=newBox,
-                             isIso=newIso,
+                             renderMode=newRenderMode,
                              alphaPow=newAlphaPow,
                              isSlice=newSlice,
                              slicePos=newSlicePos,

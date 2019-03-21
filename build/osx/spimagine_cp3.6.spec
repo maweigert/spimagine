@@ -18,6 +18,7 @@ a = Analysis(
         'scipy.linalg.cython_blas',
         'scipy.linalg.cython_lapack',
         'scipy._lib.messagestream',
+		'PyQt5.sip'
     ],
     excludes=["PyQt4", "matplotlib"],
     hookspath = ["hooks"],

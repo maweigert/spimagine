@@ -20,36 +20,21 @@ import sys
 from PyQt5 import QtCore
 from PyQt5 import QtGui, QtWidgets
 
-from spimagine.utils.quaternion import Quaternion
-from spimagine.gui.glwidget import GLWidget
-
-from spimagine.models.keyframe_model import KeyFrameList, KeyFrame
-
-from spimagine.gui.keyframe_view import KeyFramePanel
-
-from spimagine.gui.mainsettings import MainSettingsPanel
-
-from spimagine.gui.volsettings import VolumeSettingsPanel
-
-from spimagine.models.data_model import DataModel, DemoData, SpimData, TiffData, NumpyData
-
-
-from spimagine.gui.slice_view import SliceWidget
-
-
-from spimagine.gui.imageprocessor_view import ImageProcessorListView
-
-import spimagine.utils.egg3d
-from spimagine.models.imageprocessor import *
-
-
-from spimagine.gui.floatslider import FloatSlider
-
-from spimagine.models.transform_model import TransformModel
-
-from spimagine.gui.gui_utils import  createImageCheckbox,createStandardButton
-
-from spimagine.utils.imgutils import write3dTiff
+from ..utils.quaternion import Quaternion
+from .glwidget import GLWidget
+from ..models.keyframe_model import KeyFrameList, KeyFrame
+from .keyframe_view import KeyFramePanel
+from .mainsettings import MainSettingsPanel
+from .volsettings import VolumeSettingsPanel
+from ..models.data_model import DataModel
+from .slice_view import SliceWidget
+from .imageprocessor_view import ImageProcessorListView
+from ..models.imageprocessor import *
+from ..utils import egg3d
+from .floatslider import FloatSlider
+from ..models.transform_model import TransformModel
+from .gui_utils import  createImageCheckbox,createStandardButton, createTristateCheckbox
+from ..utils.imgutils import write3dTiff
 
 import logging
 from six.moves import range
@@ -158,10 +143,11 @@ class MainWidget(QtWidgets.QWidget):
 
         self.checkKey = createImageCheckbox(self, absPath("images/video.png"), absPath("images/video_inactive.png"), tooltip="keyframe editor")
 
-        self.checkIsoView = createImageCheckbox(self,
-                                                absPath("images/icon_method_vol.png"),
-                                                absPath("images/icon_method_iso.png"),
-                                                tooltip="iso surface")
+        self.checkRenderMode = createTristateCheckbox(self,
+                                                      absPath("images/icon_method_vol.png"),
+                                                      absPath("images/icon_method_iso.png"),
+                                                      absPath("images/icon_method_hit.png"),
+                                                      tooltip="rendering mode")
 
         self.checkProcView = createImageCheckbox(self,
                                                  absPath("images/icon_process_active.png"),
@@ -308,7 +294,7 @@ class MainWidget(QtWidgets.QWidget):
         hbox.addWidget(self.fileSaveButton)
 
         hbox.addSpacing(50)
-        hbox.addWidget(self.checkIsoView)
+        hbox.addWidget(self.checkRenderMode)
         hbox.addWidget(self.checkSliceView)
 
         hbox.addSpacing(10)
@@ -335,7 +321,7 @@ class MainWidget(QtWidgets.QWidget):
         hbox0.setSpacing(5)
 
 
-        self.egg3d = spimagine.utils.egg3d.Egg3dController()
+        self.egg3d = egg3d.Egg3dController()
 
         # widget = QtWidgets.QWidget()
         self.setLayout(vbox)
@@ -377,10 +363,10 @@ class MainWidget(QtWidgets.QWidget):
 
         self.settingsView._substepsChanged.connect(self.substepsChanged)
 
-        self.checkIsoView.stateChanged.connect(
-            stateToBool(self.glWidget.transform.setIso))
 
-        self.transform._isoChanged.connect(self.checkIsoView.setChecked)
+        self.checkRenderMode.stateChanged.connect(self.glWidget.transform.setRenderMode)
+
+        self.transform._rendermodeChanged.connect(self.checkRenderMode.setCheckState)
 
 
 

@@ -2,6 +2,7 @@ uniform sampler2D texture;
 uniform sampler2D texture_alpha;
 uniform sampler2D texture_LUT;
 uniform bool is_mode_black;
+uniform bool is_scale_with_alpha;
 varying vec2 mytexcoord;
 
 
@@ -23,15 +24,10 @@ void main()
 
   gl_FragColor = vec4(lut.xyz,col.x);
 
-  gl_FragColor.w = 1.0*length(col.xyz);
+  gl_FragColor.w = 1.0;
 
-
-  //gl_FragColor.w = smoothstep(0.0,0.05, col.x);
-
-
-  //if (col.x>.0)
-  // gl_FragColor.w = 1.0;
-
+  if (is_scale_with_alpha)
+    gl_FragColor.w *= length(col.xyz);
 
 
   if (tnear<0.0)

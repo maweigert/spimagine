@@ -333,35 +333,6 @@ class VolumeRenderer:
         else:
             raise NotImplementedError("wrong dtype: %s", dtype)
 
-        # #self.invMBuf = OCLArray.from_array(np.ones(16, np.float32))
-        # out = OCLArray.from_array(np.zeros(16, np.float32))
-        #
-        # src_str = """
-        # __kernel void foo(__constant float *input, __global float * output)
-        # {
-        #
-        # int i = get_global_id(0);
-        #
-        # output[i] = input[i];
-        #
-        # }
-        # """
-        # prog = OCLProgram(src_str=src_str)
-        #
-        # prog.run_kernel("foo", self.invMBuf.shape, None, self.invMBuf.data, out.data)
-        # print(out.get())
-        # method = "foo"
-        #
-        # self.proc.run_kernel(method,
-        #                      (self.width, self.height),
-        #                      None,
-        #                      self.buf.data,
-        #                      np.int32(self.width),
-        #                      self.invMBuf.data)
-        # print(self.invMBuf.get())
-        # print(self.buf.get())
-
-
 
         self.proc.run_kernel(method,
                              (self.width, self.height),
@@ -505,6 +476,43 @@ class VolumeRenderer:
         self.output_normals = self.buf_normals.get()
         self.output_occlusion = self.buf_occlusion.get()
 
+
+
+    def _render_hitsurface(self, dtype=np.float32, numParts=1, currentPart=0):
+        if dtype in [np.uint16, np.uint8]:
+            method = "hitsurface_short"
+        elif dtype==np.float32:
+
+            method = "hitsurface_float"
+        else:
+            raise NotImplementedError("wrong dtype: %s", dtype)
+
+        self.proc.run_kernel(method,
+                             (self.width, self.height),
+                             None,
+                             self.buf.data, self.buf_alpha.data,
+                             self.buf_depth.data,
+                             np.int32(self.width), np.int32(self.height),
+                             np.float32(self.boxBounds[0]),
+                             np.float32(self.boxBounds[1]),
+                             np.float32(self.boxBounds[2]),
+                             np.float32(self.boxBounds[3]),
+                             np.float32(self.boxBounds[4]),
+                             np.float32(self.boxBounds[5]),
+                             np.float32(self.minVal),
+                             np.float32(self.maxVal),
+                             np.float32(self.gamma),
+                             np.float32(self.alphaPow),
+                             np.int32(numParts),
+                               np.int32(currentPart),
+                             self.invPBuf.data,
+                             self.invMBuf.data,
+                             self.dataImg)
+
+        self.output = self.buf.get()
+        self.output_alpha = self.buf_alpha.get()
+        self.output_depth = self.buf_depth.get()
+
     def render(self, data=None, stackUnits=None,
                minVal=None, maxVal=None, gamma=None,
                modelView=None, projection=None,
@@ -542,7 +550,10 @@ class VolumeRenderer:
 
         if method=="max_project":
             self._render_max_project(self.dtype, numParts, currentPart)
-
-        if method=="iso_surface":
+        elif method == "iso_surface":
             self._render_isosurface()
+        elif method=="hit_surface":
+            self._render_hitsurface(self.dtype)
+        else:
+            raise ValueError("unknown render method %s" % method)
 

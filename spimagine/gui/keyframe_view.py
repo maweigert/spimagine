@@ -438,18 +438,21 @@ class KeyListView(QGraphicsView):
 
                 object_cntext_Menu.exec_(self.mapToGlobal(event.pos()))
 
-
-    def load_from_JSON(self,fName):
-        with open(fName,"r") as f:
+    def load_from_json_file(self, fName):
+        with open(fName, "r") as f:
             try:
-                k = KeyFrameList._from_JSON(f.read())
-                self.setModel(k)
-
-                
+                self.load_from_json(f.read())
             except Exception as e:
                 print(e)
-                print("not a valid keyframe json file: %s"%fName)
-                
+                print("not a valid keyframe json file: %s" % fName)
+
+    def load_from_json(self, s):
+        try:
+            k = KeyFrameList._from_JSON(s)
+            self.setModel(k)
+        except Exception as e:
+            print(e)
+            print("not a valid json string: %s" % s)
 
     def dropEvent(self, event):
         logger.debug("dropping...")
@@ -460,7 +463,7 @@ class KeyListView(QGraphicsView):
             if spimagine.config.__SYSTEM_DARWIN__:
                 path = spimagine.config._parseFileNameFix(path)
 
-            self.load_from_JSON(path)
+            self.load_from_json_file(path)
 
 
 
@@ -687,9 +690,12 @@ class KeyFramePanel(QWidget):
         with open(fName,"w") as f:
             f.write(self.keyView.keyList._to_JSON())
 
-    def load_from_JSON(self,fName):
-        self.keyView.load_from_JSON(fName)
-            
+    def load_from_json_file(self, fName):
+        self.keyView.load_from_json_file(fName)
+
+    def load_from_json(self, s):
+        self.keyView.load_from_json(s)
+
 
 class MainWindow(QMainWindow):
 

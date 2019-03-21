@@ -27,7 +27,7 @@ class TransformModel(QtCore.QObject):
     _gammaChanged = QtCore.pyqtSignal(float)
     _boxChanged = QtCore.pyqtSignal(int)
 
-    _isoChanged = QtCore.pyqtSignal(bool)
+    _rendermodeChanged = QtCore.pyqtSignal(int)
     _interpChanged = QtCore.pyqtSignal(bool)
 
     _perspectiveChanged = QtCore.pyqtSignal(int)
@@ -79,7 +79,7 @@ class TransformModel(QtCore.QObject):
         self.slicePos = 0
         self.sliceDim = 0
         self.zoom = 1.
-        self.setIso(False)
+        self.setRenderMode()
         self.isPerspective = True
         self.setPerspective()
         self.setValueScale(minVal, maxVal)
@@ -102,10 +102,10 @@ class TransformModel(QtCore.QObject):
         self.setStackUnits(*stackUnits)
         self.center()
 
-    def setIso(self, isIso):
-        logger.debug("setting Iso %s" % isIso)
-        if self._update_value("isIso", isIso):
-            self._isoChanged.emit(isIso)
+    def setRenderMode(self, mode=0):
+        logger.debug("setting render mode to %s" % mode)
+        if self._update_value("renderMode", mode):
+            self._rendermodeChanged.emit(mode)
             self._transformChanged.emit()
 
     def setInterpolate(self, is_interpolate):
@@ -113,7 +113,6 @@ class TransformModel(QtCore.QObject):
         if self._update_value("is_interpolate", is_interpolate):
             self._interpChanged.emit(is_interpolate)
             self._transformChanged.emit()
-
 
     def setOccStrength(self, occ_strength=.15):
         if self._update_value("occ_strength", occ_strength):
@@ -230,12 +229,12 @@ class TransformModel(QtCore.QObject):
         self.update()
         self._transformChanged.emit()
 
-    def addRotation(self, angle, x, y, z, from_left = True):
+    def addRotation(self, angle, x, y, z, from_left=True):
         q = Quaternion(np.cos(angle), np.sin(angle) * x, np.sin(angle) * y, np.sin(angle) * z)
         if from_left:
-            q_new = q*self.quatRot
+            q_new = q * self.quatRot
         else:
-            q_new = self.quatRot *q
+            q_new = self.quatRot * q
         self.setQuaternion(q_new)
 
     def setRotation(self, angle, x, y, z):
@@ -317,11 +316,11 @@ class TransformModel(QtCore.QObject):
         self.setPos(transformData.dataPos)
         self.setBounds(*transformData.bounds)
         self.setBox(transformData.isBox)
-        self.setIso(transformData.isIso)
+        self.setRenderMode(transformData.renderMode)
 
         self.setAlphaPow(transformData.alphaPow)
         self.setTranslate(*transformData.translate)
-        self.setValueScale(transformData.minVal,transformData.maxVal)
+        self.setValueScale(transformData.minVal, transformData.maxVal)
         self.setGamma(transformData.gamma)
         self.setValueScale(transformData.minVal, transformData.maxVal)
         self.setShowSlice(transformData.isSlice)
@@ -329,7 +328,6 @@ class TransformModel(QtCore.QObject):
         self.setSliceDim(transformData.sliceDim)
 
         # self.setGamma(transformData.gamma)
-
 
     def toTransformData(self):
         return TransformData(quatRot=self.quatRot, zoom=self.zoom,
@@ -340,9 +338,9 @@ class TransformModel(QtCore.QObject):
                              translate=self.translate,
                              bounds=self.bounds,
                              isBox=self.isBox,
-                             isIso=self.isIso,
+                             renderMode=self.renderMode,
                              alphaPow=self.alphaPow,
                              isSlice=self.isSlice,
                              slicePos=self.slicePos,
-                             sliceDim = self.sliceDim
+                             sliceDim=self.sliceDim
                              )

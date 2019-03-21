@@ -385,12 +385,14 @@ class TiffMultipleFiles(GenericData):
                     raise Exception("tiff stacks seem to be neither 2d nor 3d")
 
                 self.stackSize = (len(self.fNames),) + _single_size
+                
             except Exception as e:
                 print(e)
                 raise Exception("couldnt open %s as TiffData" % self.fNames[0])
                 return
 
             self.stackUnits = stackUnits
+
 
     def __getitem__(self, pos):
         if len(self.fNames) > 0 and pos < len(self.fNames):

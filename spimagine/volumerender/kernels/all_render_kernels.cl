@@ -25,5 +25,7 @@
 
 #include<iso_kernel.cl>
 
+#include<hit_kernel.cl>
+
 
 

@@ -111,6 +111,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.renderer = VolumeRenderer((spimagine.config.__DEFAULT_TEXTURE_WIDTH__,
                                         spimagine.config.__DEFAULT_TEXTURE_WIDTH__),
                                        interpolation=interpolation)
+        self._interp = interpolation
 
         self.renderer.set_projection(mat4_perspective(60, 1., .1, 100))
         # self.renderer.set_projection(projMatOrtho(-2,2,-2,2,-10,10))
@@ -144,8 +145,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.installEventFilter(self)
 
-    def set_background_mode_black(self, mode_back=True):
-        self._background_mode_black = mode_back
+    def set_background_mode_black(self, mode=True):
+        self._background_mode_black = mode
+        self.refresh()
+
+    def set_scale_with_alpha(self, mode=True):
+        self._scale_with_alpha = mode
         self.refresh()
 
     def setModel(self, dataModel):
@@ -172,6 +177,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.setCursor(QtCore.Qt.BusyCursor)
         urls = event.mimeData().urls()
+        logger.debug("len(urls) = %s"%len(urls))
 
         if len(urls) == 0:
             return
@@ -231,6 +237,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex = self._shader_from_file(absPath("shaders/texture.vert"),
                                                  absPath("shaders/texture.frag"))
 
+
         self.programCube = self._shader_from_file(absPath("shaders/box.vert"),
                                                   absPath("shaders/box.frag"))
 
@@ -283,6 +290,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         # self.set_background_color(0,0,0,.0)
         self.set_background_mode_black(True)
+        self.set_scale_with_alpha(True)
         self.clear_canvas()
 
 
@@ -298,8 +306,8 @@ class GLWidget(QtOpenGL.QGLWidget):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def set_interpolation(self, interpolate=True):
-        interp = "linear" if interpolate else "nearest"
-        self.renderer.rebuild_program(interpolation=interp)
+        self._interp = "linear" if interpolate else "nearest"
+        self.renderer.rebuild_program(interpolation=self._interp)
         self.refresh()
 
     def setTransform(self, transform):
@@ -414,7 +422,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         self.programTex.bind()
 
-        self.texture = fillTexture2d(self.output, self.texture)
+        self.texture = fillTexture2d(self.output, self.texture, interp = self._interp == "linear" )
         # self.textureAlpha = fillTexture2d(self.output_alpha, self.textureAlpha)
 
         glEnable(GL_BLEND)
@@ -425,8 +433,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.programTex.enableAttributeArray("texcoord")
         self.programTex.setAttributeArray("position", self.quadCoord)
         self.programTex.setAttributeArray("texcoord", self.quadCoordTex)
-
         self.programTex.setUniformValue("is_mode_black", self._background_mode_black)
+        self.programTex.setUniformValue("is_scale_with_alpha", self._scale_with_alpha)
+
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture)
         self.programTex.setUniformValue("texture", 0)
@@ -624,11 +633,14 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.renderer.set_occ_radius(self.transform.occ_radius)
             self.renderer.set_occ_n_points(self.transform.occ_n_points)
 
-            if self.transform.isIso:
-                renderMethod = "iso_surface"
-
-            else:
+            if self.transform.renderMode == 0:
                 renderMethod = "max_project"
+            elif self.transform.renderMode == 1:
+                renderMethod = "iso_surface"
+            elif self.transform.renderMode == 2:
+                renderMethod = "hit_surface"
+            else:
+                raise ValueError("unknown render mode %s" %self.transform.renderMode)
 
             self.renderer.render(method=renderMethod, return_alpha=True, numParts=self.NSubrenderSteps, currentPart=(
                                                                                                                         self.renderedSteps * _next_golden(

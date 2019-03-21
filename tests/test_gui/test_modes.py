@@ -11,25 +11,19 @@ import sys
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from time import time
-from spimagine import MainWidget, DemoData, NumpyData, DataModel, qt_exec
-from spimagine.gui.glwidget import GLWidget
-
-from spimagine import logger
-#logger.setLevel(logger.DEBUG)
-from tifffile import imread
-
+from spimagine import MainWidget, DemoData, DataModel
+from gputools.utils import remove_cache_dir
 
 def test_widget(blocking = False):
     app = QtWidgets.QApplication(sys.argv)
 
     win = MainWidget()
-    #win = GLWidget()
 
     t = time()
     win.setModel(DataModel(DemoData()))
     print("time to set model: ", time()-t)
     win.show()
-    # win.raise_()
+    win.transform.setRenderMode(2)
 
     if not blocking:
         QtCore.QTimer.singleShot(100,win.closeMe)
@@ -41,5 +35,7 @@ def test_widget(blocking = False):
 
 
 if __name__ == '__main__':
+
+    remove_cache_dir()
 
     test_widget(blocking = True)

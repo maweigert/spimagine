@@ -1,0 +1,11 @@
+{
+  "title": "Spimagine",
+	"icon": "spimagine.icns",
+	"window": {"size":{"width":500, "height":350}},
+	"contents": [
+      { "x": 330, "y": 175, "type": "link", "path": "/Applications" },
+      { "x": 170, "y": 175, "type": "file", "path": "/Users/mweigert/python/spimagine/build/osx/dist/spimagine.app" },
+      { "x": 800, "y": 50, "type": "position", "path": ".VolumeIcon.icns" },
+      { "x": 800, "y": 200, "type": "position", "path": ".background" }
+  ]
+}
